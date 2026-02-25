@@ -351,9 +351,9 @@ function spawnObstacle() {
 
   obstacles.push({
     x, y, w, h, vx, vy,
-    label: tmpl.label, pct: tmpl.pct, color: tmpl.color,
+    label: tmpl.label, pct: tmpl.pct, basePct: tmpl.pct, color: tmpl.color,
     hit: false, grazed: false, bounces: tmpl.bounces || false, rateHike: tmpl.rateHike || false,
-    harvestTrail: [], harvestTimer: 0,
+    harvestTrail: [], harvestTimer: 0, born: frameCount, origW: w, origH: h,
   });
 }
 
@@ -427,10 +427,26 @@ function update() {
   const pickupRate = yr < 5 ? 480 : yr < 15 ? 600 : 900;
   if (frameCount % Math.floor(pickupRate) === 0) spawnPickup();
 
+  // near-death slow-motion (below $500)
+  let timeScale = 1;
+  if (balance > 0 && balance < 500) { timeScale = 0.55 + (balance / 500) * 0.45; }
+
   // update obstacles
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const ob = obstacles[i];
-    ob.x += ob.vx; ob.y += ob.vy;
+    ob.x += ob.vx * timeScale; ob.y += ob.vy * timeScale;
+
+    // obstacles GROW as they age on screen (inflation compounds)
+    const age = (frameCount - ob.born) / 60;
+    const growFactor = 1 + age * 0.04;
+    ob.w = ob.origW * growFactor;
+    ob.h = ob.origH * growFactor;
+
+    // recession: percentages tick UP on labels
+    if (arenaRecession && !ob.rateHike) {
+      const tickUp = Math.floor(((frameCount - (arenaTriggered[18] ? arenaTriggered[18].start : frameCount)) / 40));
+      ob.pct = ob.basePct + Math.max(0, tickUp);
+    }
 
     if (ob.bounces) {
       if (ob.x < 0 || ob.x + ob.w > W) ob.vx *= -1;
@@ -468,7 +484,7 @@ function update() {
     if (ob.harvestTimer > 0) {
       ob.harvestTimer--;
       if (frameCount % 4 === 0) {
-        ob.harvestTrail.push({ x: ob.x + ob.w / 2, y: ob.y + ob.h / 2, life: 1, value: 30 * comboMultiplier });
+        ob.harvestTrail.push({ x: ob.x + ob.w / 2, y: ob.y + ob.h / 2, life: 1.2, value: 40 * comboMultiplier });
       }
     }
 
@@ -578,7 +594,7 @@ function update() {
     else if (side===1) { x=Math.random()*W; y=H+40; vx=(Math.random()-0.5)*2; vy=-(3+Math.random()*2); }
     else if (side===2) { x=-40; y=Math.random()*H; vx=3+Math.random()*2; vy=(Math.random()-0.5)*2; }
     else { x=W+40; y=Math.random()*H; vx=-(3+Math.random()*2); vy=(Math.random()-0.5)*2; }
-    obstacles.push({ x, y, w: tmpl.w*0.8, h: tmpl.h, vx, vy, label: tmpl.label, pct: tmpl.pct, color: tmpl.color, hit: false, grazed: false, bounces: false, rateHike: false, harvestTrail: [], harvestTimer: 0 });
+    obstacles.push({ x, y, w: tmpl.w*0.8, h: tmpl.h, vx, vy, label: tmpl.label, pct: tmpl.pct, basePct: tmpl.pct, color: tmpl.color, hit: false, grazed: false, bounces: false, rateHike: false, harvestTrail: [], harvestTimer: 0 });
   }
   // HYPERINFLATION: everything speeds up + drain triples
   if (arenaHyper) {
@@ -711,6 +727,12 @@ function draw() {
   if (!player) { X.fillStyle = '#000'; X.fillRect(0, 0, W, H); return; }
   X.save();
   if (shakeAmount > 0.5) X.translate((Math.random()-.5)*shakeAmount*2, (Math.random()-.5)*shakeAmount*2);
+
+  // combo feel: subtle zoom at high combos
+  if (comboCount >= 10) {
+    const cZoom = 1 + Math.min(comboCount - 10, 40) * 0.001;
+    X.translate(W/2, H/2); X.scale(cZoom, cZoom); X.translate(-W/2, -H/2);
+  }
 
   // background — desaturate based on balance
   const healthPct = Math.max(0, balance / INITIAL_BALANCE);
@@ -875,7 +897,7 @@ function draw() {
   for (const ob of obstacles) {
     for (const ht of ob.harvestTrail) {
       X.globalAlpha = ht.life * 0.6;
-      X.beginPath(); X.arc(ht.x, ht.y, 3, 0, Math.PI * 2);
+      X.beginPath(); X.arc(ht.x, ht.y, 5, 0, Math.PI * 2);
       X.fillStyle = '#78FFB4'; X.fill();
       X.globalAlpha = 1;
     }
@@ -981,7 +1003,7 @@ function draw() {
     X.beginPath(); rr(ob.x + 4, ob.y + 4, badgeW, badgeH, 4); X.fill();
     X.fillStyle = '#fff'; X.font = `bold ${W < 500 ? 10 : 12}px Mono, monospace`;
     X.textAlign = 'center'; X.textBaseline = 'middle';
-    X.fillText(ob.rateHike ? '!!' : '+' + ob.pct + '%', ob.x + 4 + badgeW / 2, ob.y + ob.h / 2);
+    X.fillText(ob.rateHike ? '!!' : '+' + Math.floor(ob.pct) + '%', ob.x + 4 + badgeW / 2, ob.y + ob.h / 2);
 
     // label text (right of badge)
     X.fillStyle = 'rgba(255,255,255,0.9)'; X.font = `500 ${W < 500 ? 11 : 13}px Knapp, sans-serif`;
