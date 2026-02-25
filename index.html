@@ -94,6 +94,12 @@ function initAudio() {
   ac = new (window.AudioContext || window.webkitAudioContext)();
   mg = ac.createGain(); mg.gain.value = 0.7; mg.connect(ac.destination);
 }
+// Legend logo image for canvas rendering
+const legendLogo = new Image();
+legendLogo.src = 'logo.svg';
+let logoLoaded = false;
+legendLogo.onload = () => { logoLoaded = true; };
+
 function synth(type, freq, vol, dur, freqEnd, delay) {
   if (!ac) return;
   const o = ac.createOscillator(), g = ac.createGain();
@@ -248,7 +254,7 @@ function spawnPickup() {
   pickups.push({
     x: 20 + Math.random() * (W - 40), y: -size,
     size, amt, label, color, type,
-    vy: 0.8 + Math.random() * 0.4,
+    vy: 2.5 + Math.random() * 1.5,
     collected: false,
   });
 }
@@ -691,40 +697,68 @@ function draw() {
   // pickups
   pickups.forEach(p => {
     if (p.collected) return;
-    const pulse = 1 + Math.sin(frameCount * 0.06) * 0.1;
-    const r = p.size * pulse;
+    const pulse = 1 + Math.sin(frameCount * 0.06) * 0.08;
     const isGold = p.type === 'defi' || p.type === 'jackpot';
+    const isBank = p.type === 'bank';
 
-    // outer glow
-    X.beginPath(); X.arc(p.x, p.y, r + 16, 0, Math.PI * 2);
-    const pglow = X.createRadialGradient(p.x, p.y, r * 0.5, p.x, p.y, r + 16);
-    pglow.addColorStop(0, isGold ? 'rgba(255,200,0,0.12)' : 'rgba(120,255,180,0.08)');
-    pglow.addColorStop(1, 'rgba(0,0,0,0)');
-    X.fillStyle = pglow; X.fill();
-
-    // solid body
-    X.beginPath(); X.arc(p.x, p.y, r, 0, Math.PI * 2);
-    const pGrd = X.createRadialGradient(p.x - r*0.2, p.y - r*0.2, 0, p.x, p.y, r);
-    if (isGold) {
-      pGrd.addColorStop(0, 'rgba(255,230,100,0.9)'); pGrd.addColorStop(1, 'rgba(200,150,0,0.7)');
+    if (isBank) {
+      // BANK INTEREST: deliberately ugly, boring gray card
+      const bw = 80, bh = 32;
+      X.globalAlpha = 0.6;
+      X.fillStyle = '#1a1a1a';
+      X.beginPath(); rr(p.x - bw/2, p.y - bh/2, bw, bh, 4); X.fill();
+      X.strokeStyle = '#333'; X.lineWidth = 0.8;
+      X.beginPath(); rr(p.x - bw/2, p.y - bh/2, bw, bh, 4); X.stroke();
+      X.fillStyle = '#666'; X.font = '9px Mono, monospace'; X.textAlign = 'center'; X.textBaseline = 'middle';
+      X.fillText('+$200', p.x, p.y - 4);
+      X.fillStyle = '#444'; X.font = '7px Mono, monospace';
+      X.fillText('0.4% APY', p.x, p.y + 8);
+      X.globalAlpha = 1;
     } else {
-      pGrd.addColorStop(0, 'rgba(120,255,180,0.6)'); pGrd.addColorStop(1, 'rgba(60,180,120,0.4)');
+      // DEFI / JACKPOT: Legend-branded premium card
+      const cw = isGold && p.type === 'jackpot' ? 120 : 100;
+      const ch = isGold && p.type === 'jackpot' ? 52 : 44;
+      const cx = p.x - cw/2, cy = p.y - ch/2;
+
+      // glow halo
+      const ghR = cw * 0.6 * pulse;
+      const glow = X.createRadialGradient(p.x, p.y, ghR * 0.3, p.x, p.y, ghR);
+      glow.addColorStop(0, p.type === 'jackpot' ? 'rgba(255,200,0,0.15)' : 'rgba(39,117,202,0.12)');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      X.fillStyle = glow; X.beginPath(); X.arc(p.x, p.y, ghR, 0, Math.PI*2); X.fill();
+
+      // card background
+      const cardGrd = X.createLinearGradient(cx, cy, cx, cy + ch);
+      if (p.type === 'jackpot') {
+        cardGrd.addColorStop(0, 'rgba(50,40,10,0.92)'); cardGrd.addColorStop(1, 'rgba(30,25,5,0.88)');
+      } else {
+        cardGrd.addColorStop(0, 'rgba(15,25,45,0.92)'); cardGrd.addColorStop(1, 'rgba(8,15,30,0.88)');
+      }
+      X.fillStyle = cardGrd;
+      X.beginPath(); rr(cx, cy, cw, ch, 8); X.fill();
+
+      // card border
+      X.strokeStyle = p.type === 'jackpot' ? 'rgba(255,180,0,0.4)' : 'rgba(39,117,202,0.35)';
+      X.lineWidth = 1.2;
+      X.beginPath(); rr(cx, cy, cw, ch, 8); X.stroke();
+
+      // Legend logo (top-left of card)
+      if (logoLoaded) {
+        X.globalAlpha = 0.6;
+        X.drawImage(legendLogo, cx + 6, cy + 4, 40, 10);
+        X.globalAlpha = 1;
+      }
+
+      // amount
+      X.fillStyle = '#fff'; X.font = `bold ${W<500?14:16}px Knapp, sans-serif`;
+      X.textAlign = 'center'; X.textBaseline = 'middle';
+      X.fillText(p.type === 'jackpot' ? '+$5,000' : '+$2,000', p.x, p.y + 2);
+
+      // rate label
+      X.fillStyle = p.type === 'jackpot' ? 'rgba(255,200,0,0.6)' : 'rgba(39,117,202,0.6)';
+      X.font = '8px Mono, monospace';
+      X.fillText('7.2% APY', p.x, cy + ch - 6);
     }
-    X.fillStyle = pGrd; X.fill();
-    X.strokeStyle = isGold ? 'rgba(255,200,0,0.5)' : 'rgba(120,255,180,0.4)';
-    X.lineWidth = 1.5; X.stroke();
-
-    // label
-    X.fillStyle = '#fff'; X.font = `bold ${W < 500 ? 11 : 13}px Mono, monospace`;
-    X.textAlign = 'center'; X.textBaseline = 'middle';
-    if (p.type === 'jackpot') X.fillText('+$5K', p.x, p.y);
-    else if (p.type === 'defi') X.fillText('+$2K', p.x, p.y);
-    else X.fillText('+$200', p.x, p.y);
-
-    // type label below
-    X.fillStyle = isGold ? 'rgba(255,200,0,0.5)' : 'rgba(120,255,180,0.3)';
-    X.font = '7px Mono, monospace';
-    X.fillText(isGold ? 'DeFi Yield' : '0.4% APY', p.x, p.y + r + 10);
   });
 
   // obstacles — solid, chunky, visually weighted
@@ -855,13 +889,12 @@ function draw() {
     X.fillStyle = '#fff'; X.font = 'bold 26px Mono, monospace';
     X.fillText(Math.floor(years).toString(), W - 20, 52);
 
-    // Legend mark centered at top
-    X.save();
-    X.globalAlpha = 0.15;
-    X.fillStyle = '#fff'; X.font = 'bold 8px Mono, monospace'; X.textAlign = 'center';
-    X.fillText('LEGEND', W / 2, 16);
-    X.globalAlpha = 1;
-    X.restore();
+    // Legend logo centered at top
+    if (logoLoaded) {
+      X.globalAlpha = 0.2;
+      X.drawImage(legendLogo, W/2 - 40, 6, 80, 18);
+      X.globalAlpha = 1;
+    }
 
     // combo — bigger, more visible
     if (comboCount >= 3) {
