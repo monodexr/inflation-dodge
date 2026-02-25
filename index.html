@@ -170,17 +170,17 @@ document.getElementById('retry-btn').addEventListener('click', () => {
 
 // ======== OBSTACLES ========
 const TIER1 = [
-  { label: 'Groceries +3%', pct: 3, w: 70, h: 24, speed: 1.2, color: '#ee5544' },
-  { label: 'Coffee +2%', pct: 2, w: 55, h: 20, speed: 1.5, color: '#cc6644' },
-  { label: 'Gas +4%', pct: 4, w: 75, h: 26, speed: 1.0, color: '#dd4433' },
-  { label: 'Subs +1%', pct: 1, w: 50, h: 18, speed: 1.8, color: '#aa5555' },
+  { label: 'Groceries +3%', pct: 3, w: 150, h: 38, speed: 2.5, color: '#ee5544' },
+  { label: 'Coffee +2%', pct: 2, w: 120, h: 34, speed: 3.0, color: '#cc6644' },
+  { label: 'Gas +4%', pct: 4, w: 140, h: 38, speed: 2.2, color: '#dd4433' },
+  { label: 'Subscriptions +1%', pct: 1, w: 160, h: 34, speed: 3.2, color: '#aa5555' },
 ];
 const TIER2 = [
-  { label: 'Rent +8%', pct: 8, w: 130, h: 30, speed: 0.7, color: '#ff3322' },
-  { label: 'Insurance +6%', pct: 6, w: 90, h: 26, speed: 1.0, color: '#ee4433', diagonal: true },
-  { label: 'Tuition +10%', pct: 10, w: 85, h: 28, speed: 0.9, color: '#ff2211', bounces: true },
-  { label: 'Car +5%', pct: 5, w: 70, h: 24, speed: 1.1, color: '#dd5544' },
-  { label: 'Rate Hike', pct: 0, w: 60, h: 22, speed: 2.0, color: '#ff0000', rateHike: true },
+  { label: 'Rent +8%', pct: 8, w: 220, h: 44, speed: 1.8, color: '#ff3322' },
+  { label: 'Insurance +6%', pct: 6, w: 170, h: 40, speed: 2.2, color: '#ee4433', diagonal: true },
+  { label: 'Tuition +10%', pct: 10, w: 160, h: 40, speed: 2.0, color: '#ff2211', bounces: true },
+  { label: 'Car Payment +5%', pct: 5, w: 160, h: 38, speed: 2.5, color: '#dd5544' },
+  { label: 'RATE HIKE', pct: 0, w: 130, h: 36, speed: 4.0, color: '#ff0000', rateHike: true },
 ];
 
 function spawnObstacle() {
@@ -193,7 +193,7 @@ function spawnObstacle() {
   let x, y, vx, vy;
   const scl = W < 500 ? 0.8 : 1;
   const w = tmpl.w * scl, h = tmpl.h;
-  const spd = tmpl.speed * (1 + yr * 0.04);
+  const spd = tmpl.speed * (1 + yr * 0.08);
 
   if (fromBottom) {
     x = Math.random() * (W - w); y = H + 10;
@@ -221,12 +221,12 @@ function spawnPickup() {
   const yr = years;
   let type, amt, label, color, size;
   const r = Math.random();
-  if (yr >= 5 && r < 0.15) {
-    type = 'defi'; amt = 2000; label = 'DeFi Yield +$2,000'; color = '#FFD700'; size = 28;
-  } else if (yr >= 10 && r < 0.03) {
-    type = 'jackpot'; amt = 5000; label = 'JACKPOT +$5,000'; color = '#FFD700'; size = 34;
+  if (yr >= 5 && r < 0.2) {
+    type = 'defi'; amt = 2000; label = 'DeFi Yield +$2,000'; color = '#FFD700'; size = 36;
+  } else if (yr >= 10 && r < 0.04) {
+    type = 'jackpot'; amt = 5000; label = 'JACKPOT +$5,000'; color = '#FFD700'; size = 44;
   } else {
-    type = 'bank'; amt = 200; label = 'Bank Interest +$200'; color = '#78FFB4'; size = 18;
+    type = 'bank'; amt = 200; label = 'Bank Interest +$200'; color = '#78FFB4'; size = 26;
   }
   pickups.push({
     x: 20 + Math.random() * (W - 40), y: -size,
@@ -253,8 +253,8 @@ function update() {
   years = gameSec / YEAR_DURATION;
   const yr = years;
 
-  // drain
-  drainRate = 2 + yr * 1.2 + Math.pow(yr, 1.5) * 0.08;
+  // drain — aggressive, accelerating
+  drainRate = 5 + yr * 3 + Math.pow(yr, 1.6) * 0.2;
   const drainPerFrame = drainRate / 60;
   balance -= drainPerFrame;
   totalDrained += drainPerFrame;
@@ -277,12 +277,12 @@ function update() {
   if (iFrames > 0) iFrames--;
   hitShrink *= 0.9;
 
-  // spawn obstacles
-  const spawnRate = Math.max(8, 45 - yr * 2.5);
+  // spawn obstacles — much more aggressive
+  const spawnRate = Math.max(6, 22 - yr * 1.5);
   if (frameCount % Math.floor(spawnRate) === 0) spawnObstacle();
 
-  // spawn pickups
-  const pickupRate = yr < 5 ? 120 : yr < 15 ? 180 : 240;
+  // spawn pickups — much rarer
+  const pickupRate = yr < 5 ? 480 : yr < 15 ? 600 : 900;
   if (frameCount % Math.floor(pickupRate) === 0) spawnPickup();
 
   // update obstacles
@@ -513,13 +513,13 @@ function draw() {
 
     // label
     if (p.type === 'defi' || p.type === 'jackpot') {
-      X.fillStyle = p.color; X.font = `bold ${W < 500 ? 8 : 10}px Mono, monospace`;
+      X.fillStyle = p.color; X.font = `bold ${W < 500 ? 12 : 14}px Mono, monospace`;
       X.textAlign = 'center'; X.textBaseline = 'middle';
-      X.fillText(p.type === 'jackpot' ? '$5K' : '$2K', p.x, p.y);
+      X.fillText(p.type === 'jackpot' ? '+$5K' : '+$2K', p.x, p.y);
     } else {
-      X.fillStyle = '#78FFB4'; X.font = '8px Mono, monospace';
+      X.fillStyle = '#78FFB4'; X.font = `bold ${W < 500 ? 10 : 12}px Mono, monospace`;
       X.textAlign = 'center'; X.textBaseline = 'middle';
-      X.fillText('$200', p.x, p.y);
+      X.fillText('+$200', p.x, p.y);
     }
   });
 
@@ -530,7 +530,7 @@ function draw() {
     X.globalAlpha = ob.grazed ? 0.5 : 1;
     X.fillStyle = ob.color + '14'; X.strokeStyle = ob.color + '55'; X.lineWidth = 0.8;
     X.beginPath(); rr(ob.x, ob.y, ob.w, ob.h, 3); X.fill(); X.stroke();
-    X.fillStyle = ob.color; X.font = `bold ${W < 500 ? 7 : 9}px Mono, monospace`;
+    X.fillStyle = ob.color; X.font = `bold ${W < 500 ? 11 : 13}px Mono, monospace`;
     X.textAlign = 'center'; X.textBaseline = 'middle';
     X.fillText(ob.label, ob.x + ob.w / 2, ob.y + ob.h / 2);
     X.restore();
