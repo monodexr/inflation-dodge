@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>INFLATION DODGE</title>
+<meta name="description" content="Navigate your savings through a storm of inflation, fees, and financial traps. Survive as long as you can.">
+<style>
+  @font-face { font-family: 'Knapp'; src: url('fonts/Knapp-Light.otf') format('opentype'); font-weight: 300; font-display: swap; }
+  @font-face { font-family: 'Knapp'; src: url('fonts/Knapp-Regular.otf') format('opentype'); font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Knapp'; src: url('fonts/Knapp-Medium.otf') format('opentype'); font-weight: 500; font-display: swap; }
+  @font-face { font-family: 'Mono'; src: url('fonts/PPNeueMontrealMono-Regular.otf') format('opentype'); font-weight: 400; font-display: swap; }
+  @font-face { font-family: 'Mono'; src: url('fonts/PPNeueMontrealMono-Bold.otf') format('opentype'); font-weight: 700; font-display: swap; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Knapp', sans-serif; -webkit-font-smoothing: antialiased; }
+  canvas { display: block; }
+
+  #start-screen {
+    position: fixed; inset: 0; background: #000; z-index: 20;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #fff; cursor: pointer; transition: opacity 0.5s;
+  }
+  #start-screen.hidden { opacity: 0; pointer-events: none; }
+  .s-presents { font-family: 'Mono'; font-size: 10px; letter-spacing: 6px; text-transform: uppercase; color: #555; }
+  .s-title { font-weight: 500; font-size: clamp(32px, 7vw, 56px); letter-spacing: 1px; text-transform: uppercase; text-align: center; line-height: 1.1; margin: 8px 0; }
+  .s-sub { font-family: 'Knapp'; font-size: 14px; font-weight: 300; color: #666; margin-top: 4px; }
+  .s-prompt { font-family: 'Mono'; font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: #D4883A; margin-top: 28px; animation: breathe 4s ease-in-out infinite; }
+  @keyframes breathe { 0%,100%{opacity:0.2} 50%{opacity:0.8} }
+
+  #death-screen {
+    display: none; position: fixed; inset: 0; z-index: 10;
+    background: rgba(0,0,0,0.97); backdrop-filter: blur(10px);
+    flex-direction: column; align-items: center; justify-content: center;
+    color: #fff; padding: 24px; overflow-y: auto;
+  }
+  #death-screen.visible { display: flex; }
+  .d-inner { display: flex; flex-direction: column; align-items: center; max-width: 400px; width: 100%; }
+  .d-inner > * { opacity: 0; transform: translateY(8px); animation: fsi 0.5s ease-out forwards; }
+  @keyframes fsi { to { opacity: 1; transform: translateY(0); } }
+  .d-tag { font-family: 'Mono'; font-size: 10px; letter-spacing: 5px; text-transform: uppercase; color: #444; margin-bottom: 10px; }
+  .d-big { font-size: clamp(36px, 9vw, 48px); font-weight: 300; line-height: 1; animation-delay: 0.08s; }
+  .d-big em { font-style: normal; color: #ff4444; }
+  .d-sub { font-size: 18px; font-weight: 300; color: #777; margin-top: 6px; animation-delay: 0.16s; }
+  .d-sub em { font-style: normal; color: #ff4444; }
+  .d-stats { font-family: 'Mono'; font-size: 11px; color: #333; margin-top: 16px; line-height: 2; text-align: left; animation-delay: 0.24s; }
+  .d-stats span { color: #78FFB4; }
+  .d-stats .red { color: #ff4444; }
+  .d-editorial { font-size: 13px; font-weight: 400; color: #3a3a3a; margin-top: 16px; text-align: center; line-height: 1.6; max-width: 340px; animation-delay: 0.32s; }
+  .d-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; animation-delay: 0.4s; }
+  .d-actions button {
+    padding: 11px 26px; background: transparent; border: 1px solid #222;
+    color: #666; font-family: 'Mono'; font-size: 10px; letter-spacing: 3px;
+    text-transform: uppercase; cursor: pointer; transition: all 0.25s; border-radius: 2px;
+  }
+  .d-actions button:hover { border-color: #555; color: #ccc; }
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+  <div class="s-presents">Legend presents</div>
+  <div class="s-title">Inflation<br>Dodge</div>
+  <div class="s-sub">Your savings. Your problem.</div>
+  <div class="s-prompt">TAP OR CLICK TO START</div>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="death-screen">
+  <div class="d-inner">
+    <div class="d-tag" id="d-tag">Game Over</div>
+    <div class="d-big">Survived <em id="d-years">0</em> years</div>
+    <div class="d-sub">Lost <em id="d-lost">$0</em> to inflation</div>
+    <div class="d-stats" id="d-stats"></div>
+    <div class="d-editorial" id="d-editorial">The average American loses ~40% of their purchasing power over 30 years. What if your money fought back?</div>
+    <div class="d-actions">
+      <button id="retry-btn">Try Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const C = document.getElementById('game');
+const X = C.getContext('2d');
+let W, H;
+function resize() { W = C.width = window.innerWidth; H = C.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+
+// ======== AUDIO ENGINE ========
+let ac, mg;
+function initAudio() {
+  if (ac) return;
+  ac = new (window.AudioContext || window.webkitAudioContext)();
+  mg = ac.createGain(); mg.gain.value = 0.7; mg.connect(ac.destination);
+}
+function synth(type, freq, vol, dur, freqEnd, delay) {
+  if (!ac) return;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.value = freq; g.gain.value = vol;
+  o.connect(g); g.connect(mg);
+  const t = ac.currentTime + (delay || 0);
+  o.start(t);
+  if (freqEnd) o.frequency.exponentialRampToValueAtTime(freqEnd, t + dur * 0.8);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.stop(t + dur + 0.05);
+}
+function playHitSound(pct) { synth('sawtooth', 100 + pct * 8, 0.3, 0.2, 50); }
+function playGrazeSound() { synth('sine', 1400, 0.12, 0.08, 800); }
+function playCollectSound(amt) { synth('sine', 500 + amt * 0.2, 0.2, 0.15, 500 + amt * 0.5); synth('sine', 700 + amt * 0.3, 0.1, 0.2, 1200 + amt * 0.4, 0.05); }
+function playDeathSound() { synth('sawtooth', 200, 0.35, 1.2, 25); }
+function playDrainTick() { if (!ac) return; const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = 220; g.gain.value = 0.02; o.connect(g); g.connect(mg); o.start(); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.03); o.stop(ac.currentTime + 0.04); }
+
+// ======== GAME STATE ========
+const YEAR_DURATION = 13; // seconds per year
+const INITIAL_BALANCE = 10000;
+
+let player, balance, drainRate, drainAccel, distance, frameCount, gameState;
+let years, peakBalance, totalLost, totalDrained;
+let obstacles, particles, pickups;
+let shakeAmount, flashAmount, hitShrink;
+let comboCount, comboMultiplier, comboLabel;
+let iFrames;
+const pt = { x: 0, y: 0 };
+let bestYears = parseFloat(localStorage.getItem('id_best') || '0');
+let ghostTrail = JSON.parse(localStorage.getItem('id_ghost') || '[]');
+let currentTrail = [];
+
+function initGame() {
+  player = { x: W / 2, y: H * 0.7, radius: 14 };
+  pt.x = player.x; pt.y = player.y;
+  balance = INITIAL_BALANCE;
+  drainRate = 2.0;
+  drainAccel = 0;
+  distance = 0;
+  frameCount = 0;
+  years = 0;
+  peakBalance = INITIAL_BALANCE;
+  totalLost = 0;
+  totalDrained = 0;
+  obstacles = [];
+  particles = [];
+  pickups = [];
+  shakeAmount = 0;
+  flashAmount = 0;
+  hitShrink = 0;
+  comboCount = 0;
+  comboMultiplier = 1;
+  comboLabel = '';
+  iFrames = 0;
+  currentTrail = [];
+  gameState = 'playing';
+  initAudio();
+}
+
+// ======== INPUT ========
+C.addEventListener('mousemove', e => { if (gameState === 'playing') { pt.x = e.clientX; pt.y = e.clientY; } });
+C.addEventListener('touchmove', e => { e.preventDefault(); if (gameState === 'playing') { pt.x = e.touches[0].clientX; pt.y = e.touches[0].clientY; } }, { passive: false });
+C.addEventListener('touchstart', e => { e.preventDefault(); if (gameState === 'playing') { pt.x = e.touches[0].clientX; pt.y = e.touches[0].clientY; } }, { passive: false });
+
+document.getElementById('start-screen').addEventListener('click', () => {
+  document.getElementById('start-screen').classList.add('hidden');
+  setTimeout(() => document.getElementById('start-screen').style.display = 'none', 500);
+  initGame();
+});
+document.getElementById('retry-btn').addEventListener('click', () => {
+  document.getElementById('death-screen').classList.remove('visible');
+  initGame();
+});
+
+// ======== OBSTACLES ========
+const TIER1 = [
+  { label: 'Groceries +3%', pct: 3, w: 70, h: 24, speed: 1.2, color: '#ee5544' },
+  { label: 'Coffee +2%', pct: 2, w: 55, h: 20, speed: 1.5, color: '#cc6644' },
+  { label: 'Gas +4%', pct: 4, w: 75, h: 26, speed: 1.0, color: '#dd4433' },
+  { label: 'Subs +1%', pct: 1, w: 50, h: 18, speed: 1.8, color: '#aa5555' },
+];
+const TIER2 = [
+  { label: 'Rent +8%', pct: 8, w: 130, h: 30, speed: 0.7, color: '#ff3322' },
+  { label: 'Insurance +6%', pct: 6, w: 90, h: 26, speed: 1.0, color: '#ee4433', diagonal: true },
+  { label: 'Tuition +10%', pct: 10, w: 85, h: 28, speed: 0.9, color: '#ff2211', bounces: true },
+  { label: 'Car +5%', pct: 5, w: 70, h: 24, speed: 1.1, color: '#dd5544' },
+  { label: 'Rate Hike', pct: 0, w: 60, h: 22, speed: 2.0, color: '#ff0000', rateHike: true },
+];
+
+function spawnObstacle() {
+  const yr = years;
+  const pool = yr < 6 ? TIER1 : (Math.random() < 0.4 ? TIER1 : TIER2);
+  const tmpl = pool[Math.floor(Math.random() * pool.length)];
+  const fromSide = yr >= 8 && Math.random() < 0.15;
+  const fromBottom = yr >= 15 && Math.random() < 0.08;
+
+  let x, y, vx, vy;
+  const scl = W < 500 ? 0.8 : 1;
+  const w = tmpl.w * scl, h = tmpl.h;
+  const spd = tmpl.speed * (1 + yr * 0.04);
+
+  if (fromBottom) {
+    x = Math.random() * (W - w); y = H + 10;
+    vx = (Math.random() - 0.5) * 0.5; vy = -spd * 1.5;
+  } else if (fromSide) {
+    const left = Math.random() > 0.5;
+    x = left ? -w - 5 : W + 5; y = 60 + Math.random() * (H * 0.6);
+    vx = left ? spd * 1.2 : -spd * 1.2; vy = (Math.random() - 0.5) * 0.8;
+  } else {
+    x = Math.random() * (W - w); y = -h - 10;
+    vx = tmpl.diagonal ? (Math.random() - 0.5) * spd * 0.8 : (Math.random() - 0.5) * 0.3;
+    vy = spd * (1.2 + Math.random() * 0.4);
+  }
+
+  obstacles.push({
+    x, y, w, h, vx, vy,
+    label: tmpl.label, pct: tmpl.pct, color: tmpl.color,
+    hit: false, grazed: false, bounces: tmpl.bounces || false, rateHike: tmpl.rateHike || false,
+    harvestTrail: [], harvestTimer: 0,
+  });
+}
+
+// ======== PICKUPS ========
+function spawnPickup() {
+  const yr = years;
+  let type, amt, label, color, size;
+  const r = Math.random();
+  if (yr >= 5 && r < 0.15) {
+    type = 'defi'; amt = 2000; label = 'DeFi Yield +$2,000'; color = '#FFD700'; size = 28;
+  } else if (yr >= 10 && r < 0.03) {
+    type = 'jackpot'; amt = 5000; label = 'JACKPOT +$5,000'; color = '#FFD700'; size = 34;
+  } else {
+    type = 'bank'; amt = 200; label = 'Bank Interest +$200'; color = '#78FFB4'; size = 18;
+  }
+  pickups.push({
+    x: 20 + Math.random() * (W - 40), y: -size,
+    size, amt, label, color, type,
+    vy: 0.8 + Math.random() * 0.4,
+    collected: false,
+  });
+}
+
+// ======== PARTICLES ========
+function spawnP(x, y, color, count, spread) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2, v = 1 + Math.random() * (spread || 4);
+    particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, color, size: 1.5 + Math.random() * 2.5 });
+  }
+}
+
+// ======== UPDATE ========
+function update() {
+  if (gameState !== 'playing') return;
+  frameCount++;
+
+  const gameSec = frameCount / 60;
+  years = gameSec / YEAR_DURATION;
+  const yr = years;
+
+  // drain
+  drainRate = 2 + yr * 1.2 + Math.pow(yr, 1.5) * 0.08;
+  const drainPerFrame = drainRate / 60;
+  balance -= drainPerFrame;
+  totalDrained += drainPerFrame;
+  if (balance > peakBalance) peakBalance = balance;
+  totalLost = INITIAL_BALANCE - balance + totalDrained;
+
+  // drain tick sound (subtle, gets faster)
+  if (frameCount % Math.max(8, Math.floor(40 - yr * 1.5)) === 0) playDrainTick();
+
+  // movement — zero lag
+  player.x += (pt.x - player.x) * 0.18;
+  player.y += (pt.y - player.y) * 0.18;
+  player.x = Math.max(player.radius, Math.min(W - player.radius, player.x));
+  player.y = Math.max(player.radius, Math.min(H - player.radius, player.y));
+
+  // record trail for ghost
+  if (frameCount % 6 === 0) currentTrail.push({ x: player.x, y: player.y, f: frameCount });
+
+  // i-frames
+  if (iFrames > 0) iFrames--;
+  hitShrink *= 0.9;
+
+  // spawn obstacles
+  const spawnRate = Math.max(8, 45 - yr * 2.5);
+  if (frameCount % Math.floor(spawnRate) === 0) spawnObstacle();
+
+  // spawn pickups
+  const pickupRate = yr < 5 ? 120 : yr < 15 ? 180 : 240;
+  if (frameCount % Math.floor(pickupRate) === 0) spawnPickup();
+
+  // update obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const ob = obstacles[i];
+    ob.x += ob.vx; ob.y += ob.vy;
+
+    if (ob.bounces) {
+      if (ob.x < 0 || ob.x + ob.w > W) ob.vx *= -1;
+    }
+
+    // off screen
+    if (ob.y > H + 50 || ob.y < -100 || ob.x < -150 || ob.x > W + 150) {
+      obstacles.splice(i, 1); continue;
+    }
+
+    if (ob.hit) continue;
+
+    // collision
+    const pr = player.radius * (1 - hitShrink * 0.3);
+    const cx = Math.max(ob.x, Math.min(player.x, ob.x + ob.w));
+    const cy = Math.max(ob.y, Math.min(player.y, ob.y + ob.h));
+    const dx = player.x - cx, dy = player.y - cy;
+    const distSq = dx * dx + dy * dy;
+
+    // graze detection (8px)
+    if (!ob.grazed && distSq < (pr + 8) * (pr + 8) && distSq > pr * pr) {
+      ob.grazed = true;
+      comboCount++;
+      updateCombo();
+      balance += 50 * comboMultiplier;
+      spawnP(cx, cy, '#78FFB4', 4, 3);
+      playGrazeSound();
+
+      // harvest: slow obstacle, start yield trail
+      ob.vx *= 0.4; ob.vy *= 0.4;
+      ob.harvestTimer = 90;
+    }
+
+    // harvest trail generation
+    if (ob.harvestTimer > 0) {
+      ob.harvestTimer--;
+      if (frameCount % 4 === 0) {
+        ob.harvestTrail.push({ x: ob.x + ob.w / 2, y: ob.y + ob.h / 2, life: 1, value: 30 * comboMultiplier });
+      }
+    }
+
+    // collision (actual hit)
+    if (distSq < pr * pr && iFrames === 0) {
+      ob.hit = true;
+      const dmg = ob.rateHike ? 0 : balance * (ob.pct / 100);
+      balance -= dmg;
+      totalLost += dmg;
+      if (ob.rateHike) drainRate *= 1.5;
+
+      // knockback
+      const kd = Math.sqrt(distSq) || 1;
+      player.x += (dx / kd) * 20;
+      player.y += (dy / kd) * 20;
+
+      iFrames = 30;
+      hitShrink = 1;
+      shakeAmount = 8;
+      flashAmount = 1;
+      comboCount = 0; comboMultiplier = 1; comboLabel = '';
+      spawnP(player.x, player.y, ob.color, 15, 6);
+      playHitSound(ob.pct);
+    }
+  }
+
+  // update harvest trails
+  for (const ob of obstacles) {
+    for (let j = ob.harvestTrail.length - 1; j >= 0; j--) {
+      const ht = ob.harvestTrail[j];
+      ht.life -= 0.008;
+      if (ht.life <= 0) { ob.harvestTrail.splice(j, 1); continue; }
+      const dx = player.x - ht.x, dy = player.y - ht.y;
+      if (dx * dx + dy * dy < 20 * 20) {
+        balance += ht.value;
+        comboCount++;
+        updateCombo();
+        spawnP(ht.x, ht.y, '#78FFB4', 3, 2);
+        ob.harvestTrail.splice(j, 1);
+      }
+    }
+  }
+
+  // update pickups
+  for (let i = pickups.length - 1; i >= 0; i--) {
+    const p = pickups[i];
+    p.y += p.vy;
+    if (p.y > H + 50) { pickups.splice(i, 1); continue; }
+    if (p.collected) continue;
+
+    // magnetic pull (30px)
+    const dx = player.x - p.x, dy = player.y - (p.y);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 30 + p.size) {
+      p.x += dx * 0.03;
+      p.y += dy * 0.03;
+    }
+
+    // collect
+    if (dist < player.radius + p.size * 0.6) {
+      p.collected = true;
+      const gain = p.amt * comboMultiplier;
+      balance += gain;
+      spawnP(p.x, p.y, p.color, 12, 5);
+      playCollectSound(p.amt);
+      pickups.splice(i, 1);
+    }
+  }
+
+  // particles
+  particles = particles.filter(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.life -= 0.025; p.vx *= 0.95; p.vy *= 0.95;
+    return p.life > 0;
+  });
+
+  shakeAmount *= 0.82;
+  flashAmount *= 0.85;
+
+  // death
+  if (balance <= 0) {
+    balance = 0;
+    gameState = 'dead';
+    playDeathSound();
+    // save ghost
+    if (years > bestYears) {
+      bestYears = years;
+      localStorage.setItem('id_best', String(bestYears));
+      ghostTrail = currentTrail;
+      localStorage.setItem('id_ghost', JSON.stringify(ghostTrail.slice(0, 500)));
+    }
+    showDeath();
+  }
+}
+
+function updateCombo() {
+  if (comboCount >= 50) { comboMultiplier = 10; comboLabel = 'LEGEND'; }
+  else if (comboCount >= 20) { comboMultiplier = 5; comboLabel = 'UNKILLABLE'; }
+  else if (comboCount >= 10) { comboMultiplier = 3; comboLabel = 'DEGEN'; }
+  else if (comboCount >= 5) { comboMultiplier = 2; comboLabel = 'RISK TAKER'; }
+  else if (comboCount >= 3) { comboMultiplier = 1.5; comboLabel = 'CLOSE CALL'; }
+  else { comboMultiplier = 1; comboLabel = ''; }
+}
+
+// ======== DRAW ========
+function rr(x, y, w, h, r) {
+  if (X.roundRect) { X.roundRect(x, y, w, h, r); return; }
+  X.moveTo(x+r,y); X.lineTo(x+w-r,y); X.arcTo(x+w,y,x+w,y+r,r);
+  X.lineTo(x+w,y+h-r); X.arcTo(x+w,y+h,x+w-r,y+h,r);
+  X.lineTo(x+r,y+h); X.arcTo(x,y+h,x,y+h-r,r);
+  X.lineTo(x,y+r); X.arcTo(x,y,x+r,y,r); X.closePath();
+}
+
+function draw() {
+  if (!player) { X.fillStyle = '#000'; X.fillRect(0, 0, W, H); return; }
+  X.save();
+  if (shakeAmount > 0.5) X.translate((Math.random()-.5)*shakeAmount*2, (Math.random()-.5)*shakeAmount*2);
+
+  // background — desaturate based on balance
+  const healthPct = Math.max(0, balance / INITIAL_BALANCE);
+  const bgR = Math.floor(0 + (1 - healthPct) * 8);
+  const bgG = Math.floor(0);
+  const bgB = Math.floor(0 + healthPct * 4);
+  X.fillStyle = `rgb(${bgR},${bgG},${bgB})`;
+  X.fillRect(0, 0, W, H);
+
+  // grid (fades with health)
+  const gridA = 0.015 + healthPct * 0.01;
+  X.strokeStyle = `rgba(120,255,180,${gridA})`; X.lineWidth = 0.5;
+  for (let x = 0; x < W; x += 40) { X.beginPath(); X.moveTo(x, 0); X.lineTo(x, H); X.stroke(); }
+  for (let y = 0; y < H; y += 40) { X.beginPath(); X.moveTo(0, y); X.lineTo(W, y); X.stroke(); }
+
+  // vignette (tightens as balance drops)
+  const vigStr = 0.1 + (1 - healthPct) * 0.4;
+  const vig = X.createRadialGradient(W/2, H/2, Math.min(W, H) * (0.35 - (1 - healthPct) * 0.1), W/2, H/2, Math.max(W, H) * 0.65);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, `rgba(0,0,0,${vigStr})`);
+  X.fillStyle = vig; X.fillRect(0, 0, W, H);
+
+  // hit flash
+  if (flashAmount > 0.05) { X.fillStyle = `rgba(255,40,40,${flashAmount * 0.1})`; X.fillRect(0, 0, W, H); }
+
+  // ghost trail
+  if (ghostTrail.length > 1 && gameState === 'playing') {
+    const ghostIdx = Math.floor(frameCount / 6);
+    X.globalAlpha = 0.08;
+    for (let i = Math.max(0, ghostIdx - 30); i < Math.min(ghostTrail.length, ghostIdx + 5); i++) {
+      const g = ghostTrail[i];
+      X.beginPath(); X.arc(g.x, g.y, 4, 0, Math.PI * 2);
+      X.fillStyle = '#555'; X.fill();
+    }
+    X.globalAlpha = 1;
+    if (ghostIdx >= ghostTrail.length && ghostTrail.length > 0) {
+      X.fillStyle = 'rgba(120,255,180,0.15)'; X.font = 'bold 10px Mono, monospace';
+      X.textAlign = 'center'; X.fillText('NEW PERSONAL BEST', W / 2, H - 40);
+    }
+  }
+
+  // harvest trails
+  for (const ob of obstacles) {
+    for (const ht of ob.harvestTrail) {
+      X.globalAlpha = ht.life * 0.6;
+      X.beginPath(); X.arc(ht.x, ht.y, 3, 0, Math.PI * 2);
+      X.fillStyle = '#78FFB4'; X.fill();
+      X.globalAlpha = 1;
+    }
+  }
+
+  // pickups
+  pickups.forEach(p => {
+    if (p.collected) return;
+    const pulse = 1 + Math.sin(frameCount * 0.06) * 0.08;
+    const r = p.size * pulse;
+
+    // glow
+    X.beginPath(); X.arc(p.x, p.y, r + 10, 0, Math.PI * 2);
+    X.fillStyle = p.type === 'defi' || p.type === 'jackpot' ? 'rgba(255,215,0,0.06)' : 'rgba(120,255,180,0.04)';
+    X.fill();
+
+    // body
+    X.beginPath(); X.arc(p.x, p.y, r, 0, Math.PI * 2);
+    X.fillStyle = p.color + '30'; X.strokeStyle = p.color + '88'; X.lineWidth = 1.5;
+    X.fill(); X.stroke();
+
+    // label
+    if (p.type === 'defi' || p.type === 'jackpot') {
+      X.fillStyle = p.color; X.font = `bold ${W < 500 ? 8 : 10}px Mono, monospace`;
+      X.textAlign = 'center'; X.textBaseline = 'middle';
+      X.fillText(p.type === 'jackpot' ? '$5K' : '$2K', p.x, p.y);
+    } else {
+      X.fillStyle = '#78FFB4'; X.font = '8px Mono, monospace';
+      X.textAlign = 'center'; X.textBaseline = 'middle';
+      X.fillText('$200', p.x, p.y);
+    }
+  });
+
+  // obstacles
+  obstacles.forEach(ob => {
+    if (ob.hit) return;
+    X.save();
+    X.globalAlpha = ob.grazed ? 0.5 : 1;
+    X.fillStyle = ob.color + '14'; X.strokeStyle = ob.color + '55'; X.lineWidth = 0.8;
+    X.beginPath(); rr(ob.x, ob.y, ob.w, ob.h, 3); X.fill(); X.stroke();
+    X.fillStyle = ob.color; X.font = `bold ${W < 500 ? 7 : 9}px Mono, monospace`;
+    X.textAlign = 'center'; X.textBaseline = 'middle';
+    X.fillText(ob.label, ob.x + ob.w / 2, ob.y + ob.h / 2);
+    X.restore();
+  });
+
+  // player
+  const pr = player.radius * (1 - hitShrink * 0.3);
+  const coinHealth = Math.max(0, Math.min(1, balance / INITIAL_BALANCE));
+
+  // outer glow
+  const glowR = 40 + comboCount * 2;
+  const og = X.createRadialGradient(player.x, player.y, 0, player.x, player.y, glowR);
+  og.addColorStop(0, `rgba(120,255,180,${0.08 + comboCount * 0.005})`);
+  og.addColorStop(1, 'rgba(120,255,180,0)');
+  X.fillStyle = og; X.beginPath(); X.arc(player.x, player.y, glowR, 0, Math.PI * 2); X.fill();
+
+  // coin body — degrades with balance
+  X.beginPath(); X.arc(player.x, player.y, pr, 0, Math.PI * 2);
+  const brightness = 40 + coinHealth * 60;
+  const sat = 50 + coinHealth * 50;
+  X.fillStyle = `hsl(150, ${sat}%, ${brightness}%)`;
+  if (iFrames > 0 && Math.floor(frameCount / 3) % 2 === 0) X.fillStyle = 'rgba(255,255,255,0.3)';
+  X.fill();
+
+  // coin ring
+  X.beginPath(); X.arc(player.x, player.y, pr + 2, 0, Math.PI * 2);
+  X.strokeStyle = coinHealth > 0.3 ? `rgba(120,255,180,${0.15 + comboCount * 0.01})` : 'rgba(255,80,80,0.3)';
+  X.lineWidth = 0.8; X.stroke();
+
+  // $ symbol
+  X.fillStyle = coinHealth > 0.3 ? '#000' : '#fff';
+  X.font = `bold ${Math.round(pr * 0.8)}px Mono, monospace`;
+  X.textAlign = 'center'; X.textBaseline = 'middle';
+  X.fillText('$', player.x, player.y + 0.5);
+
+  // particles
+  particles.forEach(p => {
+    X.globalAlpha = p.life; X.fillStyle = p.color;
+    X.beginPath(); X.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2); X.fill();
+    X.globalAlpha = 1;
+  });
+
+  // ======== HUD ========
+  if (gameState === 'playing' || gameState === 'dead') {
+    // balance + drain rate
+    const drainColor = drainRate < 5 ? '#78FFB4' : drainRate < 15 ? '#FFD666' : '#ff4444';
+    X.fillStyle = '#383838'; X.font = '8px Mono, monospace'; X.textAlign = 'left';
+    X.fillText('BALANCE', 16, 22);
+    X.fillStyle = drainColor; X.font = 'bold 20px Mono, monospace';
+    X.fillText('$' + Math.max(0, balance).toFixed(2), 16, 42);
+    X.fillStyle = drainColor + '88'; X.font = '9px Mono, monospace';
+    X.fillText('-$' + drainRate.toFixed(2) + '/s', 16, 56);
+
+    // year
+    X.fillStyle = '#383838'; X.font = '8px Mono, monospace'; X.textAlign = 'right';
+    X.fillText('YEAR', W - 16, 22);
+    X.fillStyle = '#fff'; X.font = 'bold 20px Mono, monospace';
+    X.fillText(Math.floor(years).toString(), W - 16, 42);
+
+    // combo
+    if (comboCount >= 3) {
+      X.fillStyle = '#78FFB4'; X.font = 'bold 11px Mono, monospace'; X.textAlign = 'center';
+      X.fillText(`${comboMultiplier}x ${comboLabel}`, W / 2, 26);
+      X.fillStyle = '#78FFB4' + '66'; X.font = '8px Mono, monospace';
+      X.fillText(`COMBO ${comboCount}`, W / 2, 40);
+    }
+
+    // purchasing power bar
+    const barW = W - 32, barH = 3, barX = 16, barY = H - 16;
+    X.fillStyle = '#111'; X.fillRect(barX, barY, barW, barH);
+    const barPct = Math.max(0, balance / INITIAL_BALANCE);
+    const barColor = barPct > 0.5 ? '#78FFB4' : barPct > 0.2 ? '#FFD666' : '#ff4444';
+    X.fillStyle = barColor; X.fillRect(barX, barY, barW * barPct, barH);
+    X.fillStyle = '#333'; X.font = '7px Mono, monospace'; X.textAlign = 'left';
+    X.fillText('PURCHASING POWER', barX, barY - 4);
+  }
+
+  X.restore();
+}
+
+// ======== DEATH SCREEN ========
+function showDeath() {
+  document.getElementById('d-years').textContent = Math.floor(years);
+  document.getElementById('d-lost').textContent = '$' + Math.floor(totalDrained + totalLost).toLocaleString();
+
+  const stats = document.getElementById('d-stats');
+  stats.innerHTML = [
+    `Peak balance: <span>$${Math.floor(peakBalance).toLocaleString()}</span>`,
+    `Best combo: <span>${comboCount > 0 ? comboCount + 'x' : 'none'}</span>`,
+    `Drain rate at death: <span class="red">-$${drainRate.toFixed(2)}/s</span>`,
+  ].join('<br>');
+
+  document.querySelectorAll('.d-inner > *').forEach((el, i) => {
+    el.style.animation = 'none'; el.offsetHeight;
+    el.style.animation = `fsi 0.5s ease-out ${i * 0.08}s forwards`;
+  });
+  setTimeout(() => document.getElementById('death-screen').classList.add('visible'), 500);
+}
+
+// ======== LOOP ========
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>
