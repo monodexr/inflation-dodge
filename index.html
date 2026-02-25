@@ -60,7 +60,10 @@ const logo=new Image();logo.src='logo.svg';
 
 // ============ AUDIO ============
 let ac,mg;
-function ia(){if(ac)return;ac=new(AudioContext||webkitAudioContext)();mg=ac.createGain();mg.gain.value=.7;mg.connect(ac.destination)}
+function ia(){if(ac)return;ac=new(AudioContext||webkitAudioContext)();mg=ac.createGain();mg.gain.value=.7;mg.connect(ac.destination);
+  // background drone
+  const dr=ac.createOscillator(),dg=ac.createGain();dr.type='sine';dr.frequency.value=55;dg.gain.value=.04;dr.connect(dg);dg.connect(mg);dr.start();
+  window._drone=dr;window._droneG=dg;}
 function snd(tp,f,v,d,fe){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain();o.type=tp;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(mg);o.start();if(fe)o.frequency.exponentialRampToValueAtTime(fe,ac.currentTime+d*.8);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.stop(ac.currentTime+d+.02)}
 function hitSnd(p){snd('sawtooth',100+p*8,.3,.18,50)}
 function grazeSnd(){snd('sine',1400,.12,.07,800)}
@@ -108,7 +111,7 @@ const OBS_T2=[
 let state='menu'; // menu|playing|dead|transition
 let player,balance,drainRate,obs,pickups,particles,fc,combo,comboMul,comboLbl;
 let lvl,lvlFrame,lvlAnnounce,announceTxt,announceT;
-let zoneL,zoneR,zoneT,zoneB; // zone boundaries
+let zoneL,zoneR,zoneT,zoneB,zoneTargetL=0,zoneTargetR=0,zoneTargetT=0,zoneTargetB=0; // zone boundaries
 let iframes,hitShrink,shake,flash;
 let totalLost,peakBal,bestCombo;
 let prevPX,prevPY,pt={x:0,y:0};
@@ -119,10 +122,10 @@ let bestLvl=parseInt(localStorage.getItem('id_blvl')||'0');
 
 function initGame(){
   player={x:W/2,y:H*.65,r:18};pt.x=player.x;pt.y=player.y;prevPX=player.x;prevPY=player.y;
-  balance=INIT_BAL;drainRate=8;obs=[];pickups=[];particles=[];fc=0;
+  balance=INIT_BAL;drainRate=8;obs=[];pickups=[];particles=[];fc=0;wallObs=[];
   combo=0;comboMul=1;comboLbl='';
   lvl=0;lvlFrame=0;lvlAnnounce=0;announceTxt='';announceT=0;
-  zoneL=0;zoneR=W;zoneT=0;zoneB=H;
+  zoneL=0;zoneR=W;zoneT=0;zoneB=H;zoneTargetL=0;zoneTargetR=W;zoneTargetT=0;zoneTargetB=H;
   iframes=0;hitShrink=0;shake=0;flash=0;
   totalLost=0;peakBal=INIT_BAL;bestCombo=0;
   dipDone=false;wallObs=[];legendCycle=0;
@@ -138,7 +141,7 @@ function setLevel(n){
   // zone boundaries
   const zf=L.zone;
   const pad=(1-zf)/2;
-  zoneL=W*pad;zoneR=W*(1-pad);zoneT=H*pad*.6;zoneB=H*(1-pad*.6);
+  zoneTargetL=W*pad;zoneTargetR=W*(1-pad);zoneTargetT=H*pad*.6;zoneTargetB=H*(1-pad*.6);
   drainRate=L.drain;
   // dip
   if(L.dip&&!dipDone){dipDone=true;balance*=.7;shake=15;flash=1.5;}
@@ -150,7 +153,7 @@ function setLevel(n){
     L2.drain=40+sc*5;L2.spd=5+sc*.3;L2.spawn=Math.max(4,10-sc);
     L2.zone=Math.max(.3,.5-sc*.015);
     const zf2=L2.zone;const p2=(1-zf2)/2;
-    zoneL=W*p2;zoneR=W*(1-p2);zoneT=H*p2*.6;zoneB=H*(1-p2*.6);
+    zoneTargetL=W*p2;zoneTargetR=W*(1-p2);zoneTargetT=H*p2*.6;zoneTargetB=H*(1-p2*.6);
     drainRate=L2.drain;
   }
 }
@@ -230,10 +233,14 @@ document.getElementById('ui').onclick=()=>{
 // ============ UPDATE ============
 function update(){
   if(state!=='playing')return;
+  // smooth zone lerp
+  zoneL+=(zoneTargetL-zoneL)*.04;zoneR+=(zoneTargetR-zoneR)*.04;
+  zoneT+=(zoneTargetT-zoneT)*.04;zoneB+=(zoneTargetB-zoneB)*.04;
   fc++;lvlFrame++;
   const L=curLvl();
 
   // level transition
+  if(announceT>60)return; // freeze during announcement
   if(lvlFrame>=LVL_DUR){setLevel(lvl+1);}
 
   // drain
@@ -269,7 +276,7 @@ function update(){
     }
   }
   // pickups
-  if(fc%(lvl<3?300:lvl<8?420:600)===0)spawnPickup();
+  if(fc%(lvl<2?180:lvl<5?280:lvl<8?400:600)===0)spawnPickup();
 
   // dip yield shower
   if(L.dip&&lvlFrame>60&&lvlFrame<180&&lvlFrame%15===0){
@@ -313,7 +320,7 @@ function update(){
       o.parked=true;o.vx=0;o.vy=0;wallObs.push(o);
     }
 
-    if(o.hit)continue;
+    if(o.hit){if(!o.parked){o.w*=.95;o.h*=.95;if(o.w<5){obs.splice(i,1);}};continue;}
 
     // collision
     const pr=player.r*(1-hitShrink*.3);
@@ -326,7 +333,7 @@ function update(){
     if(!o.grazed&&dq<(pr+10)*(pr+10)&&dq>pr*pr){
       o.grazed=true;combo++;if(combo>bestCombo)bestCombo=combo;
       updateCombo();
-      balance+=80*comboMul;
+      balance+=(80+lvl*30)*comboMul;
       emit(cx2,cy2,'#78FFB4',5,3);
       grazeSnd();
     }
@@ -369,7 +376,7 @@ function update(){
         collectSnd(p.amt);
         // shockwave push
         if(p.amt>=1500){
-          for(const o of obs){if(o.hit)continue;
+          for(const o of obs){if(o.hit){if(!o.parked){o.w*=.95;o.h*=.95;if(o.w<5){obs.splice(i,1);}};continue;}
             const odx=(o.x+o.w/2)-player.x,ody=(o.y+o.h/2)-player.y;
             const od=Math.sqrt(odx*odx+ody*ody);
             if(od<140&&od>0){o.vx+=(odx/od)*5;o.vy+=(ody/od)*5;}
@@ -423,7 +430,7 @@ function draw(){
   x.fillStyle=L.legend?'#080810':'#030306';
   x.fillRect(0,0,W,H);
 
-  if(state==='playing'||state==='dead'){
+  if(state==='playing'){
     // zone border (the red walls closing in)
     const borderW=3;
     x.fillStyle=`rgba(255,40,40,${.15+(.5-hp*.3)})`;
