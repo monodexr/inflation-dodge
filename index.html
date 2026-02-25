@@ -333,7 +333,7 @@ function update() {
     // collision (actual hit)
     if (distSq < pr * pr && iFrames === 0) {
       ob.hit = true;
-      const dmg = ob.rateHike ? 0 : balance * (ob.pct / 100);
+      const dmg = ob.rateHike ? 0 : Math.max(500, balance * (ob.pct / 100) + ob.pct * 80);
       balance -= dmg;
       totalLost += dmg;
       if (ob.rateHike) drainRate *= 1.5;
@@ -343,7 +343,7 @@ function update() {
       player.x += (dx / kd) * 20;
       player.y += (dy / kd) * 20;
 
-      iFrames = 30;
+      iFrames = 12;
       hitShrink = 1;
       shakeAmount = 8;
       flashAmount = 1;
