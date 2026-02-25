@@ -141,7 +141,7 @@ let ghostTrail = JSON.parse(localStorage.getItem('id_ghost') || '[]');
 let currentTrail = [];
 
 function initGame() {
-  player = { x: W / 2, y: H * 0.7, radius: 14 };
+  player = { x: W / 2, y: H * 0.7, radius: 18 };
   pt.x = player.x; pt.y = player.y;
   balance = INITIAL_BALANCE;
   drainRate = 2.0;
@@ -270,8 +270,8 @@ function update() {
   years = gameSec / YEAR_DURATION;
   const yr = years;
 
-  // drain — aggressive, accelerating
-  drainRate = 5 + yr * 3 + Math.pow(yr, 1.6) * 0.2;
+  // drain — brutal, accelerating fast
+  drainRate = 10 + yr * 5 + Math.pow(yr, 1.7) * 0.3;
   const drainPerFrame = drainRate / 60;
   balance -= drainPerFrame;
   totalDrained += drainPerFrame;
@@ -295,8 +295,8 @@ function update() {
   if (iFrames > 0) iFrames--;
   hitShrink *= 0.9;
 
-  // spawn obstacles — much more aggressive
-  const spawnRate = Math.max(6, 22 - yr * 1.5);
+  // spawn obstacles — relentless
+  const spawnRate = Math.max(5, 18 - yr * 1.8);
   if (frameCount % Math.floor(spawnRate) === 0) spawnObstacle();
 
   // spawn pickups — much rarer
@@ -353,10 +353,10 @@ function update() {
       ob.hit = true;
       let dmg;
       if (ob.rateHike) {
-        dmg = 800;
-        drainRate *= 2.0;
+        dmg = 1200;
+        drainRate *= 2.5;
       } else {
-        dmg = Math.max(500, balance * (ob.pct / 100) + ob.pct * 80);
+        dmg = Math.max(800, balance * (ob.pct / 100) * 1.5 + ob.pct * 100);
       }
       balance -= dmg;
       totalLost += dmg;
@@ -573,9 +573,9 @@ function draw() {
   X.fillStyle = `rgb(${bgR},${bgG},${bgB})`;
   X.fillRect(0, 0, W, H);
 
-  // grid (fades with health)
+  // grid (Legend blue, fades with health)
   const gridA = 0.015 + healthPct * 0.01;
-  X.strokeStyle = `rgba(120,255,180,${gridA})`; X.lineWidth = 0.5;
+  X.strokeStyle = `rgba(39,117,202,${gridA})`; X.lineWidth = 0.5;
   for (let x = 0; x < W; x += 40) { X.beginPath(); X.moveTo(x, 0); X.lineTo(x, H); X.stroke(); }
   for (let y = 0; y < H; y += 40) { X.beginPath(); X.moveTo(0, y); X.lineTo(W, y); X.stroke(); }
 
@@ -586,27 +586,56 @@ function draw() {
   vig.addColorStop(1, `rgba(0,0,0,${vigStr})`);
   X.fillStyle = vig; X.fillRect(0, 0, W, H);
 
-  // arena: BLACKOUT
-  if (arenaDark) { X.fillStyle = 'rgba(0,0,0,0.6)'; X.fillRect(0, 0, W, H); }
-  // arena: RECESSION — dark overlay + desaturation
-  if (arenaRecession) { X.fillStyle = 'rgba(0,0,20,0.2)'; X.fillRect(0, 0, W, H); }
-  // arena: RATE HIKE — red pulse at edges
+  // arena: BLACKOUT — nearly blind
+  if (arenaDark) {
+    X.fillStyle = 'rgba(0,0,0,0.8)'; X.fillRect(0, 0, W, H);
+    // only a small circle of visibility around player
+    const vis = X.createRadialGradient(player.x, player.y, 30, player.x, player.y, 120);
+    vis.addColorStop(0, 'rgba(0,0,0,0)'); vis.addColorStop(1, 'rgba(0,0,0,0.7)');
+    X.fillStyle = vis; X.fillRect(0, 0, W, H);
+  }
+  // arena: RECESSION — everything goes blue/cold, screen desaturates heavily
+  if (arenaRecession) {
+    X.fillStyle = 'rgba(0,10,40,0.35)'; X.fillRect(0, 0, W, H);
+    X.fillStyle = 'rgba(255,255,255,0.03)'; X.font = `bold ${W<500?20:40}px Mono, monospace`;
+    X.textAlign = 'center'; X.textBaseline = 'middle';
+    X.fillText('RECESSION', W/2, H/2);
+  }
+  // arena: RATE HIKE — pulsing red border, screen tinted red, impossible to miss
   if (arenaRateHike) {
-    const rp = 0.5 + Math.sin(frameCount * 0.1) * 0.3;
-    X.fillStyle = `rgba(255,0,0,${0.04 * rp})`; X.fillRect(0, 0, W, H);
-    X.strokeStyle = `rgba(255,50,50,${0.15 * rp})`; X.lineWidth = 3;
+    const rp = 0.5 + Math.sin(frameCount * 0.12) * 0.5;
+    X.fillStyle = `rgba(255,0,0,${0.08 * rp})`; X.fillRect(0, 0, W, H);
+    X.strokeStyle = `rgba(255,30,30,${0.5 * rp})`; X.lineWidth = 6;
+    X.strokeRect(3, 3, W-6, H-6);
+    X.fillStyle = `rgba(255,50,50,${0.03 * rp})`; X.font = `bold ${W<500?14:22}px Mono, monospace`;
+    X.textAlign = 'center'; X.fillText('-$' + Math.floor(drainRate) + '/SEC', W/2, 80);
+  }
+  // arena: HOUSING CRISIS — dark red, screen feels oppressive
+  if (arenaHousing) {
+    X.fillStyle = 'rgba(60,0,0,0.3)'; X.fillRect(0, 0, W, H);
+    // warning stripes at top
+    for (let i = 0; i < W; i += 40) {
+      X.fillStyle = `rgba(255,0,0,${0.04 + Math.sin(frameCount*0.05+i*0.1)*0.02})`;
+      X.fillRect(i, 0, 20, 4);
+    }
+  }
+  // arena: TAX SEASON — flashing red/orange border, screen pulses
+  if (arenaTax) {
+    const tp = 0.5 + Math.sin(frameCount * 0.2) * 0.5;
+    X.fillStyle = `rgba(255,80,0,${0.12 * tp})`; X.fillRect(0, 0, W, H);
+    X.strokeStyle = `rgba(255,120,0,${0.6 * tp})`; X.lineWidth = 4;
     X.strokeRect(2, 2, W-4, H-4);
   }
-  // arena: HOUSING CRISIS — ominous dark red tint
-  if (arenaHousing) { X.fillStyle = 'rgba(60,0,0,0.15)'; X.fillRect(0, 0, W, H); }
-  // arena: TAX SEASON — flashing edges
-  if (arenaTax) {
-    const tp = Math.sin(frameCount * 0.15) > 0 ? 0.08 : 0;
-    X.fillStyle = `rgba(255,100,0,${tp})`; X.fillRect(0, 0, W, H);
-  }
-  // arena: HYPERINFLATION — red sky, screen vibrates
+  // arena: HYPERINFLATION — deep red sky, everything vibrates, screen border on fire
   if (arenaHyper) {
-    X.fillStyle = `rgba(80,0,0,${0.15 + Math.sin(frameCount*0.08)*0.05})`; X.fillRect(0, 0, W, H);
+    const hp = 0.5 + Math.sin(frameCount*0.1)*0.3;
+    X.fillStyle = `rgba(120,0,0,${0.25 + hp*0.1})`; X.fillRect(0, 0, W, H);
+    X.strokeStyle = `rgba(255,50,0,${0.4 + hp*0.3})`; X.lineWidth = 5;
+    X.strokeRect(2, 2, W-4, H-4);
+    // scanlines
+    for (let y = (frameCount*3)%6; y < H; y += 6) {
+      X.fillStyle = 'rgba(255,0,0,0.03)'; X.fillRect(0, y, W, 2);
+    }
   }
 
   // hit flash
@@ -729,22 +758,32 @@ function draw() {
   og.addColorStop(1, 'rgba(120,255,180,0)');
   X.fillStyle = og; X.beginPath(); X.arc(player.x, player.y, glowR, 0, Math.PI * 2); X.fill();
 
-  // coin body — degrades with balance
+  // USDC-style coin body — premium Legend look
   X.beginPath(); X.arc(player.x, player.y, pr, 0, Math.PI * 2);
-  const brightness = 40 + coinHealth * 60;
-  const sat = 50 + coinHealth * 50;
-  X.fillStyle = `hsl(150, ${sat}%, ${brightness}%)`;
+  const coinGrd = X.createRadialGradient(player.x - 2, player.y - 2, 0, player.x, player.y, pr);
+  if (coinHealth > 0.3) {
+    coinGrd.addColorStop(0, `rgba(100,200,255,${0.6 + coinHealth * 0.4})`);
+    coinGrd.addColorStop(1, `rgba(39,117,202,${0.5 + coinHealth * 0.5})`);
+  } else {
+    coinGrd.addColorStop(0, `rgba(120,60,60,${0.4 + coinHealth})`);
+    coinGrd.addColorStop(1, `rgba(80,30,30,${0.3 + coinHealth})`);
+  }
+  X.fillStyle = coinGrd;
   if (iFrames > 0 && Math.floor(frameCount / 3) % 2 === 0) X.fillStyle = 'rgba(255,255,255,0.3)';
   X.fill();
 
-  // coin ring
-  X.beginPath(); X.arc(player.x, player.y, pr + 2, 0, Math.PI * 2);
-  X.strokeStyle = coinHealth > 0.3 ? `rgba(120,255,180,${0.15 + comboCount * 0.01})` : 'rgba(255,80,80,0.3)';
-  X.lineWidth = 0.8; X.stroke();
+  // outer ring (coin edge)
+  X.beginPath(); X.arc(player.x, player.y, pr + 2.5, 0, Math.PI * 2);
+  X.strokeStyle = coinHealth > 0.3 ? `rgba(100,180,255,${0.25 + comboCount * 0.015})` : 'rgba(255,60,60,0.3)';
+  X.lineWidth = 1.2; X.stroke();
+  // inner ring detail
+  X.beginPath(); X.arc(player.x, player.y, pr - 3, 0, Math.PI * 2);
+  X.strokeStyle = coinHealth > 0.3 ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)';
+  X.lineWidth = 0.5; X.stroke();
 
   // $ symbol
-  X.fillStyle = coinHealth > 0.3 ? '#000' : '#fff';
-  X.font = `bold ${Math.round(pr * 0.8)}px Mono, monospace`;
+  X.fillStyle = coinHealth > 0.3 ? '#fff' : '#aaa';
+  X.font = `bold ${Math.round(pr * 0.75)}px Mono, monospace`;
   X.textAlign = 'center'; X.textBaseline = 'middle';
   X.fillText('$', player.x, player.y + 0.5);
 
@@ -757,36 +796,36 @@ function draw() {
 
   // ======== HUD ========
   if (gameState === 'playing' || gameState === 'dead') {
-    // balance + drain rate
-    const drainColor = drainRate < 5 ? '#78FFB4' : drainRate < 15 ? '#FFD666' : '#ff4444';
-    X.fillStyle = '#383838'; X.font = '8px Mono, monospace'; X.textAlign = 'left';
-    X.fillText('BALANCE', 16, 22);
-    X.fillStyle = drainColor; X.font = 'bold 20px Mono, monospace';
-    X.fillText('$' + Math.max(0, balance).toFixed(2), 16, 42);
-    X.fillStyle = drainColor + '88'; X.font = '9px Mono, monospace';
-    X.fillText('-$' + drainRate.toFixed(2) + '/s', 16, 56);
+    // balance + drain rate — larger, premium
+    const drainColor = drainRate < 15 ? '#78FFB4' : drainRate < 30 ? '#FFD666' : '#ff4444';
+    X.fillStyle = '#555'; X.font = '10px Mono, monospace'; X.textAlign = 'left';
+    X.fillText('BALANCE', 20, 26);
+    X.fillStyle = drainColor; X.font = 'bold 26px Mono, monospace';
+    X.fillText('$' + Math.max(0, balance).toFixed(0), 20, 52);
+    X.fillStyle = drainColor + '88'; X.font = '11px Mono, monospace';
+    X.fillText('-$' + drainRate.toFixed(1) + '/s', 20, 68);
 
-    // year
-    X.fillStyle = '#383838'; X.font = '8px Mono, monospace'; X.textAlign = 'right';
-    X.fillText('YEAR', W - 16, 22);
-    X.fillStyle = '#fff'; X.font = 'bold 20px Mono, monospace';
-    X.fillText(Math.floor(years).toString(), W - 16, 42);
+    // year — large
+    X.fillStyle = '#555'; X.font = '10px Mono, monospace'; X.textAlign = 'right';
+    X.fillText('YEAR', W - 20, 26);
+    X.fillStyle = '#fff'; X.font = 'bold 26px Mono, monospace';
+    X.fillText(Math.floor(years).toString(), W - 20, 52);
 
-    // combo
+    // combo — bigger, more visible
     if (comboCount >= 3) {
-      X.fillStyle = '#78FFB4'; X.font = 'bold 11px Mono, monospace'; X.textAlign = 'center';
-      X.fillText(`${comboMultiplier}x ${comboLabel}`, W / 2, 26);
-      X.fillStyle = '#78FFB4' + '66'; X.font = '8px Mono, monospace';
-      X.fillText(`COMBO ${comboCount}`, W / 2, 40);
+      X.fillStyle = '#2775CA'; X.font = 'bold 14px Mono, monospace'; X.textAlign = 'center';
+      X.fillText(`${comboMultiplier}x ${comboLabel}`, W / 2, 30);
+      X.fillStyle = 'rgba(39,117,202,0.4)'; X.font = '10px Mono, monospace';
+      X.fillText(`COMBO ${comboCount}`, W / 2, 46);
     }
 
-    // purchasing power bar
-    const barW = W - 32, barH = 3, barX = 16, barY = H - 16;
+    // purchasing power bar — thicker
+    const barW = W - 40, barH = 5, barX = 20, barY = H - 20;
     X.fillStyle = '#111'; X.fillRect(barX, barY, barW, barH);
     const barPct = Math.max(0, balance / INITIAL_BALANCE);
-    const barColor = barPct > 0.5 ? '#78FFB4' : barPct > 0.2 ? '#FFD666' : '#ff4444';
+    const barColor = barPct > 0.5 ? '#2775CA' : barPct > 0.2 ? '#FFD666' : '#ff4444';
     X.fillStyle = barColor; X.fillRect(barX, barY, barW * barPct, barH);
-    X.fillStyle = '#333'; X.font = '7px Mono, monospace'; X.textAlign = 'left';
+    X.fillStyle = '#444'; X.font = '8px Mono, monospace'; X.textAlign = 'left';
     X.fillText('PURCHASING POWER', barX, barY - 4);
   }
 
