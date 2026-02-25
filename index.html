@@ -54,19 +54,93 @@
     text-transform: uppercase; cursor: pointer; transition: all 0.25s; border-radius: 2px;
   }
   .d-actions button:hover { border-color: #555; color: #ccc; }
+  #challenge-btn { background: rgba(39,117,202,0.06); border-color: rgba(39,117,202,0.2); color: rgba(39,117,202,0.8); }
+  #challenge-btn:hover { background: rgba(39,117,202,0.12); border-color: rgba(39,117,202,0.5); color: #fff; }
+  .d-footer { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 24px; animation-delay: 0.5s; opacity:0; transform:translateY(8px); animation: fsi 0.5s ease-out forwards; }
+  .d-footer img.logo { height: 16px; opacity: 0.3; }
+  .d-footer .cta { font-family: 'Mono'; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: #333; }
+  .d-footer a { display: inline-block; transition: opacity 0.2s; }
+  .d-footer a:hover { opacity: 0.7; }
+  .d-footer a img { height: 36px; border-radius: 6px; }
+
+  /* start screen branded */
+  .s-logo { margin-bottom: 20px; opacity: 0.7; }
+  .s-logo img { height: 22px; }
+
+  /* tutorial */
+  #tutorial { display:none; position:fixed; inset:0; z-index:25; background:rgba(0,0,0,0.94); backdrop-filter:blur(10px); flex-direction:column; align-items:center; justify-content:center; color:#fff; cursor:pointer; }
+  #tutorial.visible { display:flex; }
+  .tut-inner { max-width:360px; width:100%; padding:24px; }
+  .tut-inner .tut-title { font-size:26px; font-weight:300; margin-bottom:20px; text-align:center; }
+  .tut-inner ol { list-style:none; counter-reset:r; padding:0; }
+  .tut-inner ol li { counter-increment:r; font-family:'Mono'; font-size:12px; color:#888; line-height:1.7; padding:8px 0 8px 28px; border-bottom:1px solid #141414; position:relative; }
+  .tut-inner ol li::before { content:counter(r); font-weight:700; color:#D4883A; position:absolute; left:0; top:8px; }
+  .tut-inner .tut-sign { font-size:12px; color:#444; text-align:center; margin-top:18px; font-style:italic; }
+  .tut-inner .tut-go { display:block; width:100%; margin-top:16px; padding:13px; background:transparent; border:1px solid #282828; border-radius:3px; font-family:'Mono'; font-size:11px; letter-spacing:4px; text-transform:uppercase; color:#D4883A; cursor:pointer; text-align:center; transition:all 0.25s; }
+  .tut-inner .tut-go:hover { border-color:#D4883A; color:#fff; }
+
+  /* leaderboard */
+  #leaderboard { display:none; position:fixed; inset:0; z-index:30; background:rgba(0,0,0,0.97); backdrop-filter:blur(12px); flex-direction:column; align-items:center; justify-content:flex-start; overflow-y:auto; color:#fff; }
+  #leaderboard.visible { display:flex; }
+  .lb-inner { width:100%; max-width:480px; padding:36px 24px 60px; }
+  .lb-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+  .lb-head .lb-t { font-size:24px; font-weight:300; }
+  .lb-head .lb-x { width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid #222; border-radius:4px; cursor:pointer; background:none; color:#555; font-family:'Mono'; font-size:14px; transition:all 0.2s; }
+  .lb-head .lb-x:hover { border-color:#555; color:#fff; }
+  .lb-table { width:100%; }
+  .lb-row { display:grid; grid-template-columns:28px 1fr auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid #0e0e0e; }
+  .lb-row:hover { background:rgba(255,255,255,0.01); }
+  .lb-row.top3 .lb-rk { color:#D4883A; }
+  .lb-rk { font-family:'Mono'; font-size:11px; font-weight:700; color:#333; text-align:center; }
+  .lb-nm { font-family:'Mono'; font-size:12px; color:#ccc; }
+  .lb-sc { font-family:'Mono'; font-size:12px; font-weight:700; color:#fff; text-align:right; }
+  .lb-sc .u { font-weight:400; color:#444; font-size:9px; }
+  .lb-btn { font-family:'Mono'; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:#444; cursor:pointer; background:none; border:none; padding:6px 0; transition:color 0.2s; }
+  .lb-btn:hover { color:#888; }
+
+  /* share card overlay */
+  #share-wrap { display:none; position:fixed; inset:0; z-index:35; background:rgba(0,0,0,0.97); flex-direction:column; align-items:center; justify-content:center; gap:16px; }
+  #share-wrap.visible { display:flex; }
+  #share-wrap canvas { border-radius:10px; max-width:92vw; max-height:55vh; box-shadow:0 4px 40px rgba(0,0,0,0.5); }
+  .sh-actions { display:flex; gap:10px; }
+  .sh-actions button { padding:10px 22px; background:transparent; border:1px solid #222; color:#666; font-family:'Mono'; font-size:10px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; border-radius:2px; }
+  .sh-actions button:hover { border-color:#888; color:#fff; }
+  .sh-actions .sh-primary { background:rgba(39,117,202,0.06); border-color:rgba(39,117,202,0.2); color:rgba(39,117,202,0.8); }
+  .sh-actions .sh-primary:hover { border-color:rgba(39,117,202,0.5); color:#fff; }
+  #sh-toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:rgba(39,117,202,0.1); border:1px solid rgba(39,117,202,0.2); color:#2775CA; padding:10px 24px; border-radius:6px; font-family:'Mono'; font-size:11px; letter-spacing:2px; z-index:50; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+  #sh-toast.visible { opacity:1; }
 </style>
 </head>
 <body>
 
 <div id="start-screen">
-  <div class="s-presents">Legend presents</div>
+  <div class="s-logo"><img src="logo.svg" alt="Legend" /></div>
+  <div class="s-presents">Presents</div>
   <div class="s-title">Inflation<br>Dodge</div>
   <div class="s-sub">Your savings. Your problem.</div>
   <div class="s-prompt">TAP OR CLICK TO START</div>
+  <button class="lb-btn" id="lb-open-start" style="margin-top:16px;" onclick="event.stopPropagation();document.getElementById('leaderboard').classList.add('visible');">View Leaderboard</button>
 </div>
 
 <canvas id="game"></canvas>
 
+<!-- TUTORIAL -->
+<div id="tutorial">
+  <div class="tut-inner">
+    <div class="tut-title">How to Play</div>
+    <ol>
+      <li>Move your mouse or finger to dodge inflation obstacles</li>
+      <li>Your $10,000 balance drains every second — and it accelerates</li>
+      <li>Collect yield pickups to earn it back. DeFi yields are worth 10x bank interest.</li>
+      <li>Graze obstacles (near-miss) to build a combo multiplier on all pickups</li>
+      <li>Survive as many years as you can. $0 = game over.</li>
+    </ol>
+    <div class="tut-sign">The economy is rigged against your savings.<br>Can you outrun it?</div>
+    <button class="tut-go" id="tut-go-btn">Let's Go</button>
+  </div>
+</div>
+
+<!-- DEATH SCREEN -->
 <div id="death-screen">
   <div class="d-inner">
     <div class="d-tag" id="d-tag">Game Over</div>
@@ -76,9 +150,40 @@
     <div class="d-editorial" id="d-editorial">The average American loses ~40% of their purchasing power over 30 years. What if your money fought back?</div>
     <div class="d-actions">
       <button id="retry-btn">Try Again</button>
+      <button id="challenge-btn">Challenge a Friend</button>
+    </div>
+    <button class="lb-btn" onclick="document.getElementById('leaderboard').classList.add('visible');">View Leaderboard</button>
+    <div class="d-footer">
+      <img class="logo" src="logo.svg" alt="Legend" />
+      <div class="cta">Skip the inflation. Get started today.</div>
+      <a href="https://apps.apple.com/us/app/legend-xyz/id6504718187" target="_blank" rel="noopener noreferrer">
+        <img src="https://legend.xyz/footer/cta-app-store@2x.webp" alt="Download on the App Store" />
+      </a>
     </div>
   </div>
 </div>
+
+<!-- LEADERBOARD -->
+<div id="leaderboard">
+  <div class="lb-inner">
+    <div class="lb-head">
+      <div class="lb-t">Leaderboard</div>
+      <button class="lb-x" id="lb-close">&times;</button>
+    </div>
+    <div class="lb-table" id="lb-table"></div>
+  </div>
+</div>
+
+<!-- SHARE CARD -->
+<div id="share-wrap">
+  <canvas id="share-card" width="600" height="315"></canvas>
+  <div class="sh-actions">
+    <button class="sh-primary" id="sh-copy">Copy Link</button>
+    <button id="sh-save">Save Image</button>
+    <button id="sh-close">Close</button>
+  </div>
+</div>
+<div id="sh-toast">Link copied!</div>
 
 <script>
 const C = document.getElementById('game');
@@ -184,11 +289,24 @@ C.addEventListener('touchstart', e => { e.preventDefault(); if (gameState === 'p
 document.getElementById('start-screen').addEventListener('click', () => {
   document.getElementById('start-screen').classList.add('hidden');
   setTimeout(() => document.getElementById('start-screen').style.display = 'none', 500);
+  document.getElementById('tutorial').classList.add('visible');
+});
+document.getElementById('tut-go-btn').addEventListener('click', () => {
+  document.getElementById('tutorial').classList.remove('visible');
   initGame();
+});
+document.getElementById('tutorial').addEventListener('click', e => {
+  if (e.target === document.getElementById('tutorial')) {
+    document.getElementById('tutorial').classList.remove('visible');
+    initGame();
+  }
 });
 document.getElementById('retry-btn').addEventListener('click', () => {
   document.getElementById('death-screen').classList.remove('visible');
   initGame();
+});
+document.getElementById('lb-close').addEventListener('click', () => {
+  document.getElementById('leaderboard').classList.remove('visible');
 });
 
 // ======== OBSTACLES ========
@@ -927,8 +1045,18 @@ function showDeath() {
   stats.innerHTML = [
     `Peak balance: <span>$${Math.floor(peakBalance).toLocaleString()}</span>`,
     `Best combo: <span>${comboCount > 0 ? comboCount + 'x' : 'none'}</span>`,
-    `Drain rate at death: <span class="red">-$${drainRate.toFixed(2)}/s</span>`,
+    `Drain rate at death: <span class="red">-$${drainRate.toFixed(1)}/s</span>`,
   ].join('<br>');
+
+  // challenge beat detection
+  const ed = document.getElementById('d-editorial');
+  if (cScore && Math.floor(years) > parseInt(cScore)) {
+    ed.innerHTML = `<span style="color:#2775CA">You beat ${cBy}'s ${cScore} years!</span><br>The average American loses ~40% of purchasing power over 30 years. What if your money fought back?`;
+  } else if (cScore) {
+    ed.innerHTML = `${cBy} still leads with ${cScore} years.<br>The average American loses ~40% of purchasing power over 30 years.`;
+  } else if (Math.floor(years) < 5) {
+    ed.innerHTML = 'Inflation is undefeated. Your savings didn\'t stand a chance.';
+  }
 
   document.querySelectorAll('.d-inner > *').forEach((el, i) => {
     el.style.animation = 'none'; el.offsetHeight;
@@ -940,6 +1068,105 @@ function showDeath() {
 // ======== LOOP ========
 function loop() { update(); draw(); requestAnimationFrame(loop); }
 loop();
+
+// ======== CHALLENGE LINKS ========
+const urlP = new URLSearchParams(window.location.search);
+const cScore = urlP.get('challenge'), cBy = urlP.get('by') || '???';
+if (cScore) {
+  const sub = document.querySelector('.s-sub');
+  sub.innerHTML = `<span style="color:#ff4444">${cBy} survived ${cScore} years.</span><br>Can you beat it?`;
+  document.querySelector('.s-prompt').textContent = 'TAP TO ACCEPT';
+}
+
+let handle = localStorage.getItem('id_handle') || '';
+function ensureHandle() {
+  if (handle) return handle;
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  handle = ''; for (let i = 0; i < 3; i++) handle += c[Math.floor(Math.random() * c.length)];
+  localStorage.setItem('id_handle', handle); return handle;
+}
+function challengeUrl() {
+  return `${window.location.origin}${window.location.pathname}?challenge=${Math.floor(years)}&by=${ensureHandle()}`;
+}
+
+// ======== SHARE CARD ========
+function renderShareCard() {
+  const sc = document.getElementById('share-card'), cx = sc.getContext('2d');
+  const w = 600, h = 315; sc.width = w; sc.height = h;
+  const bg = cx.createLinearGradient(0, 0, 0, h);
+  bg.addColorStop(0, '#050508'); bg.addColorStop(1, '#0a0a10');
+  cx.fillStyle = bg; cx.fillRect(0, 0, w, h);
+  // grid
+  cx.strokeStyle = 'rgba(39,117,202,0.02)'; cx.lineWidth = 0.5;
+  for (let x = 0; x < w; x += 25) { cx.beginPath(); cx.moveTo(x,0); cx.lineTo(x,h); cx.stroke(); }
+  for (let y = 0; y < h; y += 25) { cx.beginPath(); cx.moveTo(0,y); cx.lineTo(w,y); cx.stroke(); }
+  // glow
+  const gl = cx.createRadialGradient(w/2, h*0.4, 0, w/2, h*0.4, 200);
+  gl.addColorStop(0, 'rgba(39,117,202,0.04)'); gl.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = gl; cx.fillRect(0, 0, w, h);
+  // title
+  cx.fillStyle = '#444'; cx.font = '9px Mono, monospace'; cx.textAlign = 'center';
+  cx.fillText('I N F L A T I O N   D O D G E', w/2, 30);
+  // score
+  cx.fillStyle = '#fff'; cx.font = '300 52px Knapp, sans-serif'; cx.fillText(Math.floor(years) + ' years', w/2, 95);
+  cx.fillStyle = '#555'; cx.font = '10px Mono, monospace'; cx.fillText('SURVIVED', w/2, 115);
+  // stats
+  cx.fillStyle = '#ff4444'; cx.font = 'bold 22px Mono, monospace';
+  cx.fillText('-$' + Math.floor(totalDrained + totalLost).toLocaleString(), w*0.3, 165);
+  cx.fillStyle = '#2775CA'; cx.fillText(comboCount + 'x combo', w*0.7, 165);
+  cx.fillStyle = '#333'; cx.font = '8px Mono, monospace';
+  cx.fillText('LOST TO INFLATION', w*0.3, 180); cx.fillText('BEST COMBO', w*0.7, 180);
+  // dare
+  cx.fillStyle = '#2775CA'; cx.font = '500 12px Mono, monospace';
+  cx.fillText(ensureHandle() + ' challenges you to beat ' + Math.floor(years) + ' years', w/2, 250);
+  // brand
+  if (logoLoaded) cx.drawImage(legendLogo, w/2 - 50, 270, 100, 100*(28/160));
+  // accents
+  cx.fillStyle = '#ff4444'; cx.fillRect(0, 0, w, 1.5);
+  cx.fillStyle = '#2775CA'; cx.fillRect(0, h-1.5, w, 1.5);
+}
+
+document.getElementById('challenge-btn').addEventListener('click', () => {
+  renderShareCard();
+  document.getElementById('share-wrap').classList.add('visible');
+});
+document.getElementById('sh-copy').addEventListener('click', () => {
+  navigator.clipboard.writeText(challengeUrl()).then(() => {
+    const t = document.getElementById('sh-toast'); t.classList.add('visible');
+    setTimeout(() => t.classList.remove('visible'), 2200);
+  }).catch(() => prompt('Copy:', challengeUrl()));
+});
+document.getElementById('sh-save').addEventListener('click', () => {
+  const a = document.createElement('a'); a.download = 'inflation-dodge-' + Math.floor(years) + 'yrs.png';
+  a.href = document.getElementById('share-card').toDataURL('image/png'); a.click();
+});
+document.getElementById('sh-close').addEventListener('click', () => {
+  document.getElementById('share-wrap').classList.remove('visible');
+});
+
+// ======== LEADERBOARD (dummy data) ========
+(function() {
+  const DATA = [
+    { rank:1, name:'ZKR', years:18, combo:'12x', bal:'$4,207' },
+    { rank:2, name:'VTL', years:15, combo:'8x', bal:'$2,891' },
+    { rank:3, name:'MXN', years:14, combo:'15x', bal:'$1,203' },
+    { rank:4, name:'DFI', years:12, combo:'5x', bal:'$0' },
+    { rank:5, name:'APX', years:11, combo:'9x', bal:'$0' },
+    { rank:6, name:'NRG', years:10, combo:'3x', bal:'$0' },
+    { rank:7, name:'KYC', years:9, combo:'7x', bal:'$0' },
+    { rank:8, name:'BLK', years:8, combo:'2x', bal:'$0' },
+    { rank:9, name:'FEN', years:7, combo:'4x', bal:'$0' },
+    { rank:10, name:'RWA', years:6, combo:'1x', bal:'$0' },
+  ];
+  const tbl = document.getElementById('lb-table');
+  tbl.innerHTML = DATA.map(d =>
+    `<div class="lb-row${d.rank<=3?' top3':''}">
+      <div class="lb-rk">${d.rank}</div>
+      <div class="lb-nm">${d.name}</div>
+      <div class="lb-sc">${d.years}<span class="u">yr</span> ${d.combo}</div>
+    </div>`
+  ).join('');
+})();
 </script>
 </body>
 </html>
