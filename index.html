@@ -691,41 +691,85 @@ function draw() {
   // pickups
   pickups.forEach(p => {
     if (p.collected) return;
-    const pulse = 1 + Math.sin(frameCount * 0.06) * 0.08;
+    const pulse = 1 + Math.sin(frameCount * 0.06) * 0.1;
     const r = p.size * pulse;
+    const isGold = p.type === 'defi' || p.type === 'jackpot';
 
-    // glow
-    X.beginPath(); X.arc(p.x, p.y, r + 10, 0, Math.PI * 2);
-    X.fillStyle = p.type === 'defi' || p.type === 'jackpot' ? 'rgba(255,215,0,0.06)' : 'rgba(120,255,180,0.04)';
-    X.fill();
+    // outer glow
+    X.beginPath(); X.arc(p.x, p.y, r + 16, 0, Math.PI * 2);
+    const pglow = X.createRadialGradient(p.x, p.y, r * 0.5, p.x, p.y, r + 16);
+    pglow.addColorStop(0, isGold ? 'rgba(255,200,0,0.12)' : 'rgba(120,255,180,0.08)');
+    pglow.addColorStop(1, 'rgba(0,0,0,0)');
+    X.fillStyle = pglow; X.fill();
 
-    // body
+    // solid body
     X.beginPath(); X.arc(p.x, p.y, r, 0, Math.PI * 2);
-    X.fillStyle = p.color + '30'; X.strokeStyle = p.color + '88'; X.lineWidth = 1.5;
-    X.fill(); X.stroke();
+    const pGrd = X.createRadialGradient(p.x - r*0.2, p.y - r*0.2, 0, p.x, p.y, r);
+    if (isGold) {
+      pGrd.addColorStop(0, 'rgba(255,230,100,0.9)'); pGrd.addColorStop(1, 'rgba(200,150,0,0.7)');
+    } else {
+      pGrd.addColorStop(0, 'rgba(120,255,180,0.6)'); pGrd.addColorStop(1, 'rgba(60,180,120,0.4)');
+    }
+    X.fillStyle = pGrd; X.fill();
+    X.strokeStyle = isGold ? 'rgba(255,200,0,0.5)' : 'rgba(120,255,180,0.4)';
+    X.lineWidth = 1.5; X.stroke();
 
     // label
-    if (p.type === 'defi' || p.type === 'jackpot') {
-      X.fillStyle = p.color; X.font = `bold ${W < 500 ? 12 : 14}px Mono, monospace`;
-      X.textAlign = 'center'; X.textBaseline = 'middle';
-      X.fillText(p.type === 'jackpot' ? '+$5K' : '+$2K', p.x, p.y);
-    } else {
-      X.fillStyle = '#78FFB4'; X.font = `bold ${W < 500 ? 10 : 12}px Mono, monospace`;
-      X.textAlign = 'center'; X.textBaseline = 'middle';
-      X.fillText('+$200', p.x, p.y);
-    }
+    X.fillStyle = '#fff'; X.font = `bold ${W < 500 ? 11 : 13}px Mono, monospace`;
+    X.textAlign = 'center'; X.textBaseline = 'middle';
+    if (p.type === 'jackpot') X.fillText('+$5K', p.x, p.y);
+    else if (p.type === 'defi') X.fillText('+$2K', p.x, p.y);
+    else X.fillText('+$200', p.x, p.y);
+
+    // type label below
+    X.fillStyle = isGold ? 'rgba(255,200,0,0.5)' : 'rgba(120,255,180,0.3)';
+    X.font = '7px Mono, monospace';
+    X.fillText(isGold ? 'DeFi Yield' : '0.4% APY', p.x, p.y + r + 10);
   });
 
-  // obstacles
+  // obstacles — solid, chunky, visually weighted
   obstacles.forEach(ob => {
     if (ob.hit) return;
     X.save();
-    X.globalAlpha = ob.grazed ? 0.5 : 1;
-    X.fillStyle = ob.color + '14'; X.strokeStyle = ob.color + '55'; X.lineWidth = 0.8;
-    X.beginPath(); rr(ob.x, ob.y, ob.w, ob.h, 3); X.fill(); X.stroke();
-    X.fillStyle = ob.color; X.font = `bold ${W < 500 ? 11 : 13}px Mono, monospace`;
+    X.globalAlpha = ob.grazed ? 0.4 : 1;
+
+    // color intensity based on severity
+    const severity = Math.min(1, ob.pct / 20);
+    const r = 180 + severity * 75, g = 60 - severity * 40, b = 30;
+
+    // solid fill with gradient
+    const obGrd = X.createLinearGradient(ob.x, ob.y, ob.x, ob.y + ob.h);
+    obGrd.addColorStop(0, `rgba(${r},${g},${b},0.85)`);
+    obGrd.addColorStop(1, `rgba(${r * 0.7},${g * 0.6},${b},0.75)`);
+    X.fillStyle = obGrd;
+    X.beginPath(); rr(ob.x, ob.y, ob.w, ob.h, 6); X.fill();
+
+    // bright edge
+    X.strokeStyle = `rgba(${Math.min(255,r+40)},${g+20},${b+10},0.5)`;
+    X.lineWidth = 1.5;
+    X.beginPath(); rr(ob.x, ob.y, ob.w, ob.h, 6); X.stroke();
+
+    // inner glow at top
+    const igrd = X.createLinearGradient(ob.x, ob.y, ob.x, ob.y + ob.h * 0.4);
+    igrd.addColorStop(0, 'rgba(255,255,255,0.08)');
+    igrd.addColorStop(1, 'rgba(255,255,255,0)');
+    X.fillStyle = igrd;
+    X.beginPath(); rr(ob.x + 1, ob.y + 1, ob.w - 2, ob.h * 0.4, 5); X.fill();
+
+    // percentage badge (left side)
+    const badgeW = 32, badgeH = ob.h - 8;
+    X.fillStyle = 'rgba(0,0,0,0.3)';
+    X.beginPath(); rr(ob.x + 4, ob.y + 4, badgeW, badgeH, 4); X.fill();
+    X.fillStyle = '#fff'; X.font = `bold ${W < 500 ? 10 : 12}px Mono, monospace`;
     X.textAlign = 'center'; X.textBaseline = 'middle';
-    X.fillText(ob.label, ob.x + ob.w / 2, ob.y + ob.h / 2);
+    X.fillText(ob.rateHike ? '!!' : '+' + ob.pct + '%', ob.x + 4 + badgeW / 2, ob.y + ob.h / 2);
+
+    // label text (right of badge)
+    X.fillStyle = 'rgba(255,255,255,0.9)'; X.font = `500 ${W < 500 ? 11 : 13}px Knapp, sans-serif`;
+    X.textAlign = 'left';
+    const labelName = ob.label.replace(/\s*\+\d+%/, '').replace('RATE HIKE', 'RATE HIKE');
+    X.fillText(labelName, ob.x + badgeW + 10, ob.y + ob.h / 2 + 1);
+
     X.restore();
   });
 
@@ -811,6 +855,14 @@ function draw() {
     X.fillStyle = '#fff'; X.font = 'bold 26px Mono, monospace';
     X.fillText(Math.floor(years).toString(), W - 20, 52);
 
+    // Legend mark centered at top
+    X.save();
+    X.globalAlpha = 0.15;
+    X.fillStyle = '#fff'; X.font = 'bold 8px Mono, monospace'; X.textAlign = 'center';
+    X.fillText('LEGEND', W / 2, 16);
+    X.globalAlpha = 1;
+    X.restore();
+
     // combo — bigger, more visible
     if (comboCount >= 3) {
       X.fillStyle = '#2775CA'; X.font = 'bold 14px Mono, monospace'; X.textAlign = 'center';
@@ -826,7 +878,9 @@ function draw() {
     const barColor = barPct > 0.5 ? '#2775CA' : barPct > 0.2 ? '#FFD666' : '#ff4444';
     X.fillStyle = barColor; X.fillRect(barX, barY, barW * barPct, barH);
     X.fillStyle = '#444'; X.font = '8px Mono, monospace'; X.textAlign = 'left';
-    X.fillText('PURCHASING POWER', barX, barY - 4);
+    X.fillText('PURCHASING POWER', barX, barY - 6);
+    X.textAlign = 'right'; X.fillStyle = '#333';
+    X.fillText('POWERED BY LEGEND', barX + barW, barY - 6);
   }
 
   X.restore();
