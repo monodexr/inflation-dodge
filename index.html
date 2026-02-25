@@ -123,6 +123,20 @@ let comboCount, comboMultiplier, comboLabel;
 let iFrames;
 const pt = { x: 0, y: 0 };
 let bestYears = parseFloat(localStorage.getItem('id_best') || '0');
+let playerVX = 0, playerVY = 0, prevPX = 0, prevPY = 0;
+let arenaEffects = [], announceText = '', announceTimer = 0;
+let edgeWarnings = [];
+
+const ARENA_EVENTS = [
+  { at: 15, name: 'BANKER HOURS', dur: 360, effect: 'slow' },
+  { at: 24, name: 'FEE MAGNET', dur: 300, effect: 'magnet' },
+  { at: 39, name: 'FINE PRINT', dur: 240, effect: 'shrink' },
+  { at: 48, name: 'MARKET CRASH', dur: 360, effect: 'shake' },
+  { at: 63, name: 'BLACKOUT', dur: 180, effect: 'dark' },
+  { at: 72, name: 'INVERTED', dur: 240, effect: 'invert' },
+];
+let arenaTriggered = {};
+let arenaSlowPlayer=false,arenaMagnet=false,arenaShake=false,arenaDark=false,arenaInvert=false,arenaShrink=false;
 let ghostTrail = JSON.parse(localStorage.getItem('id_ghost') || '[]');
 let currentTrail = [];
 
@@ -149,6 +163,9 @@ function initGame() {
   comboLabel = '';
   iFrames = 0;
   currentTrail = [];
+  playerVX = 0; playerVY = 0; prevPX = W / 2; prevPY = H * 0.7;
+  arenaEffects = []; announceText = ''; announceTimer = 0; arenaTriggered = {};
+  edgeWarnings = [];
   gameState = 'playing';
   initAudio();
 }
@@ -264,9 +281,10 @@ function update() {
   // drain tick sound (subtle, gets faster)
   if (frameCount % Math.max(8, Math.floor(40 - yr * 1.5)) === 0) playDrainTick();
 
-  // movement — zero lag
-  player.x += (pt.x - player.x) * 0.18;
-  player.y += (pt.y - player.y) * 0.18;
+  // movement — zero lag (slowed during BANKER HOURS)
+  const moveLerp = arenaSlowPlayer ? 0.06 : 0.18;
+  player.x += (pt.x - player.x) * moveLerp;
+  player.y += (pt.y - player.y) * moveLerp;
   player.x = Math.max(player.radius, Math.min(W - player.radius, player.x));
   player.y = Math.max(player.radius, Math.min(H - player.radius, player.y));
 
@@ -351,6 +369,87 @@ function update() {
       spawnP(player.x, player.y, ob.color, 15, 6);
       playHitSound(ob.pct);
     }
+  }
+
+  // player velocity tracking (for speed lines)
+  playerVX = player.x - prevPX; playerVY = player.y - prevPY;
+  prevPX = player.x; prevPY = player.y;
+
+  // player pressure wave — push nearby obstacles away
+  const PRESSURE_R = 50;
+  for (const ob of obstacles) {
+    if (ob.hit) continue;
+    const ocx = ob.x + ob.w / 2, ocy = ob.y + ob.h / 2;
+    const dx = ocx - player.x, dy = ocy - player.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < PRESSURE_R && dist > 0) {
+      const force = (1 - dist / PRESSURE_R) * 0.6;
+      ob.vx += (dx / dist) * force;
+      ob.vy += (dy / dist) * force;
+    }
+  }
+
+  // obstacle-obstacle collision physics (lightweight)
+  for (let i = 0; i < obstacles.length; i++) {
+    const a = obstacles[i]; if (a.hit) continue;
+    for (let j = i + 1; j < obstacles.length; j++) {
+      const b = obstacles[j]; if (b.hit) continue;
+      const ax = a.x + a.w/2, ay = a.y + a.h/2, bx = b.x + b.w/2, by = b.y + b.h/2;
+      const dx = bx - ax, dy = by - ay;
+      const minD = (a.w + b.w) * 0.3;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < minD && dist > 0) {
+        const push = (1 - dist/minD) * 0.3;
+        a.vx -= (dx/dist) * push; a.vy -= (dy/dist) * push;
+        b.vx += (dx/dist) * push; b.vy += (dy/dist) * push;
+      }
+    }
+  }
+
+  // arena effects
+  if (announceTimer > 0) announceTimer--;
+  const gs = frameCount / 60;
+  for (const ae of ARENA_EVENTS) {
+    if (!arenaTriggered[ae.at] && gs >= ae.at) {
+      arenaTriggered[ae.at] = { start: frameCount + 150, end: frameCount + 150 + ae.dur };
+      announceText = ae.name; announceTimer = 150;
+    }
+  }
+  // active arena effects
+  arenaSlowPlayer = false; arenaMagnet = false; arenaShake = false; arenaDark = false; arenaInvert = false; arenaShrink = false;
+  for (const ae of ARENA_EVENTS) {
+    const t = arenaTriggered[ae.at];
+    if (t && frameCount >= t.start && frameCount < t.end) {
+      if (ae.effect === 'slow') arenaSlowPlayer = true;
+      if (ae.effect === 'magnet') arenaMagnet = true;
+      if (ae.effect === 'shake') arenaShake = true;
+      if (ae.effect === 'dark') arenaDark = true;
+      if (ae.effect === 'invert') arenaInvert = true;
+      if (ae.effect === 'shrink') arenaShrink = true;
+    }
+  }
+
+  // arena: BANKER HOURS movement handled in movement section above
+  // arena: FEE MAGNET — obstacles curve toward player
+  if (arenaMagnet) {
+    for (const ob of obstacles) {
+      if (ob.hit) continue;
+      const dx = player.x - (ob.x + ob.w/2), dy = player.y - (ob.y + ob.h/2);
+      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+      ob.vx += (dx/dist) * 0.15; ob.vy += (dy/dist) * 0.15;
+    }
+  }
+  // arena: MARKET CRASH — sustained shake
+  if (arenaShake) shakeAmount = Math.max(shakeAmount, 4);
+
+  // edge warnings for incoming obstacles
+  edgeWarnings = [];
+  for (const ob of obstacles) {
+    if (ob.hit) continue;
+    if (ob.y < 0 && ob.y > -60) edgeWarnings.push({ x: ob.x + ob.w/2, y: 0, side: 'top' });
+    if (ob.x < 0 && ob.x > -60) edgeWarnings.push({ x: 0, y: ob.y + ob.h/2, side: 'left' });
+    if (ob.x + ob.w > W && ob.x < W + 60) edgeWarnings.push({ x: W, y: ob.y + ob.h/2, side: 'right' });
+    if (ob.y + ob.h > H && ob.y < H + 60) edgeWarnings.push({ x: ob.x + ob.w/2, y: H, side: 'bottom' });
   }
 
   // update harvest trails
@@ -466,8 +565,46 @@ function draw() {
   vig.addColorStop(1, `rgba(0,0,0,${vigStr})`);
   X.fillStyle = vig; X.fillRect(0, 0, W, H);
 
+  // arena: INVERT
+  if (typeof arenaInvert !== 'undefined' && arenaInvert) {
+    X.translate(W/2, H/2); X.rotate(Math.PI); X.translate(-W/2, -H/2);
+  }
+  // arena: BLACKOUT
+  if (typeof arenaDark !== 'undefined' && arenaDark) {
+    X.fillStyle = 'rgba(0,0,0,0.5)'; X.fillRect(0, 0, W, H);
+  }
+  // arena: BANKER HOURS dim
+  if (typeof arenaSlowPlayer !== 'undefined' && arenaSlowPlayer) {
+    X.fillStyle = 'rgba(0,0,0,0.25)'; X.fillRect(0, 0, W, H);
+    X.save(); X.translate(W/2,H/2); X.rotate(-0.12);
+    X.fillStyle = 'rgba(255,255,255,0.025)'; X.font = `bold ${W<500?30:60}px Knapp, sans-serif`;
+    X.textAlign = 'center'; X.textBaseline = 'middle'; X.fillText('CLOSED', 0, 0);
+    X.restore();
+  }
+
   // hit flash
   if (flashAmount > 0.05) { X.fillStyle = `rgba(255,40,40,${flashAmount * 0.1})`; X.fillRect(0, 0, W, H); }
+
+  // edge warnings
+  for (const ew of edgeWarnings) {
+    X.beginPath();
+    if (ew.side === 'top') { X.moveTo(ew.x-6,0); X.lineTo(ew.x+6,0); X.lineTo(ew.x,8); }
+    else if (ew.side === 'left') { X.moveTo(0,ew.y-6); X.lineTo(0,ew.y+6); X.lineTo(8,ew.y); }
+    else if (ew.side === 'right') { X.moveTo(W,ew.y-6); X.lineTo(W,ew.y+6); X.lineTo(W-8,ew.y); }
+    else { X.moveTo(ew.x-6,H); X.lineTo(ew.x+6,H); X.lineTo(ew.x,H-8); }
+    X.closePath(); X.fillStyle = 'rgba(255,60,60,0.4)'; X.fill();
+  }
+
+  // announcement text
+  if (announceTimer > 0) {
+    const t = announceTimer / 150;
+    const scale = t > 0.85 ? 1 + (1-t)/0.15*0.3 : 1;
+    const alpha = t > 0.2 ? Math.min(1,(1-t)/0.15*0.5+0.4) : t/0.2;
+    X.save(); X.translate(W/2,H/2); X.scale(scale,scale);
+    X.fillStyle = `rgba(255,146,20,${alpha*0.5})`; X.font = `500 ${W<500?40:72}px Knapp, sans-serif`;
+    X.textAlign = 'center'; X.textBaseline = 'middle'; X.fillText(announceText,0,0);
+    X.restore();
+  }
 
   // ghost trail
   if (ghostTrail.length > 1 && gameState === 'playing') {
@@ -536,8 +673,26 @@ function draw() {
     X.restore();
   });
 
+  // speed lines behind player
+  const spd = Math.sqrt(playerVX*playerVX + playerVY*playerVY);
+  if (spd > 2) {
+    const lineCount = Math.min(6, Math.floor(spd / 1.5));
+    for (let i = 0; i < lineCount; i++) {
+      const len = 8 + spd * 2 + Math.random() * 10;
+      const ox = player.x - playerVX * (2 + i * 1.5) + (Math.random()-0.5) * 12;
+      const oy = player.y - playerVY * (2 + i * 1.5) + (Math.random()-0.5) * 12;
+      X.beginPath(); X.moveTo(ox, oy);
+      X.lineTo(ox - playerVX * len * 0.15, oy - playerVY * len * 0.15);
+      X.strokeStyle = `rgba(120,255,180,${0.08 + spd * 0.01})`; X.lineWidth = 1; X.stroke();
+    }
+  }
+
+  // pressure wave ring around player
+  X.beginPath(); X.arc(player.x, player.y, 50, 0, Math.PI * 2);
+  X.strokeStyle = `rgba(120,255,180,${0.03 + spd * 0.003})`; X.lineWidth = 0.5; X.stroke();
+
   // player
-  const pr = player.radius * (1 - hitShrink * 0.3);
+  const pr = player.radius * (1 - hitShrink * 0.3) * (typeof arenaShrink !== 'undefined' && arenaShrink ? 0.6 : 1);
   const coinHealth = Math.max(0, Math.min(1, balance / INITIAL_BALANCE));
 
   // outer glow
