@@ -128,15 +128,15 @@ let arenaEffects = [], announceText = '', announceTimer = 0;
 let edgeWarnings = [];
 
 const ARENA_EVENTS = [
-  { at: 15, name: 'BANKER HOURS', dur: 360, effect: 'slow' },
-  { at: 24, name: 'FEE MAGNET', dur: 300, effect: 'magnet' },
-  { at: 39, name: 'FINE PRINT', dur: 240, effect: 'shrink' },
-  { at: 48, name: 'MARKET CRASH', dur: 360, effect: 'shake' },
-  { at: 63, name: 'BLACKOUT', dur: 180, effect: 'dark' },
-  { at: 72, name: 'INVERTED', dur: 240, effect: 'invert' },
+  { at: 18, name: 'RECESSION', dur: 300, effect: 'recession' },
+  { at: 31, name: 'RATE HIKE', dur: 360, effect: 'ratehike' },
+  { at: 52, name: 'HOUSING CRISIS', dur: 300, effect: 'housing' },
+  { at: 68, name: 'TAX SEASON', dur: 240, effect: 'tax' },
+  { at: 85, name: 'BLACKOUT', dur: 180, effect: 'dark' },
+  { at: 99, name: 'HYPERINFLATION', dur: 360, effect: 'hyper' },
 ];
 let arenaTriggered = {};
-let arenaSlowPlayer=false,arenaMagnet=false,arenaShake=false,arenaDark=false,arenaInvert=false,arenaShrink=false;
+let arenaRecession=false,arenaRateHike=false,arenaHousing=false,arenaTax=false,arenaDark=false,arenaHyper=false;
 let ghostTrail = JSON.parse(localStorage.getItem('id_ghost') || '[]');
 let currentTrail = [];
 
@@ -281,8 +281,8 @@ function update() {
   // drain tick sound (subtle, gets faster)
   if (frameCount % Math.max(8, Math.floor(40 - yr * 1.5)) === 0) playDrainTick();
 
-  // movement — zero lag (slowed during BANKER HOURS)
-  const moveLerp = arenaSlowPlayer ? 0.06 : 0.18;
+  // movement — zero lag (slowed during RECESSION)
+  const moveLerp = arenaRecession ? 0.10 : 0.18;
   player.x += (pt.x - player.x) * moveLerp;
   player.y += (pt.y - player.y) * moveLerp;
   player.x = Math.max(player.radius, Math.min(W - player.radius, player.x));
@@ -351,10 +351,15 @@ function update() {
     // collision (actual hit)
     if (distSq < pr * pr && iFrames === 0) {
       ob.hit = true;
-      const dmg = ob.rateHike ? 0 : Math.max(500, balance * (ob.pct / 100) + ob.pct * 80);
+      let dmg;
+      if (ob.rateHike) {
+        dmg = 800;
+        drainRate *= 2.0;
+      } else {
+        dmg = Math.max(500, balance * (ob.pct / 100) + ob.pct * 80);
+      }
       balance -= dmg;
       totalLost += dmg;
-      if (ob.rateHike) drainRate *= 1.5;
 
       // knockback
       const kd = Math.sqrt(distSq) || 1;
@@ -416,31 +421,47 @@ function update() {
     }
   }
   // active arena effects
-  arenaSlowPlayer = false; arenaMagnet = false; arenaShake = false; arenaDark = false; arenaInvert = false; arenaShrink = false;
+  arenaRecession = false; arenaRateHike = false; arenaHousing = false; arenaTax = false; arenaDark = false; arenaHyper = false;
   for (const ae of ARENA_EVENTS) {
     const t = arenaTriggered[ae.at];
     if (t && frameCount >= t.start && frameCount < t.end) {
-      if (ae.effect === 'slow') arenaSlowPlayer = true;
-      if (ae.effect === 'magnet') arenaMagnet = true;
-      if (ae.effect === 'shake') arenaShake = true;
+      if (ae.effect === 'recession') arenaRecession = true;
+      if (ae.effect === 'ratehike') arenaRateHike = true;
+      if (ae.effect === 'housing') arenaHousing = true;
+      if (ae.effect === 'tax') arenaTax = true;
       if (ae.effect === 'dark') arenaDark = true;
-      if (ae.effect === 'invert') arenaInvert = true;
-      if (ae.effect === 'shrink') arenaShrink = true;
+      if (ae.effect === 'hyper') arenaHyper = true;
     }
   }
 
-  // arena: BANKER HOURS movement handled in movement section above
-  // arena: FEE MAGNET — obstacles curve toward player
-  if (arenaMagnet) {
-    for (const ob of obstacles) {
-      if (ob.hit) continue;
-      const dx = player.x - (ob.x + ob.w/2), dy = player.y - (ob.y + ob.h/2);
-      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-      ob.vx += (dx/dist) * 0.15; ob.vy += (dy/dist) * 0.15;
-    }
+  // RECESSION: screen darkens, obstacles speed up 50%
+  if (arenaRecession) {
+    for (const ob of obstacles) { if (!ob.hit) { ob.vy *= 1.005; ob.vx *= 1.005; } }
   }
-  // arena: MARKET CRASH — sustained shake
-  if (arenaShake) shakeAmount = Math.max(shakeAmount, 4);
+  // RATE HIKE: drain rate doubles
+  if (arenaRateHike) drainRate *= 2;
+  // HOUSING CRISIS: spawn extra-large obstacles
+  if (arenaHousing && frameCount % 30 === 0) {
+    const x = Math.random() * (W - 250); const vy = 1.5 + Math.random();
+    obstacles.push({ x, y: -60, w: 250, h: 50, vx: (Math.random()-0.5)*0.3, vy, label: 'HOUSING +20%', pct: 20, color: '#ff2200', hit: false, grazed: false, bounces: false, rateHike: false, harvestTrail: [], harvestTimer: 0 });
+  }
+  // TAX SEASON: obstacles from ALL directions
+  if (arenaTax && frameCount % 12 === 0) {
+    const side = Math.floor(Math.random() * 4);
+    const tmpl = TIER1[Math.floor(Math.random() * TIER1.length)];
+    let x,y,vx,vy;
+    if (side===0) { x=Math.random()*W; y=-40; vx=(Math.random()-0.5)*2; vy=3+Math.random()*2; }
+    else if (side===1) { x=Math.random()*W; y=H+40; vx=(Math.random()-0.5)*2; vy=-(3+Math.random()*2); }
+    else if (side===2) { x=-40; y=Math.random()*H; vx=3+Math.random()*2; vy=(Math.random()-0.5)*2; }
+    else { x=W+40; y=Math.random()*H; vx=-(3+Math.random()*2); vy=(Math.random()-0.5)*2; }
+    obstacles.push({ x, y, w: tmpl.w*0.8, h: tmpl.h, vx, vy, label: tmpl.label, pct: tmpl.pct, color: tmpl.color, hit: false, grazed: false, bounces: false, rateHike: false, harvestTrail: [], harvestTimer: 0 });
+  }
+  // HYPERINFLATION: everything speeds up + drain triples
+  if (arenaHyper) {
+    drainRate *= 3;
+    for (const ob of obstacles) { if (!ob.hit) { ob.vy *= 1.008; ob.vx *= 1.008; } }
+    shakeAmount = Math.max(shakeAmount, 2);
+  }
 
   // edge warnings for incoming obstacles
   edgeWarnings = [];
@@ -565,21 +586,27 @@ function draw() {
   vig.addColorStop(1, `rgba(0,0,0,${vigStr})`);
   X.fillStyle = vig; X.fillRect(0, 0, W, H);
 
-  // arena: INVERT
-  if (typeof arenaInvert !== 'undefined' && arenaInvert) {
-    X.translate(W/2, H/2); X.rotate(Math.PI); X.translate(-W/2, -H/2);
-  }
   // arena: BLACKOUT
-  if (typeof arenaDark !== 'undefined' && arenaDark) {
-    X.fillStyle = 'rgba(0,0,0,0.5)'; X.fillRect(0, 0, W, H);
+  if (arenaDark) { X.fillStyle = 'rgba(0,0,0,0.6)'; X.fillRect(0, 0, W, H); }
+  // arena: RECESSION — dark overlay + desaturation
+  if (arenaRecession) { X.fillStyle = 'rgba(0,0,20,0.2)'; X.fillRect(0, 0, W, H); }
+  // arena: RATE HIKE — red pulse at edges
+  if (arenaRateHike) {
+    const rp = 0.5 + Math.sin(frameCount * 0.1) * 0.3;
+    X.fillStyle = `rgba(255,0,0,${0.04 * rp})`; X.fillRect(0, 0, W, H);
+    X.strokeStyle = `rgba(255,50,50,${0.15 * rp})`; X.lineWidth = 3;
+    X.strokeRect(2, 2, W-4, H-4);
   }
-  // arena: BANKER HOURS dim
-  if (typeof arenaSlowPlayer !== 'undefined' && arenaSlowPlayer) {
-    X.fillStyle = 'rgba(0,0,0,0.25)'; X.fillRect(0, 0, W, H);
-    X.save(); X.translate(W/2,H/2); X.rotate(-0.12);
-    X.fillStyle = 'rgba(255,255,255,0.025)'; X.font = `bold ${W<500?30:60}px Knapp, sans-serif`;
-    X.textAlign = 'center'; X.textBaseline = 'middle'; X.fillText('CLOSED', 0, 0);
-    X.restore();
+  // arena: HOUSING CRISIS — ominous dark red tint
+  if (arenaHousing) { X.fillStyle = 'rgba(60,0,0,0.15)'; X.fillRect(0, 0, W, H); }
+  // arena: TAX SEASON — flashing edges
+  if (arenaTax) {
+    const tp = Math.sin(frameCount * 0.15) > 0 ? 0.08 : 0;
+    X.fillStyle = `rgba(255,100,0,${tp})`; X.fillRect(0, 0, W, H);
+  }
+  // arena: HYPERINFLATION — red sky, screen vibrates
+  if (arenaHyper) {
+    X.fillStyle = `rgba(80,0,0,${0.15 + Math.sin(frameCount*0.08)*0.05})`; X.fillRect(0, 0, W, H);
   }
 
   // hit flash
@@ -692,7 +719,7 @@ function draw() {
   X.strokeStyle = `rgba(120,255,180,${0.03 + spd * 0.003})`; X.lineWidth = 0.5; X.stroke();
 
   // player
-  const pr = player.radius * (1 - hitShrink * 0.3) * (typeof arenaShrink !== 'undefined' && arenaShrink ? 0.6 : 1);
+  const pr = player.radius * (1 - hitShrink * 0.3);
   const coinHealth = Math.max(0, Math.min(1, balance / INITIAL_BALANCE));
 
   // outer glow
