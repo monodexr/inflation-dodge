@@ -220,8 +220,11 @@ c.ontouchmove=e=>{e.preventDefault();if(state==='playing'){pt.x=e.touches[0].cli
 c.ontouchstart=e=>{e.preventDefault();if(state==='playing'){pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}};
 
 document.getElementById('ui').onclick=()=>{
-  if(state==='menu')initGame();
-  else if(state==='dead')initGame();
+  if(state==='menu'||state==='dead'){
+    document.getElementById('ui').className='';
+    document.getElementById('ui').style.display='none';
+    initGame();
+  }
 };
 
 // ============ UPDATE ============
@@ -581,6 +584,7 @@ function showDeath(){
   const ui=document.getElementById('ui');
   const L=curLvl();
   const yrs=((lvl+1)*YEAR_PER_LVL).toFixed(0);
+  ui.style.display='flex';
   ui.className='menu';
   ui.querySelector('.panel').id='p-dead';
   ui.querySelector('.panel').innerHTML=`
@@ -595,7 +599,7 @@ function showDeath(){
     </div>
     <div class="msg" style="animation-delay:.32s">${lvl<3?'Inflation is undefeated. Your savings didn\'t stand a chance.':'The average American loses ~40% of their purchasing power over 30 years. What if your money fought back?'}</div>
     <div class="btns" style="animation-delay:.4s">
-      <button class="btn" onclick="initGame()">Try Again</button>
+      <button class="btn" onclick="document.getElementById('ui').style.display='none';initGame()">Try Again</button>
     </div>
     <div class="footer" style="animation-delay:.5s">
       <img class="logo" src="logo.svg" alt="Legend"/>
