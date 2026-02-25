@@ -629,13 +629,36 @@ function update() {
       p.y += dy * 0.03;
     }
 
-    // collect
+    // collect — with shockwave
     if (dist < player.radius + p.size * 0.6) {
       p.collected = true;
       const gain = p.amt * comboMultiplier;
       balance += gain;
-      spawnP(p.x, p.y, p.color, 12, 5);
+      spawnP(p.x, p.y, p.color, 16, 7);
       playCollectSound(p.amt);
+
+      // shockwave: push nearby obstacles away (bigger push for bigger pickups)
+      const pushForce = p.amt >= 2000 ? 6 : p.amt >= 500 ? 3 : 1;
+      for (const ob of obstacles) {
+        if (ob.hit) continue;
+        const odx = (ob.x + ob.w/2) - player.x, ody = (ob.y + ob.h/2) - player.y;
+        const odist = Math.sqrt(odx*odx + ody*ody);
+        if (odist < 150 && odist > 0) {
+          const sf = (1 - odist/150) * pushForce;
+          ob.vx += (odx/odist) * sf;
+          ob.vy += (ody/odist) * sf;
+        }
+      }
+
+      // screen pulse for DeFi/Jackpot
+      if (p.amt >= 2000) { flashAmount = 0.3; shakeAmount = 3; }
+
+      // shockwave ring particle
+      for (let a = 0; a < Math.PI * 2; a += 0.3) {
+        const rv = 2 + Math.random() * 2;
+        particles.push({ x: player.x, y: player.y, vx: Math.cos(a)*rv*pushForce*0.5, vy: Math.sin(a)*rv*pushForce*0.5, life: 0.4, color: p.color, size: 1 });
+      }
+
       pickups.splice(i, 1);
     }
   }
@@ -691,17 +714,63 @@ function draw() {
 
   // background — desaturate based on balance
   const healthPct = Math.max(0, balance / INITIAL_BALANCE);
-  const bgR = Math.floor(0 + (1 - healthPct) * 8);
-  const bgG = Math.floor(0);
-  const bgB = Math.floor(0 + healthPct * 4);
-  X.fillStyle = `rgb(${bgR},${bgG},${bgB})`;
+  const yr = years;
+  X.fillStyle = '#030308';
   X.fillRect(0, 0, W, H);
 
-  // grid (Legend blue, fades with health)
-  const gridA = 0.015 + healthPct * 0.01;
-  X.strokeStyle = `rgba(39,117,202,${gridA})`; X.lineWidth = 0.5;
-  for (let x = 0; x < W; x += 40) { X.beginPath(); X.moveTo(x, 0); X.lineTo(x, H); X.stroke(); }
-  for (let y = 0; y < H; y += 40) { X.beginPath(); X.moveTo(0, y); X.lineTo(W, y); X.stroke(); }
+  // parallax depth layers (replace flat grid — creates sense of world)
+  // far layer: slow, dim dots (stars / distant lights)
+  X.fillStyle = `rgba(39,117,202,${0.06 + healthPct * 0.04})`;
+  for (let i = 0; i < 40; i++) {
+    const px = ((i * 137.5 + frameCount * 0.1) % (W + 40)) - 20;
+    const py = ((i * 89.3 + frameCount * 0.05) % (H + 40)) - 20;
+    X.fillRect(px, py, 1, 1);
+  }
+  // mid layer: medium speed, slightly brighter (city lights)
+  X.fillStyle = `rgba(39,117,202,${0.1 + healthPct * 0.06})`;
+  for (let i = 0; i < 25; i++) {
+    const px = ((i * 173.7 + frameCount * 0.25) % (W + 40)) - 20;
+    const py = ((i * 113.1 + frameCount * 0.15) % (H + 40)) - 20;
+    X.fillRect(px, py, 1.5, 1.5);
+  }
+  // near layer: fast, brightest (street level)
+  X.fillStyle = `rgba(39,117,202,${0.15 + healthPct * 0.08})`;
+  for (let i = 0; i < 15; i++) {
+    const px = ((i * 211.3 + frameCount * 0.5) % (W + 40)) - 20;
+    const py = ((i * 151.7 + frameCount * 0.3) % (H + 40)) - 20;
+    X.fillRect(px, py, 2, 2);
+  }
+
+  // horizon line (subtle, gives depth)
+  const horizY = H * 0.6;
+  const hg = X.createLinearGradient(0, horizY - 2, 0, horizY + 2);
+  hg.addColorStop(0, 'rgba(39,117,202,0)'); hg.addColorStop(0.5, `rgba(39,117,202,${0.03 + healthPct * 0.02})`); hg.addColorStop(1, 'rgba(39,117,202,0)');
+  X.fillStyle = hg; X.fillRect(0, horizY - 2, W, 4);
+
+  // film grain (increases as health drops)
+  if (healthPct < 0.7) {
+    const grainIntensity = (1 - healthPct) * 0.04;
+    for (let i = 0; i < 30; i++) {
+      const gx = Math.random() * W, gy = Math.random() * H;
+      X.fillStyle = `rgba(255,255,255,${Math.random() * grainIntensity})`;
+      X.fillRect(gx, gy, 1, 1);
+    }
+  }
+
+  // chromatic aberration hint (red shift when low health)
+  if (healthPct < 0.4) {
+    const caStr = (1 - healthPct / 0.4) * 0.03;
+    X.fillStyle = `rgba(255,0,0,${caStr})`; X.fillRect(2, 0, W, H);
+    X.fillStyle = `rgba(0,0,255,${caStr * 0.5})`; X.fillRect(-2, 0, W, H);
+  }
+
+  // scanlines (appear as you approach death)
+  if (healthPct < 0.25) {
+    const slStr = (1 - healthPct / 0.25) * 0.06;
+    for (let sy = 0; sy < H; sy += 3) {
+      X.fillStyle = `rgba(0,0,0,${slStr})`; X.fillRect(0, sy, W, 1);
+    }
+  }
 
   // vignette (tightens as balance drops)
   const vigStr = 0.1 + (1 - healthPct) * 0.4;
@@ -952,8 +1021,19 @@ function draw() {
   og.addColorStop(1, 'rgba(120,255,180,0)');
   X.fillStyle = og; X.beginPath(); X.arc(player.x, player.y, glowR, 0, Math.PI * 2); X.fill();
 
+  // coin breathe + flicker when low health
+  const breathe = 1 + Math.sin(frameCount * 0.04) * 0.03;
+  const flicker = coinHealth < 0.3 ? (Math.random() < 0.15 ? 0.5 : 1) : 1;
+  const finalPr = pr * breathe * flicker;
+
+  // danger sparks when low
+  if (coinHealth < 0.3 && frameCount % 8 === 0) {
+    const sa = Math.random() * Math.PI * 2;
+    particles.push({ x: player.x + Math.cos(sa)*pr, y: player.y + Math.sin(sa)*pr, vx: Math.cos(sa)*2, vy: Math.sin(sa)*2, life: 0.6, color: '#ff4444', size: 1.5 });
+  }
+
   // USDC-style coin body — premium Legend look
-  X.beginPath(); X.arc(player.x, player.y, pr, 0, Math.PI * 2);
+  X.beginPath(); X.arc(player.x, player.y, finalPr, 0, Math.PI * 2);
   const coinGrd = X.createRadialGradient(player.x - 2, player.y - 2, 0, player.x, player.y, pr);
   if (coinHealth > 0.3) {
     coinGrd.addColorStop(0, `rgba(100,200,255,${0.6 + coinHealth * 0.4})`);
@@ -967,17 +1047,17 @@ function draw() {
   X.fill();
 
   // outer ring (coin edge)
-  X.beginPath(); X.arc(player.x, player.y, pr + 2.5, 0, Math.PI * 2);
-  X.strokeStyle = coinHealth > 0.3 ? `rgba(100,180,255,${0.25 + comboCount * 0.015})` : 'rgba(255,60,60,0.3)';
-  X.lineWidth = 1.2; X.stroke();
+  X.beginPath(); X.arc(player.x, player.y, finalPr + 2.5, 0, Math.PI * 2);
+  X.strokeStyle = coinHealth > 0.3 ? `rgba(100,180,255,${0.25 + comboCount * 0.015})` : `rgba(255,60,60,${0.2 + Math.sin(frameCount*0.1)*0.15})`;
+  X.lineWidth = coinHealth > 0.3 ? 1.2 : 1.5; X.stroke();
   // inner ring detail
-  X.beginPath(); X.arc(player.x, player.y, pr - 3, 0, Math.PI * 2);
-  X.strokeStyle = coinHealth > 0.3 ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)';
+  X.beginPath(); X.arc(player.x, player.y, finalPr - 3, 0, Math.PI * 2);
+  X.strokeStyle = coinHealth > 0.3 ? 'rgba(255,255,255,0.08)' : 'rgba(255,60,60,0.05)';
   X.lineWidth = 0.5; X.stroke();
 
   // $ symbol
   X.fillStyle = coinHealth > 0.3 ? '#fff' : '#aaa';
-  X.font = `bold ${Math.round(pr * 0.75)}px Mono, monospace`;
+  X.font = `bold ${Math.round(finalPr * 0.75)}px Mono, monospace`;
   X.textAlign = 'center'; X.textBaseline = 'middle';
   X.fillText('$', player.x, player.y + 0.5);
 
