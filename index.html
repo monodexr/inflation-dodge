@@ -698,67 +698,65 @@ function draw() {
   pickups.forEach(p => {
     if (p.collected) return;
     const pulse = 1 + Math.sin(frameCount * 0.06) * 0.08;
-    const isGold = p.type === 'defi' || p.type === 'jackpot';
+
+    // all pickups are Legend-branded cards — hierarchy through size, glow, color
+    const isJackpot = p.type === 'jackpot';
+    const isDefi = p.type === 'defi';
     const isBank = p.type === 'bank';
 
-    if (isBank) {
-      // BANK INTEREST: deliberately ugly, boring gray card
-      const bw = 80, bh = 32;
-      X.globalAlpha = 0.6;
-      X.fillStyle = '#1a1a1a';
-      X.beginPath(); rr(p.x - bw/2, p.y - bh/2, bw, bh, 4); X.fill();
-      X.strokeStyle = '#333'; X.lineWidth = 0.8;
-      X.beginPath(); rr(p.x - bw/2, p.y - bh/2, bw, bh, 4); X.stroke();
-      X.fillStyle = '#666'; X.font = '9px Mono, monospace'; X.textAlign = 'center'; X.textBaseline = 'middle';
-      X.fillText('+$200', p.x, p.y - 4);
-      X.fillStyle = '#444'; X.font = '7px Mono, monospace';
-      X.fillText('0.4% APY', p.x, p.y + 8);
+    const cw = isJackpot ? 130 : isDefi ? 110 : 90;
+    const ch = isJackpot ? 56 : isDefi ? 48 : 40;
+    const cx = p.x - cw/2, cy = p.y - ch/2;
+
+    // accent color
+    const accent = isJackpot ? [255,200,0] : isDefi ? [39,117,202] : [120,255,180];
+    const acStr = `${accent[0]},${accent[1]},${accent[2]}`;
+
+    // glow halo (bigger for rare pickups)
+    const glowR = (isJackpot ? 80 : isDefi ? 60 : 35) * pulse;
+    const glow = X.createRadialGradient(p.x, p.y, glowR*0.2, p.x, p.y, glowR);
+    glow.addColorStop(0, `rgba(${acStr},${isJackpot?0.2:isDefi?0.14:0.06})`);
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    X.fillStyle = glow; X.beginPath(); X.arc(p.x, p.y, glowR, 0, Math.PI*2); X.fill();
+
+    // card background
+    const cardGrd = X.createLinearGradient(cx, cy, cx, cy + ch);
+    cardGrd.addColorStop(0, `rgba(${Math.floor(accent[0]*0.15)},${Math.floor(accent[1]*0.15)},${Math.floor(accent[2]*0.15)},0.92)`);
+    cardGrd.addColorStop(1, `rgba(${Math.floor(accent[0]*0.08)},${Math.floor(accent[1]*0.08)},${Math.floor(accent[2]*0.08)},0.88)`);
+    X.fillStyle = cardGrd;
+    X.beginPath(); rr(cx, cy, cw, ch, 8); X.fill();
+
+    // card border
+    X.strokeStyle = `rgba(${acStr},${isBank?0.2:0.4})`;
+    X.lineWidth = isBank ? 0.8 : 1.5;
+    X.beginPath(); rr(cx, cy, cw, ch, 8); X.stroke();
+
+    // inner highlight at top
+    const ihl = X.createLinearGradient(cx, cy, cx, cy + ch*0.3);
+    ihl.addColorStop(0, `rgba(${acStr},0.08)`); ihl.addColorStop(1, 'rgba(0,0,0,0)');
+    X.fillStyle = ihl;
+    X.beginPath(); rr(cx+1, cy+1, cw-2, ch*0.3, 7); X.fill();
+
+    // Legend logo top-left
+    if (logoLoaded) {
+      const logoW = isBank ? 35 : 45;
+      const logoH = logoW * (28/160);
+      X.globalAlpha = isBank ? 0.3 : 0.5;
+      X.drawImage(legendLogo, cx + 6, cy + 5, logoW, logoH);
       X.globalAlpha = 1;
-    } else {
-      // DEFI / JACKPOT: Legend-branded premium card
-      const cw = isGold && p.type === 'jackpot' ? 120 : 100;
-      const ch = isGold && p.type === 'jackpot' ? 52 : 44;
-      const cx = p.x - cw/2, cy = p.y - ch/2;
-
-      // glow halo
-      const ghR = cw * 0.6 * pulse;
-      const glow = X.createRadialGradient(p.x, p.y, ghR * 0.3, p.x, p.y, ghR);
-      glow.addColorStop(0, p.type === 'jackpot' ? 'rgba(255,200,0,0.15)' : 'rgba(39,117,202,0.12)');
-      glow.addColorStop(1, 'rgba(0,0,0,0)');
-      X.fillStyle = glow; X.beginPath(); X.arc(p.x, p.y, ghR, 0, Math.PI*2); X.fill();
-
-      // card background
-      const cardGrd = X.createLinearGradient(cx, cy, cx, cy + ch);
-      if (p.type === 'jackpot') {
-        cardGrd.addColorStop(0, 'rgba(50,40,10,0.92)'); cardGrd.addColorStop(1, 'rgba(30,25,5,0.88)');
-      } else {
-        cardGrd.addColorStop(0, 'rgba(15,25,45,0.92)'); cardGrd.addColorStop(1, 'rgba(8,15,30,0.88)');
-      }
-      X.fillStyle = cardGrd;
-      X.beginPath(); rr(cx, cy, cw, ch, 8); X.fill();
-
-      // card border
-      X.strokeStyle = p.type === 'jackpot' ? 'rgba(255,180,0,0.4)' : 'rgba(39,117,202,0.35)';
-      X.lineWidth = 1.2;
-      X.beginPath(); rr(cx, cy, cw, ch, 8); X.stroke();
-
-      // Legend logo (top-left of card)
-      if (logoLoaded) {
-        X.globalAlpha = 0.6;
-        X.drawImage(legendLogo, cx + 6, cy + 4, 40, 10);
-        X.globalAlpha = 1;
-      }
-
-      // amount
-      X.fillStyle = '#fff'; X.font = `bold ${W<500?14:16}px Knapp, sans-serif`;
-      X.textAlign = 'center'; X.textBaseline = 'middle';
-      X.fillText(p.type === 'jackpot' ? '+$5,000' : '+$2,000', p.x, p.y + 2);
-
-      // rate label
-      X.fillStyle = p.type === 'jackpot' ? 'rgba(255,200,0,0.6)' : 'rgba(39,117,202,0.6)';
-      X.font = '8px Mono, monospace';
-      X.fillText('7.2% APY', p.x, cy + ch - 6);
     }
+
+    // amount (centered, below logo)
+    X.fillStyle = '#fff';
+    X.font = `bold ${isJackpot ? 18 : isDefi ? 15 : 12}px Knapp, sans-serif`;
+    X.textAlign = 'center'; X.textBaseline = 'middle';
+    const amtText = isJackpot ? '+$5,000' : isDefi ? '+$2,000' : '+$200';
+    X.fillText(amtText, p.x, p.y + (isBank ? 2 : 4));
+
+    // APY label bottom
+    X.fillStyle = `rgba(${acStr},0.55)`;
+    X.font = `${isBank ? 7 : 8}px Mono, monospace`;
+    X.fillText(isBank ? '0.4% APY' : '7.2% APY', p.x, cy + ch - 7);
   });
 
   // obstacles — solid, chunky, visually weighted
