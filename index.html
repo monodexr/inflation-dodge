@@ -164,7 +164,7 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
       <div class="mt-4 text-[10px] text-gray-700 font-mono leading-relaxed">
         <div>GRID.SYS.INIT</div>
         <div>RENDER_SCALE: 100%</div>
-        <div>FPS: 60</div>
+        <div id="hud-fps">FPS: 60</div>
       </div>
     </div>
     <div class="flex flex-col items-end gap-1">
@@ -856,6 +856,7 @@ function updateCombo(){
   if(comboMul>prev)comboSnd(combo);
 }
 
+let fpsFrames=0,fpsLast=performance.now(),fpsVal=60;
 function updateHUD(){
   const hp=Math.max(0,balance/INIT_BAL);
   const pct=Math.round(hp*100);
@@ -866,6 +867,10 @@ function updateHUD(){
   const bar=document.getElementById('hud-bar');
   bar.style.width=pct+'%';
   bar.style.backgroundColor=hp>=.8?'#22c55e':hp>=.4?'#eab308':'#e63329';
+  fpsFrames++;
+  const now=performance.now();
+  if(now-fpsLast>=500){fpsVal=Math.round(fpsFrames/((now-fpsLast)/1000));fpsFrames=0;fpsLast=now;
+    document.getElementById('hud-fps').textContent='FPS: '+fpsVal;}
 }
 
 // ============ DRAW (canvas only — no HUD) ============
