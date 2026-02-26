@@ -73,10 +73,10 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
 </head>
 <body class="text-white select-none">
 
-<!-- shared overlays -->
-<div class="scanlines"></div>
-<div class="vignette"></div>
-<div class="noise-overlay"></div>
+<!-- shared overlays (gameplay only) -->
+<div id="fx-scanlines" class="scanlines"></div>
+<div id="fx-vignette" class="vignette"></div>
+<div id="fx-noise" class="noise-overlay"></div>
 
 <!-- game canvas -->
 <canvas id="c"></canvas>
@@ -320,6 +320,10 @@ const appIcon=new Image();appIcon.src='app-icon.png';
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   if(id)document.getElementById(id).classList.add('active');
+  const fx=id==='screen-death'||id==='screen-title'?'none':'';
+  document.getElementById('fx-scanlines').style.display=fx;
+  document.getElementById('fx-vignette').style.display=fx;
+  document.getElementById('fx-noise').style.display=fx;
 }
 
 // ============ AUDIO ============
