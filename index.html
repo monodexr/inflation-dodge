@@ -15,6 +15,7 @@
 <meta name="twitter:description" content="Your savings are under attack. Top score wins $1,000 USDC daily.">
 <meta name="twitter:image" content="https://monodexr.github.io/inflation-dodge/og-share.png">
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://pixijs.download/v7.3.2/pixi.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=JetBrains+Mono:wght@400;700;800&family=Oswald:wght@400;500;700&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@900&display=swap" rel="stylesheet">
 <style>
@@ -25,7 +26,8 @@
 @font-face{font-family:'M';src:url('fonts/PPNeueMontrealMono-Bold.otf') format('opentype');font-weight:700;font-display:swap}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#050505;-webkit-font-smoothing:antialiased}
-canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
+canvas{display:block;cursor:none;position:fixed;top:0;left:0}
+#c{z-index:-1;opacity:0}
 
 .font-mono{font-family:'JetBrains Mono',monospace}
 .font-display{font-family:'Oswald',sans-serif}
@@ -506,9 +508,9 @@ function spawnPickup(){
 function emit(px,py,col,n,sp){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=1+Math.random()*(sp||4);particles.push({x:px,y:py,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,col,sz:1.5+Math.random()*2.5});}}
 
 // ============ INPUT ============
-c.onmousemove=e=>{if(state==='playing'){pt.x=e.clientX;pt.y=e.clientY}};
-c.ontouchmove=e=>{e.preventDefault();if(state==='playing'){pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}};
-c.ontouchstart=e=>{e.preventDefault();if(state==='playing'){pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}};
+document.addEventListener('mousemove',e=>{if(state==='playing'){pt.x=e.clientX;pt.y=e.clientY}});
+document.addEventListener('touchmove',e=>{if(state==='playing'){pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}},{passive:true});
+document.addEventListener('touchstart',e=>{if(state==='playing'){pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}},{passive:true});
 
 // start button
 document.getElementById('btn-start').onclick=()=>{
@@ -948,9 +950,103 @@ function showDeath(){
   }
 })();
 
+// ============ PIXI POST-PROCESSING ============
+let pixiApp=null,pixiSprite=null;
+function initPixi(){
+  if(!PIXI)return;
+  pixiApp=new PIXI.Application({
+    width:W,height:H,
+    backgroundAlpha:0,
+    resolution:window.devicePixelRatio||1,
+    autoDensity:true,
+    antialias:false,
+  });
+  const pxCanvas=pixiApp.view;
+  pxCanvas.style.position='fixed';
+  pxCanvas.style.top='0';pxCanvas.style.left='0';
+  pxCanvas.style.width='100%';pxCanvas.style.height='100%';
+  pxCanvas.style.zIndex='1';
+  pxCanvas.style.pointerEvents='none';
+  document.body.insertBefore(pxCanvas,document.getElementById('screen-title'));
+
+  // create texture from game canvas
+  const baseTex=PIXI.BaseTexture.from(c,{scaleMode:PIXI.SCALE_MODES.LINEAR});
+  const tex=new PIXI.Texture(baseTex);
+  pixiSprite=new PIXI.Sprite(tex);
+  pixiSprite.width=W;pixiSprite.height=H;
+  pixiApp.stage.addChild(pixiSprite);
+
+  // bloom / glow filter
+  const bloomFrag=`
+    precision mediump float;
+    varying vec2 vTextureCoord;
+    uniform sampler2D uSampler;
+    uniform float uBloom;
+    uniform float uTime;
+    void main(){
+      vec2 uv=vTextureCoord;
+      vec4 col=texture2D(uSampler,uv);
+      // sample blur for bloom
+      float b=uBloom;
+      vec4 bloom=vec4(0.0);
+      float total=0.0;
+      for(float x=-2.0;x<=2.0;x+=1.0){
+        for(float y=-2.0;y<=2.0;y+=1.0){
+          vec2 off=vec2(x,y)*b*0.002;
+          vec4 s=texture2D(uSampler,uv+off);
+          float w=1.0/(1.0+length(vec2(x,y)));
+          bloom+=s*w;total+=w;
+        }
+      }
+      bloom/=total;
+      // chromatic aberration
+      float ca=0.001+sin(uTime*0.5)*0.0003;
+      float r=texture2D(uSampler,uv+vec2(ca,0.0)).r;
+      float g=col.g;
+      float bl=texture2D(uSampler,uv-vec2(ca,0.0)).b;
+      vec4 chromatic=vec4(r,g,bl,col.a);
+      // combine
+      vec4 final=mix(chromatic,bloom,0.15);
+      // subtle vignette boost
+      float vig=1.0-smoothstep(0.4,1.4,length(uv-0.5)*2.0);
+      final.rgb*=mix(0.85,1.0,vig);
+      gl_FragColor=final;
+    }
+  `;
+  const bloomFilter=new PIXI.Filter(undefined,bloomFrag,{
+    uBloom:1.2,
+    uTime:0.0,
+  });
+  pixiApp.stage.filters=[bloomFilter];
+
+  // resize handler
+  const origResize=resize;
+  resize=function(){
+    origResize();
+    if(pixiApp){pixiApp.renderer.resize(W,H);pixiSprite.width=W;pixiSprite.height=H;}
+  };
+}
+
+try{initPixi();}catch(e){console.warn('Pixi init failed, using Canvas 2D fallback',e);}
+
 // ============ INIT ============
 lucide.createIcons();
-function loop(){update();draw();requestAnimationFrame(loop);}
+function loop(){
+  update();
+  draw();
+  // update pixi post-processing
+  if(pixiApp&&pixiSprite){
+    pixiSprite.texture.baseTexture.resource.source=c;
+    pixiSprite.texture.baseTexture.update();
+    const f=pixiApp.stage.filters;
+    if(f&&f[0]&&f[0].uniforms){
+      f[0].uniforms.uTime=performance.now()/1000;
+      f[0].uniforms.uBloom=state==='playing'?1.2+flash*2:0.5;
+    }
+    pixiApp.render();
+  }
+  requestAnimationFrame(loop);
+}
 loop();
 </script>
 </body>
