@@ -385,20 +385,16 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 </div>
 
 <!-- ============ SHARE MODAL ============ -->
-<div id="share-modal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(0,0,0,.9)">
-  <div class="flex flex-col items-center gap-5 max-w-md w-full px-6">
-    <div class="text-xs font-mono text-gray-500 uppercase tracking-widest">Challenge a friend</div>
-    <canvas id="share-canvas" width="600" height="400" class="w-full rounded border border-gray-800"></canvas>
-    <!-- name + share in one row -->
-    <div class="flex items-center gap-2 w-full">
-      <input id="share-name" type="text" placeholder="Your name" maxlength="20" class="flex-1 px-4 py-3 bg-black border border-gray-700 text-white font-mono text-xs uppercase tracking-wider outline-none focus:border-[#D4883A] transition-colors pointer-events-auto" />
-      <button id="share-copy" class="whitespace-nowrap px-6 py-3 bg-[#FF3333] hover:bg-[#ff1a1a] text-black font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Share Link</button>
+<div id="share-modal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(0,0,0,.92)">
+  <div class="flex flex-col items-center gap-5 max-w-lg w-full px-6">
+    <div class="text-[9px] font-mono text-[#e63329] uppercase tracking-[0.3em] font-bold">Challenge a friend</div>
+    <canvas id="share-canvas" width="600" height="340" class="w-full rounded-xl shadow-[0_20px_50px_rgba(0,0,0,.5)]" style="border:1px solid rgba(255,255,255,.06)"></canvas>
+    <div class="flex items-center gap-2 w-full max-w-sm">
+      <input id="share-name" type="text" placeholder="Your name" maxlength="20" class="flex-1 px-4 py-3 bg-black border border-white/10 text-white font-mono text-xs uppercase tracking-wider outline-none focus:border-[#e63329]/50 transition-colors pointer-events-auto rounded" />
+      <button id="share-copy" class="btn-cycle whitespace-nowrap px-6 py-3 bg-transparent text-[#e63329] border border-[#e63329]/60 font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto clip-parallelogram" style="animation:btn-blink 2.4s step-end infinite">Share Link</button>
     </div>
-    <div id="share-copied" class="hidden text-xs font-mono text-green-400 uppercase tracking-widest">Link copied! Share it anywhere — preview shows in iMessage & Twitter</div>
-    <div class="flex items-center gap-3">
-      <button id="share-save" class="whitespace-nowrap px-4 py-2 bg-transparent border border-gray-700 hover:border-gray-500 text-gray-500 font-mono text-[10px] font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Save Image</button>
-      <button id="share-close" class="whitespace-nowrap px-4 py-2 bg-transparent border border-gray-700 hover:border-gray-500 text-gray-500 font-mono text-[10px] font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Close</button>
-    </div>
+    <div id="share-copied" class="hidden text-[10px] font-mono text-[#10b981] uppercase tracking-widest">Link copied — preview shows in iMessage &amp; Twitter</div>
+    <button id="share-close" class="text-[10px] font-mono text-white/20 uppercase tracking-widest cursor-pointer pointer-events-auto hover:text-white/50 transition-colors mt-2">Close</button>
   </div>
 </div>
 
@@ -680,49 +676,76 @@ document.getElementById('btn-retry').onclick=()=>{
 function renderShareCard(){
   const sc=document.getElementById('share-canvas');
   const sx=sc.getContext('2d');
-  const sw=600,sh=400;sc.width=sw;sc.height=sh;
-  // bg
-  sx.fillStyle='#050505';sx.fillRect(0,0,sw,sh);
-  // grid
-  sx.strokeStyle='rgba(255,255,255,.03)';sx.lineWidth=1;
-  for(let gx=0;gx<sw;gx+=30){sx.beginPath();sx.moveTo(gx,0);sx.lineTo(gx,sh);sx.stroke();}
-  for(let gy=0;gy<sh;gy+=30){sx.beginPath();sx.moveTo(0,gy);sx.lineTo(sw,gy);sx.stroke();}
-  // red line accent
-  sx.fillStyle='#FF3333';sx.fillRect(0,0,sw,3);sx.fillRect(0,sh-3,sw,3);
-  // header
-  sx.fillStyle='#FF3333';sx.font='bold 11px JetBrains Mono,monospace';
-  sx.textAlign='center';sx.fillText('INFLATION WINS AGAIN',sw/2,36);
-  // main stat
-  sx.fillStyle='#fff';sx.font='bold 72px Anton,sans-serif';
-  sx.textAlign='center';sx.fillText('SURVIVED',sw/2,110);
+  const sw=600,sh=340;sc.width=sw;sc.height=sh;
   const yrs=((lvl+1)*YEAR_PER_LVL).toFixed(0);
-  sx.fillStyle='#FF3333';sx.font='bold 96px Anton,sans-serif';
-  sx.fillText(yrs,sw/2-40,200);
-  sx.fillStyle='rgba(255,255,255,.7)';sx.font='bold 40px Anton,sans-serif';
-  sx.fillText('YEARS',sw/2+60,200);
-  // stats row
+
+  // bg + grid
+  sx.fillStyle='#0a0a0a';sx.fillRect(0,0,sw,sh);
+  sx.strokeStyle='rgba(255,255,255,.03)';sx.lineWidth=1;
+  for(let gx=0;gx<sw;gx+=40){sx.beginPath();sx.moveTo(gx,0);sx.lineTo(gx,sh);sx.stroke();}
+  for(let gy=0;gy<sh;gy+=40){sx.beginPath();sx.moveTo(0,gy);sx.lineTo(sw,gy);sx.stroke();}
+  // vignette
+  const vig=sx.createRadialGradient(sw/2,sh/2,0,sw/2,sh/2,sw*.5);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,.6)');
+  sx.fillStyle=vig;sx.fillRect(0,0,sw,sh);
+
+  // top-left: INFLATION DODGE label
+  sx.fillStyle='#e63329';sx.beginPath();sx.arc(26,24,3,0,Math.PI*2);sx.fill();
+  sx.fillStyle='rgba(255,255,255,.3)';sx.font='bold 9px "Space Mono",monospace';
+  sx.textAlign='left';sx.textBaseline='middle';sx.fillText('INFLATION DODGE',36,24);
+
+  // left side: SURVIVED + years
+  sx.fillStyle='#ffffff';sx.font='56px Anton,sans-serif';
+  sx.textAlign='left';sx.textBaseline='alphabetic';sx.fillText('SURVIVED',30,130);
+  // ghost outline
+  sx.strokeStyle='rgba(230,51,41,.3)';sx.lineWidth=1;sx.font='56px Anton,sans-serif';
+  sx.strokeText('SURVIVED',31,130);
+  // year number
+  sx.fillStyle='#e63329';sx.font='88px Anton,sans-serif';
+  sx.fillText(yrs,30,220);
+  // glow
+  sx.shadowColor='rgba(230,51,41,.4)';sx.shadowBlur=20;
+  sx.fillText(yrs,30,220);sx.shadowBlur=0;
+  // YEARS label
+  sx.fillStyle='rgba(255,255,255,.6)';sx.font='40px Anton,sans-serif';
+  const yrW=sx.measureText(yrs).width;
+  sx.fillText('YEARS',30+yrW+12,220);
+
+  // vertical divider
+  const divX=340;
+  const divGrad=sx.createLinearGradient(0,50,0,sh-60);
+  divGrad.addColorStop(0,'transparent');divGrad.addColorStop(.2,'rgba(255,255,255,.15)');
+  divGrad.addColorStop(.8,'rgba(255,255,255,.15)');divGrad.addColorStop(1,'transparent');
+  sx.fillStyle=divGrad;sx.fillRect(divX,50,1,sh-110);
+
+  // right side: stats
   const stats=[
-    {l:'LOST',v:'-$'+Math.floor(totalLost).toLocaleString(),c:'#FF3333'},
-    {l:'PEAK',v:'$'+Math.floor(peakBal).toLocaleString(),c:'#22c55e'},
-    {l:'LEVEL',v:String(lvl+1),c:'#fff'},
-    {l:'COMBO',v:bestCombo>0?bestCombo+'x':'—',c:'#eab308'}
+    {l:'LOST',v:'-$'+Math.floor(totalLost).toLocaleString(),c:'#e63329'},
+    {l:'PEAK',v:'$'+Math.floor(peakBal).toLocaleString(),c:'#f59e0b'},
+    {l:'LEVEL',v:String(lvl+1),c:'#ffffff'},
+    {l:'COMBO',v:bestCombo>0?bestCombo+'x':'—',c:'#f59e0b'}
   ];
-  const colW=sw/4;
-  stats.forEach((s,i)=>{
-    const cx=colW*i+colW/2;
-    sx.fillStyle='rgba(255,255,255,.3)';sx.font='bold 10px JetBrains Mono,monospace';
-    sx.textAlign='center';sx.fillText(s.l,cx,260);
-    sx.fillStyle=s.c;sx.font='bold 24px JetBrains Mono,monospace';
-    sx.fillText(s.v,cx,290);
+  const rx=sw-30;let ry=80;
+  stats.forEach(s=>{
+    sx.fillStyle='rgba(255,255,255,.4)';sx.font='bold 9px "Space Mono",monospace';
+    sx.textAlign='right';sx.textBaseline='alphabetic';sx.fillText(s.l,rx,ry);
+    sx.fillStyle=s.c;sx.font='24px Anton,sans-serif';
+    sx.fillText(s.v,rx,ry+22);
+    ry+=56;
   });
-  // divider
-  sx.fillStyle='rgba(255,255,255,.1)';sx.fillRect(40,310,sw-80,1);
-  // dare
-  sx.fillStyle='rgba(255,255,255,.5)';sx.font='bold 14px JetBrains Mono,monospace';
-  sx.textAlign='center';sx.fillText('CAN YOU BEAT THIS? TAP THE LINK.',sw/2,340);
-  // branding
-  sx.fillStyle='rgba(255,255,255,.3)';sx.font='bold 10px JetBrains Mono,monospace';
-  sx.fillText('INFLATION DODGE — POWERED BY LEGEND',sw/2,375);
+
+  // bottom bar
+  sx.fillStyle='#0a0a0a';sx.fillRect(0,sh-36,sw,36);
+  sx.fillStyle='rgba(255,255,255,.1)';sx.fillRect(0,sh-36,sw,1);
+  sx.fillStyle='#e63329';sx.font='bold 10px "Space Mono",monospace';
+  sx.textAlign='left';sx.fillText('CAN YOU BEAT THIS? TAP THE LINK.  ///  INFLATION DODGE',16,sh-14);
+  sx.fillStyle='rgba(255,255,255,.2)';sx.font='bold 9px "Space Mono",monospace';
+  sx.textAlign='right';sx.fillText('LEGEND',sw-16,sh-14);
+
+  // corner brackets
+  sx.strokeStyle='rgba(230,51,41,.2)';sx.lineWidth=1;
+  sx.beginPath();sx.moveTo(sw-20,16);sx.lineTo(sw-16,16);sx.lineTo(sw-16,20);sx.stroke();
+  sx.beginPath();sx.moveTo(20,sh-52);sx.lineTo(16,sh-52);sx.lineTo(16,sh-48);sx.stroke();
 }
 
 function getChallengeUrl(name){
@@ -734,13 +757,6 @@ function getChallengeUrl(name){
 document.getElementById('btn-challenge').onclick=()=>{
   renderShareCard();
   document.getElementById('share-modal').style.display='flex';
-};
-document.getElementById('share-save').onclick=()=>{
-  const sc=document.getElementById('share-canvas');
-  const link=document.createElement('a');
-  link.download='inflation-dodge-score.png';
-  link.href=sc.toDataURL('image/png');
-  link.click();
 };
 document.getElementById('share-copy').onclick=async()=>{
   const name=document.getElementById('share-name').value.trim()||'Anon';
