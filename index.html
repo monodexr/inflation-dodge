@@ -87,6 +87,9 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 .btn-cycle{transition:all .2s}.btn-cycle:hover{box-shadow:0 0 30px rgba(230,51,41,.4)}
 .clip-parallelogram{clip-path:polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%)}
 .stat-block{transition:all .3s ease}.stat-block:hover{background-color:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.3)!important;transform:translateY(-2px)}.stat-block:hover .stat-value{text-shadow:0 0 10px currentColor}
+@keyframes pulse-green-glow{0%,100%{text-shadow:0 0 5px #10b981}50%{text-shadow:0 0 15px #10b981,0 0 20px #10b981}}
+.pulse-green{animation:pulse-green-glow 2s infinite}
+.leaderboard-row{transition:all .2s ease;border-bottom:1px solid rgba(255,255,255,.05)}.leaderboard-row:hover{background:rgba(255,255,255,.03)}
 .floating-pill{position:absolute;padding:6px 16px;border-radius:9999px;border:1px solid;font-size:.75rem;font-weight:bold;pointer-events:none;will-change:transform;white-space:nowrap;z-index:10;font-family:'JetBrains Mono',monospace}
 .trail-symbol{position:absolute;color:#e63329;font-family:'JetBrains Mono',monospace;font-weight:bold;pointer-events:none;animation:trail-fade .6s linear forwards;z-index:60}
 @keyframes trail-fade{0%{opacity:1;transform:scale(1) translateY(0)}100%{opacity:0;transform:scale(.5) translateY(-20px)}}
@@ -399,33 +402,56 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 </div>
 
 <!-- ============ LEADERBOARD MODAL ============ -->
-<div id="lb-modal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(0,0,0,.9)">
-  <div class="flex flex-col items-center w-full max-w-xl px-6">
-    <!-- header -->
-    <div class="w-full text-center mb-6">
-      <div class="text-xs font-mono text-gray-500 uppercase tracking-widest mb-2">Daily Competition</div>
-      <div class="flex items-center justify-center gap-3 mb-4">
-        <div class="w-8 h-px bg-red-500/50"></div>
-        <span class="font-anton text-3xl text-white tracking-tight">DAY <span id="lb-day" class="text-[#D4883A]">1</span> / 7</span>
-        <div class="w-8 h-px bg-red-500/50"></div>
-      </div>
-      <!-- prize ticker -->
-      <div class="inline-block bg-[#0a1a0a] border border-green-500/30 px-6 py-3 rounded">
-        <div class="text-[10px] font-mono text-green-500/60 uppercase tracking-widest mb-1">Today's Prize — Earning 8.14% APY</div>
-        <div class="font-anton text-4xl text-green-400 tracking-tight" id="lb-prize">$1,000.00</div>
+<div id="lb-modal" class="fixed inset-0 z-50 hidden flex-col" style="background:#0a0a0a">
+  <!-- floating pills bg -->
+  <div id="lb-pills" class="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-40"></div>
+  <!-- scanlines -->
+  <div class="pointer-events-none fixed inset-0 z-40" style="background:linear-gradient(to bottom,rgba(255,255,255,0) 50%,rgba(0,0,0,.08) 50%);background-size:100% 4px;opacity:.5"></div>
+
+  <!-- header -->
+  <header class="relative z-20 w-full pt-8 px-8 md:px-16 pb-6 flex items-center justify-between border-b border-white/[.06] flex-shrink-0">
+    <div class="flex items-center gap-4 md:gap-6">
+      <button id="lb-close" class="clip-parallelogram px-4 py-2 border border-white/15 text-white/30 font-mono text-[9px] uppercase tracking-widest hover:border-white/40 hover:text-white/70 transition-all cursor-pointer pointer-events-auto">← BACK</button>
+      <div class="w-px h-8 bg-white/10 hidden md:block"></div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-[#e63329] font-mono text-[9px] tracking-[0.5em] font-bold opacity-70">DAILY COMPETITION</span>
+        <h2 class="font-anton text-3xl md:text-5xl text-white tracking-tight leading-none">DAY <span id="lb-day">1</span> / 7</h2>
       </div>
     </div>
-    <!-- scores -->
-    <div class="w-full border border-gray-800 rounded overflow-hidden mb-6">
-      <div class="grid grid-cols-[40px_1fr_100px_80px] bg-gray-900/50 px-4 py-2 text-[10px] font-mono text-gray-500 uppercase tracking-widest border-b border-gray-800">
-        <span>#</span><span>Player</span><span class="text-right">Years</span><span class="text-right">Balance</span>
+    <div class="clip-parallelogram flex items-center gap-4 px-5 md:px-8 py-3 md:py-4 border border-[#10b981]/30 bg-[#10b981]/5">
+      <div class="flex flex-col gap-0.5 items-end">
+        <span class="text-[#10b981]/50 text-[8px] tracking-[0.4em] font-bold uppercase">TODAY'S PRIZE — 8.14% APY</span>
+        <div class="font-mono text-xl md:text-3xl text-[#10b981] font-bold pulse-green" id="lb-prize">$1,000.000000</div>
       </div>
-      <div id="lb-rows"></div>
     </div>
-    <!-- your rank -->
-    <div id="lb-you" class="w-full border border-[#D4883A]/30 bg-[#D4883A]/5 rounded px-4 py-3 mb-6 grid grid-cols-[40px_1fr_100px_80px] text-sm font-mono items-center">
+  </header>
+
+  <!-- table -->
+  <main class="relative z-20 w-full px-8 md:px-16 mt-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+    <div class="grid gap-4 py-3 font-mono text-[9px] text-white/20 uppercase tracking-[0.25em] font-bold" style="grid-template-columns:80px 1fr 140px 140px">
+      <div>RANK</div><div>PLAYER</div><div class="text-right">SURVIVED</div><div class="text-right">BALANCE</div>
     </div>
-    <button id="lb-close" class="whitespace-nowrap px-6 py-3 bg-transparent border border-gray-600 hover:border-gray-400 text-gray-400 font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Close</button>
+    <div class="w-full border-t border-white/[.06] mb-1"></div>
+    <div id="lb-rows" class="flex-1 overflow-y-auto" style="scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent"></div>
+    <!-- your row -->
+    <div class="w-full border-t border-white/[.06] mt-2 mb-2"></div>
+    <div id="lb-you" class="clip-parallelogram border border-[#e63329]/40 bg-[#e63329]/[.06] grid gap-4 py-4 items-center mb-4" style="grid-template-columns:80px 1fr 140px 140px"></div>
+  </main>
+
+  <!-- bottom ticker -->
+  <div class="relative z-30 bg-[#0a0a0a] border-t border-white/10 h-10 flex items-center overflow-hidden flex-shrink-0">
+    <div class="ticker-wrap flex items-center whitespace-nowrap" style="animation:ticker-scroll 30s linear infinite">
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// LIVE LEADERBOARD</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// WIN REAL PRIZES</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// DON'T GO BROKE</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// INFLATION IS A THREAT</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// SURVIVE AT ALL COSTS</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// LIVE LEADERBOARD</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// WIN REAL PRIZES</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// DON'T GO BROKE</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// INFLATION IS A THREAT</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// SURVIVE AT ALL COSTS</span>
+    </div>
   </div>
 </div>
 
@@ -807,41 +833,46 @@ let lbTickerInterval=null;
 function openLeaderboard(){
   const modal=document.getElementById('lb-modal');
   modal.style.display='flex';
-  // day calc (day 1 = launch day, increment daily)
-  const launch=new Date('2026-02-26');
-  const now=new Date();
+  const launch=new Date('2026-02-26');const now=new Date();
   const day=Math.max(1,Math.min(7,Math.floor((now-launch)/(1000*60*60*24))+1));
   document.getElementById('lb-day').textContent=String(day);
-  // prize ticker — 8.14% APY on $1000 = ~$0.000223/s
   lbPrize=1000.00;
   const perSec=1000*0.0814/(365.25*24*3600);
   if(lbTickerInterval)clearInterval(lbTickerInterval);
-  lbTickerInterval=setInterval(()=>{
-    lbPrize+=perSec*.1;
-    document.getElementById('lb-prize').textContent='$'+lbPrize.toFixed(6);
-  },100);
+  lbTickerInterval=setInterval(()=>{lbPrize+=perSec*.08;document.getElementById('lb-prize').textContent='$'+lbPrize.toFixed(6);},80);
+  // floating pills
+  const lp=document.getElementById('lb-pills');lp.innerHTML='';
+  [{text:'RENT +12%',t:'high'},{text:'GAS +4%',t:'mid'},{text:'COFFEE +2%',t:'low'},{text:'UTILITIES +9%',t:'high'},{text:'TAXES +10%',t:'high'},{text:'DEBT +15%',t:'high'}].forEach(d=>{
+    const el=document.createElement('div');el.className='floating-pill font-mono';el.innerText=d.text;
+    const cc2=d.t==='high'?'border-red-500 text-red-500 bg-red-900/10':d.t==='mid'?'border-amber-500 text-amber-500 bg-amber-900/10':'border-emerald-500 text-emerald-500 bg-emerald-900/10';
+    el.classList.add(...cc2.split(' '));el.style.opacity='.18';
+    el.style.transform=`translate(${Math.random()*(innerWidth-150)}px,${Math.random()*(innerHeight-50)}px)`;
+    lp.appendChild(el);
+  });
   // render rows
-  const rows=document.getElementById('lb-rows');
-  rows.innerHTML='';
+  const rows=document.getElementById('lb-rows');rows.innerHTML='';
+  const gc='grid-template-columns:80px 1fr 140px 140px';
   LB_DUMMY.forEach((p,i)=>{
     const isFirst=i===0;
-    rows.innerHTML+=`<div class="grid grid-cols-[40px_1fr_100px_80px] px-4 py-2.5 text-sm font-mono items-center border-b border-gray-800/50 ${isFirst?'bg-[#D4883A]/10':'hover:bg-white/[.02]'} transition-colors">
-      <span class="${isFirst?'text-[#D4883A] font-bold':'text-gray-500'}">${i+1}</span>
-      <span class="${isFirst?'text-white font-bold':'text-gray-300'}">${p.name}</span>
-      <span class="text-right ${isFirst?'text-white font-bold':'text-gray-400'}">${p.yrs} yrs</span>
-      <span class="text-right ${isFirst?'text-green-400 font-bold':'text-gray-500'}">$${p.bal.toLocaleString()}</span>
+    const fadeA=Math.max(.2,1-i*.08);
+    rows.innerHTML+=`<div class="leaderboard-row grid gap-4 py-4 items-center ${isFirst?'bg-[#f59e0b]/[.03]':''}" style="${gc}">
+      <div><span class="font-anton text-${isFirst?'2xl':'xl'} ${isFirst?'text-[#f59e0b]':'text-white'}" style="${isFirst?'text-shadow:0 0 12px rgba(245,158,11,.5)':''};opacity:${fadeA}">#${i+1}</span></div>
+      <div class="flex items-center gap-3">${isFirst?'<div class="w-1.5 h-1.5 rounded-full bg-[#f59e0b] flex-shrink-0 animate-pulse"></div>':''}<span class="font-mono text-sm ${isFirst?'font-bold text-white':'text-white'}" style="opacity:${fadeA}">${p.name}</span>${isFirst?'<span class="clip-parallelogram text-[8px] font-mono font-bold px-2 py-0.5 bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/30">LEADING</span>':''}</div>
+      <div class="text-right font-anton text-${isFirst?'xl':'lg'} text-white" style="opacity:${fadeA}">${p.yrs} YRS</div>
+      <div class="text-right font-mono text-sm ${isFirst?'text-[#10b981] font-bold':'text-white'}" style="opacity:${fadeA}">$${p.bal.toLocaleString()}</div>
     </div>`;
   });
-  // your score
+  // your row
   const yrs=state==='dead'?((lvl+1)*YEAR_PER_LVL):0;
   const you=document.getElementById('lb-you');
   if(state==='dead'){
-    const rank=LB_DUMMY.filter(p=>p.yrs>yrs).length+1;
-    you.innerHTML=`<span class="text-[#D4883A] font-bold">${rank>10?'—':rank}</span><span class="text-[#D4883A] font-bold">YOU</span><span class="text-right text-white font-bold">${yrs} yrs</span><span class="text-right text-gray-400">$${endBalance.toLocaleString()}</span>`;
+    const rank=LB_DUMMY.filter(p2=>p2.yrs>yrs).length+1;
+    you.innerHTML=`<div class="font-anton text-xl text-[#e63329]/60">${rank>10?'—':'#'+rank}</div>
+      <div class="font-mono text-sm text-white font-bold flex items-center gap-2"><span class="clip-parallelogram bg-[#e63329] text-white text-[8px] font-bold px-2 py-0.5 tracking-wider">YOU</span></div>
+      <div class="text-right font-anton text-lg text-white/40">${yrs} YRS</div>
+      <div class="text-right font-mono text-sm text-[#e63329]/70 font-bold">$${endBalance.toLocaleString()}</div>`;
     you.style.display='grid';
-  }else{
-    you.style.display='none';
-  }
+  }else{you.style.display='none';}
 }
 document.getElementById('btn-leaderboard').onclick=()=>openLeaderboard();
 document.getElementById('lb-close').onclick=()=>{
