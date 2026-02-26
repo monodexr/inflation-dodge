@@ -78,6 +78,10 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 .btn-glitch:hover::before{left:100%}
 .red-glow-text{text-shadow:0 0 20px rgba(255,51,51,.6)}
 
+/* gameplay scanline sweep */
+@keyframes scan-sweep{0%{transform:translateY(-100%)}100%{transform:translateY(100vh)}}
+.scan-sweep{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(to bottom,transparent 0%,transparent 40%,rgba(230,51,41,.04) 50%,transparent 60%,transparent 100%);pointer-events:none;z-index:2;animation:scan-sweep 6s linear infinite}
+
 /* screen management */
 .screen{display:none}
 .screen.active{display:flex}
@@ -92,6 +96,7 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 
 <!-- game canvas -->
 <canvas id="c"></canvas>
+<div id="scan-sweep" class="scan-sweep" style="display:none"></div>
 
 <!-- ============ TITLE SCREEN ============ -->
 <div id="screen-title" class="screen active fixed inset-0 z-20 flex-col items-center justify-center overflow-hidden cursor-pointer" style="background:#050505">
@@ -394,6 +399,7 @@ function showScreen(id){
   document.getElementById('fx-scanlines').style.display='none';
   document.getElementById('fx-vignette').style.display='none';
   document.getElementById('fx-noise').style.display='none';
+  document.getElementById('scan-sweep').style.display=id==='screen-hud'?'':'none';
   document.body.style.cursor=id==='screen-hud'||!id?'none':'';
   if(id!=='screen-hud')document.getElementById('screen-level').style.opacity='0';
   if(lvlOverlayTimer){clearTimeout(lvlOverlayTimer);lvlOverlayTimer=null;}
@@ -915,14 +921,6 @@ function draw(){
   const radMask=X.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.6);
   radMask.addColorStop(0,'rgba(0,0,0,0)');radMask.addColorStop(.4,'rgba(0,0,0,0)');radMask.addColorStop(1,'rgba(10,10,10,1)');
   X.fillStyle=radMask;X.fillRect(0,0,W,H);
-
-  // moving scanline (subtle red-tinted, sweeps down every 6s)
-  const scanY=(fc*1.5)%(H+100)-50;
-  X.fillStyle='rgba(230,51,41,.02)';
-  X.fillRect(0,scanY,W,80);
-  const scanGrad=X.createLinearGradient(0,scanY,0,scanY+80);
-  scanGrad.addColorStop(0,'rgba(230,51,41,0)');scanGrad.addColorStop(.5,'rgba(230,51,41,.03)');scanGrad.addColorStop(1,'rgba(230,51,41,0)');
-  X.fillStyle=scanGrad;X.fillRect(0,scanY,W,80);
 
   // zone walls
   X.fillStyle='#050505';
