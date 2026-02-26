@@ -172,7 +172,7 @@ function initGame(){
 function setLevel(n){
   lvl=n;lvlFrame=0;
   const L=LEVELS[Math.min(n,LEVELS.length-1)];
-  announceTxt='LEVEL '+(n+1)+': '+L.name;announceT=120;
+  announceT=60;
   lvlSnd();
   const zf=L.zone;const pad=(1-zf)/2;
   ztL=W*pad;ztR=W*(1-pad);ztT=H*pad*.6;ztB=H*(1-pad*.6);
@@ -478,18 +478,7 @@ function draw(){
     X.fillStyle=sp;X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);
   }
 
-  // ---- LEVEL ANNOUNCEMENT ----
-  if(announceT>0){
-    const t=announceT/120;
-    const sc=t>.85?1+(1-t)/.15*.12:1;
-    const a=t>.12?Math.min(1,(1-t)/.12*.35+.55):t/.12;
-    X.save();X.translate(W/2,H/2);X.scale(sc,sc);
-    X.fillStyle=`rgba(255,146,20,${a*.8})`;
-    X.font=`500 ${W<500?22:40}px Knapp,sans-serif`;
-    X.textAlign='center';X.textBaseline='middle';
-    X.fillText(announceTxt,0,0);
-    X.restore();
-  }
+  // level announcement removed — level info is now persistent in center HUD
 
   // ---- PICKUPS ----
   pickups.forEach(p=>{
