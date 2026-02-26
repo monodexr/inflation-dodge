@@ -445,10 +445,11 @@ function collectSnd(a){
 }
 // combo milestone sounds
 function comboSnd(c){
-  if(c===3){snd('sine',800,.08,.1,1200);}
-  else if(c===5){snd('sine',1000,.1,.12,1500);snd('sine',1200,.06,.15,1800);}
-  else if(c===10){snd('sine',1200,.12,.15,1800);snd('sine',1500,.08,.2,2200);snd('triangle',800,.05,.1,1200);}
-  else if(c===20){snd('sine',1500,.15,.2,2400);snd('sine',1800,.1,.25,2800);snd('triangle',1000,.08,.15,1800);snd('sine',2200,.06,.3,3000);}
+  if(c>=50){snd('sine',1800,.18,.25,3000);snd('sine',2200,.12,.3,3500);snd('triangle',1200,.1,.2,2000);snd('sine',2800,.08,.35,4000);noise(.03,.1);}
+  else if(c>=20){snd('sine',1500,.15,.2,2400);snd('sine',1800,.1,.25,2800);snd('triangle',1000,.08,.15,1800);snd('sine',2200,.06,.3,3000);}
+  else if(c>=10){snd('sine',1200,.12,.15,1800);snd('sine',1500,.08,.2,2200);snd('triangle',800,.05,.1,1200);}
+  else if(c>=5){snd('sine',1000,.1,.12,1500);snd('sine',1200,.06,.15,1800);}
+  else if(c>=3){snd('sine',800,.08,.1,1200);}
 }
 // death — dramatic multi-layer crash
 function deathSnd(){
@@ -539,7 +540,7 @@ function initGame(){
   zoneL=0;zoneR=W;zoneT=0;zoneB=H;ztL=0;ztR=W;ztT=0;ztB=H;
   iframes=0;hitShrink=0;shake=0;flash=0;
   totalLost=0;peakBal=INIT_BAL;bestCombo=0;
-  dipDone=false;wallObs=[];legendCycle=0;trailPts=[];
+  dipDone=false;wallObs=[];legendCycle=0;trailPts=[];lastBalWarn=0;
   showScreen('screen-hud');
   state='playing';ia();
   setLevel(0);
@@ -595,11 +596,11 @@ document.addEventListener('touchstart',e=>{if(state==='playing'){pt.x=e.touches[
 
 // start button
 document.getElementById('btn-start').onclick=()=>{
-  clickSnd();showScreen(null);initGame();
+  ia();clickSnd();showScreen(null);initGame();
 };
 // retry button
 document.getElementById('btn-retry').onclick=()=>{
-  clickSnd();showScreen(null);initGame();
+  ia();clickSnd();showScreen(null);initGame();
 };
 
 // ============ CHALLENGE SYSTEM ============
