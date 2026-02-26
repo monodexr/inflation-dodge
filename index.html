@@ -115,6 +115,17 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
     </button>
   </div>
 
+  <!-- challenge dare (shown when ?c= param present) -->
+  <div id="challenge-dare" class="hidden absolute top-1/3 z-30 w-full text-center">
+    <div class="inline-block bg-[#1a0505] border border-red-500/30 px-8 py-4 rounded -skew-x-6 shadow-[0_0_30px_rgba(255,51,51,.15)]">
+      <div class="skew-x-6">
+        <p class="font-mono text-xs text-red-400 uppercase tracking-widest mb-1">You've been challenged</p>
+        <p class="font-mono text-2xl text-white font-bold"><span id="dare-name" class="text-[#D4883A]">Someone</span> survived <span id="dare-score" class="text-[#FF3333]">$0</span></p>
+        <p class="font-mono text-sm text-gray-400 mt-1">Can you beat that?</p>
+      </div>
+    </div>
+  </div>
+
   <!-- bottom -->
   <div class="absolute bottom-8 flex flex-col items-center gap-2 opacity-60 z-30">
     <div class="flex items-center gap-2 text-xs font-mono text-gray-500">
@@ -295,6 +306,20 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
   </div>
 </div>
 
+<!-- ============ SHARE MODAL ============ -->
+<div id="share-modal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(0,0,0,.85)">
+  <div class="flex flex-col items-center gap-6 max-w-lg w-full px-6">
+    <div class="text-xs font-mono text-gray-400 uppercase tracking-widest">Share your score</div>
+    <canvas id="share-canvas" width="600" height="400" class="w-full rounded border border-gray-800"></canvas>
+    <div class="flex items-center gap-3">
+      <button id="share-save" class="whitespace-nowrap px-6 py-3 bg-[#FF3333] hover:bg-[#ff1a1a] text-black font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Save Image</button>
+      <button id="share-copy" class="whitespace-nowrap px-6 py-3 bg-transparent border border-gray-600 hover:border-white text-white font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Copy Link</button>
+      <button id="share-close" class="whitespace-nowrap px-6 py-3 bg-transparent border border-gray-600 hover:border-gray-400 text-gray-400 font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Close</button>
+    </div>
+    <div id="share-copied" class="hidden text-xs font-mono text-green-400 uppercase tracking-widest">Link copied to clipboard</div>
+  </div>
+</div>
+
 <script>
 // ============ CANVAS ============
 const c=document.getElementById('c'),X=c.getContext('2d');
@@ -454,6 +479,98 @@ document.getElementById('btn-retry').onclick=()=>{
   showScreen(null);
   initGame();
 };
+
+// ============ CHALLENGE SYSTEM ============
+function renderShareCard(){
+  const sc=document.getElementById('share-canvas');
+  const sx=sc.getContext('2d');
+  const sw=600,sh=400;sc.width=sw;sc.height=sh;
+  // bg
+  sx.fillStyle='#050505';sx.fillRect(0,0,sw,sh);
+  // grid
+  sx.strokeStyle='rgba(255,255,255,.03)';sx.lineWidth=1;
+  for(let gx=0;gx<sw;gx+=30){sx.beginPath();sx.moveTo(gx,0);sx.lineTo(gx,sh);sx.stroke();}
+  for(let gy=0;gy<sh;gy+=30){sx.beginPath();sx.moveTo(0,gy);sx.lineTo(sw,gy);sx.stroke();}
+  // red line accent
+  sx.fillStyle='#FF3333';sx.fillRect(0,0,sw,3);sx.fillRect(0,sh-3,sw,3);
+  // header
+  sx.fillStyle='#FF3333';sx.font='bold 11px JetBrains Mono,monospace';
+  sx.textAlign='center';sx.fillText('INFLATION WINS AGAIN',sw/2,36);
+  // main stat
+  sx.fillStyle='#fff';sx.font='bold 72px Anton,sans-serif';
+  sx.textAlign='center';sx.fillText('SURVIVED',sw/2,110);
+  const yrs=((lvl+1)*YEAR_PER_LVL).toFixed(0);
+  sx.fillStyle='#FF3333';sx.font='bold 96px Anton,sans-serif';
+  sx.fillText(yrs,sw/2-40,200);
+  sx.fillStyle='rgba(255,255,255,.7)';sx.font='bold 40px Anton,sans-serif';
+  sx.fillText('YEARS',sw/2+60,200);
+  // stats row
+  const stats=[
+    {l:'LOST',v:'-$'+Math.floor(totalLost).toLocaleString(),c:'#FF3333'},
+    {l:'PEAK',v:'$'+Math.floor(peakBal).toLocaleString(),c:'#22c55e'},
+    {l:'LEVEL',v:String(lvl+1),c:'#fff'},
+    {l:'COMBO',v:bestCombo>0?bestCombo+'x':'—',c:'#eab308'}
+  ];
+  const colW=sw/4;
+  stats.forEach((s,i)=>{
+    const cx=colW*i+colW/2;
+    sx.fillStyle='rgba(255,255,255,.3)';sx.font='bold 10px JetBrains Mono,monospace';
+    sx.textAlign='center';sx.fillText(s.l,cx,260);
+    sx.fillStyle=s.c;sx.font='bold 24px JetBrains Mono,monospace';
+    sx.fillText(s.v,cx,290);
+  });
+  // divider
+  sx.fillStyle='rgba(255,255,255,.1)';sx.fillRect(40,310,sw-80,1);
+  // dare
+  sx.fillStyle='rgba(255,255,255,.5)';sx.font='bold 14px JetBrains Mono,monospace';
+  sx.textAlign='center';sx.fillText('CAN YOU BEAT THIS? TAP THE LINK.',sw/2,340);
+  // branding
+  sx.fillStyle='rgba(255,255,255,.3)';sx.font='bold 10px JetBrains Mono,monospace';
+  sx.fillText('INFLATION DODGE — POWERED BY LEGEND',sw/2,375);
+}
+
+function getChallengeUrl(){
+  const base=location.origin+location.pathname;
+  const name=prompt('Your name (for the dare):');
+  if(!name)return null;
+  const yrs=((lvl+1)*YEAR_PER_LVL).toFixed(0);
+  return base+'?c='+encodeURIComponent(name)+'&y='+yrs+'&l='+Math.floor(totalLost);
+}
+
+document.getElementById('btn-challenge').onclick=()=>{
+  renderShareCard();
+  document.getElementById('share-modal').style.display='flex';
+};
+document.getElementById('share-save').onclick=()=>{
+  const sc=document.getElementById('share-canvas');
+  const link=document.createElement('a');
+  link.download='inflation-dodge-score.png';
+  link.href=sc.toDataURL('image/png');
+  link.click();
+};
+document.getElementById('share-copy').onclick=()=>{
+  const url=getChallengeUrl();
+  if(url){
+    navigator.clipboard.writeText(url).then(()=>{
+      document.getElementById('share-copied').classList.remove('hidden');
+      setTimeout(()=>document.getElementById('share-copied').classList.add('hidden'),2000);
+    });
+  }
+};
+document.getElementById('share-close').onclick=()=>{
+  document.getElementById('share-modal').style.display='none';
+};
+
+// detect challenge URL on load
+(function(){
+  const p=new URLSearchParams(location.search);
+  const cName=p.get('c'),cYrs=p.get('y'),cLost=p.get('l');
+  if(cName){
+    document.getElementById('challenge-dare').classList.remove('hidden');
+    document.getElementById('dare-name').textContent=decodeURIComponent(cName);
+    document.getElementById('dare-score').textContent=cYrs+' years';
+  }
+})();
 
 // ============ UPDATE ============
 function update(){
