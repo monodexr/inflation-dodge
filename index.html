@@ -402,6 +402,20 @@ function rr(cx,cy,cw,ch,cr){
   X.lineTo(cx,cy+cr);X.arcTo(cx,cy,cx+cr,cy,cr);X.closePath();
 }
 
+// background dot layers (parallax depth)
+const bgDots=[];
+for(let layer=0;layer<3;layer++){
+  const dots=[];
+  const count=layer===0?60:layer===1?35:18;
+  for(let i=0;i<count;i++){
+    dots.push({x:Math.random()*2000,y:Math.random()*1400,
+      sz:.5+layer*.6+Math.random()*.8,
+      sp:.15+layer*.12+Math.random()*.1,
+      a:.03+layer*.02+Math.random()*.02});
+  }
+  bgDots.push(dots);
+}
+
 function draw(){
   if(state==='dead'||state==='menu'){X.fillStyle='#000';X.fillRect(0,0,W,H);return;}
   if(state!=='playing')return;
@@ -415,33 +429,35 @@ function draw(){
   // ---- BACKGROUND ----
   X.fillStyle='#06060A';X.fillRect(0,0,W,H);
 
-  // ---- ZONE WALLS (solid black outside, hard glowing edge) ----
+  // parallax dots
+  bgDots.forEach((layer,li)=>{
+    layer.forEach(d=>{
+      d.y+=d.sp;
+      if(d.y>H+10){d.y=-10;d.x=Math.random()*W;}
+      X.fillStyle=`rgba(255,255,255,${d.a})`;
+      X.fillRect(d.x%W,d.y,d.sz,d.sz);
+    });
+  });
+
+  // subtle grid inside zone
+  X.strokeStyle=`rgba(39,117,202,${.005+hp*.005})`;X.lineWidth=.5;
+  for(let gx=zoneL;gx<zoneR;gx+=50){X.beginPath();X.moveTo(gx,zoneT);X.lineTo(gx,zoneB);X.stroke();}
+  for(let gy=zoneT;gy<zoneB;gy+=50){X.beginPath();X.moveTo(zoneL,gy);X.lineTo(zoneR,gy);X.stroke();}
+
+  // ---- ZONE WALLS ----
   X.fillStyle='#000';
   X.fillRect(0,0,zoneL,H);
   X.fillRect(zoneR,0,W-zoneR,H);
   X.fillRect(zoneL,0,zoneR-zoneL,zoneT);
   X.fillRect(zoneL,zoneB,zoneR-zoneL,H-zoneB);
 
-  // hard edge — double line with glow
+  // glowing red edge
   const pulse=.6+Math.sin(fc*.04)*.15;
   X.save();
-  X.shadowColor='#ff2020';X.shadowBlur=20*pulse;
-  X.strokeStyle=`rgba(255,40,30,${.7+pulse*.2})`;X.lineWidth=2.5;
+  X.shadowColor='#ff2020';X.shadowBlur=18*pulse;
+  X.strokeStyle=`rgba(255,40,30,${.65+pulse*.25})`;X.lineWidth=2.5;
   X.strokeRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);
-  X.shadowBlur=0;
-  // inner warning stripes at the edge (danger zone feel)
-  const stripeW=6;
-  X.fillStyle=`rgba(255,30,20,${.04+pulse*.02})`;
-  X.fillRect(zoneL,zoneT,stripeW,zoneB-zoneT);
-  X.fillRect(zoneR-stripeW,zoneT,stripeW,zoneB-zoneT);
-  X.fillRect(zoneL,zoneT,zoneR-zoneL,stripeW);
-  X.fillRect(zoneL,zoneB-stripeW,zoneR-zoneL,stripeW);
-  X.restore();
-
-  // subtle grid
-  X.strokeStyle=`rgba(39,117,202,${.006+hp*.006})`;X.lineWidth=.5;
-  for(let gx=zoneL;gx<zoneR;gx+=50){X.beginPath();X.moveTo(gx,zoneT);X.lineTo(gx,zoneB);X.stroke();}
-  for(let gy=zoneT;gy<zoneB;gy+=50){X.beginPath();X.moveTo(zoneL,gy);X.lineTo(zoneR,gy);X.stroke();}
+  X.shadowBlur=0;X.restore();
 
   if(L.legend){X.fillStyle='rgba(255,200,0,.015)';X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);}
   if(flash>.05){X.fillStyle=`rgba(255,40,40,${flash*.12})`;X.fillRect(0,0,W,H);}
@@ -467,13 +483,11 @@ function draw(){
     X.restore();
   }
 
-  // ---- PICKUPS (Legend app icon in circle) ----
+  // ---- PICKUPS ----
   pickups.forEach(p=>{
     if(p.collected)return;
     const isG=p.type==='defi';
     const r=p.sz*(1+Math.sin(fc*.06)*.04);
-
-    // outer glow
     X.save();
     X.shadowColor=p.fake?'#ff0000':isG?'#FFD700':'#78FFB4';
     X.shadowBlur=p.fake?8:isG?14:8;
@@ -481,20 +495,15 @@ function draw(){
     X.strokeStyle=p.fake?'rgba(255,60,60,.6)':isG?'rgba(255,200,0,.5)':'rgba(120,255,180,.35)';
     X.lineWidth=2.5;X.stroke();
     X.shadowBlur=0;X.restore();
-
-    // icon circle
     if(appIcon.complete&&!p.fake){
       X.save();X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);X.clip();
-      X.drawImage(appIcon,p.x-r,p.y-r,r*2,r*2);
-      X.restore();
+      X.drawImage(appIcon,p.x-r,p.y-r,r*2,r*2);X.restore();
     }else{
       X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);
       X.fillStyle=p.fake?'rgba(255,30,30,.7)':'rgba(20,20,25,.8)';X.fill();
     }
-
-    // label pill below
     const lbl=p.fake?'???':isG?'+$'+Math.floor(p.amt/1000)+'K':'+$200';
-    X.font=`bold 11px M,monospace`;
+    X.font='bold 11px M,monospace';
     const tw=X.measureText(lbl).width;
     const px=p.x-tw/2-6,py=p.y+r+5;
     X.fillStyle=p.fake?'rgba(255,30,30,.5)':isG?'rgba(255,200,0,.18)':'rgba(120,255,180,.12)';
@@ -504,58 +513,39 @@ function draw(){
     X.fillText(lbl,p.x,py+9);
   });
 
-  // ---- OBSTACLES (distinct color families, readable labels) ----
+  // ---- OBSTACLES ----
   obs.forEach(o=>{
     if(o.hit&&!o.parked)return;
     X.save();
     X.globalAlpha=o.grazed?.3:o.parked?.45:1;
-
-    // body fill — each obstacle has its own bg color
     const grad=X.createLinearGradient(o.x,o.y,o.x,o.y+o.h);
-    grad.addColorStop(0,o.fg||'#882222');
-    grad.addColorStop(1,o.bg||'#441111');
-    X.fillStyle=grad;
-    X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.fill();
-
-    // border in accent color
-    X.strokeStyle=(o.accent||'#ff4444')+'88';
-    X.lineWidth=o.rateHike?3:1.5;
+    grad.addColorStop(0,o.fg||'#882222');grad.addColorStop(1,o.bg||'#441111');
+    X.fillStyle=grad;X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.fill();
+    X.strokeStyle=(o.accent||'#ff4444')+'88';X.lineWidth=o.rateHike?3:1.5;
     X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.stroke();
-
-    // top highlight
     const hl=X.createLinearGradient(o.x,o.y,o.x,o.y+o.h*.3);
     hl.addColorStop(0,'rgba(255,255,255,.08)');hl.addColorStop(1,'rgba(255,255,255,0)');
     X.fillStyle=hl;X.beginPath();rr(o.x+1,o.y+1,o.w-2,o.h*.3,8);X.fill();
-
-    // ---- TEXT LAYOUT: percentage left, label right ----
     const pctStr=o.rateHike?'RATE HIKE':'+'+Math.floor(o.pct)+'%';
-    // percentage — large, bold, in accent color
     X.fillStyle=o.accent||'#ff6644';
     X.font=`bold ${Math.min(Math.round(o.h*.5),22)}px M,monospace`;
     X.textAlign='left';X.textBaseline='middle';
     X.fillText(pctStr,o.x+12,o.y+o.h/2);
-
-    // label — right side, WHITE, readable
     if(o.label&&!o.rateHike){
       X.fillStyle='rgba(255,255,255,.9)';
       X.font=`500 ${Math.min(Math.round(o.h*.36),16)}px Knapp,sans-serif`;
       X.textAlign='right';
       X.fillText(o.label.toUpperCase(),o.x+o.w-12,o.y+o.h/2);
     }
-
     X.restore();
   });
 
   // ---- PLAYER ----
   const pr=player.r*(1-hitShrink*.3);
   const coinHp=Math.max(0,Math.min(1,balance/INIT_BAL));
-
-  // glow
   const pg=X.createRadialGradient(player.x,player.y,0,player.x,player.y,32+combo*1.5);
   pg.addColorStop(0,`rgba(39,117,202,${.12+combo*.006})`);pg.addColorStop(1,'rgba(0,0,0,0)');
   X.fillStyle=pg;X.beginPath();X.arc(player.x,player.y,32+combo*1.5,0,Math.PI*2);X.fill();
-
-  // coin body
   X.beginPath();X.arc(player.x,player.y,pr,0,Math.PI*2);
   const cg=X.createRadialGradient(player.x-2,player.y-2,0,player.x,player.y,pr);
   cg.addColorStop(0,coinHp>.3?'rgba(100,200,255,.9)':'rgba(120,60,60,.6)');
@@ -564,173 +554,129 @@ function draw(){
   if(iframes>0&&Math.floor(fc/3)%2===0)X.fillStyle='rgba(255,255,255,.3)';
   if(L.fade){X.globalAlpha=.3+Math.abs(Math.sin(fc*.05))*.7;}
   X.fill();X.globalAlpha=1;
-
-  // ring
   X.beginPath();X.arc(player.x,player.y,pr+2.5,0,Math.PI*2);
   X.strokeStyle=coinHp>.3?`rgba(100,180,255,${.2+combo*.01})`:'rgba(255,60,60,.3)';
   X.lineWidth=1.2;X.stroke();
-
-  // $ sign
   X.fillStyle=coinHp>.3?'#fff':'#aaa';
   X.font=`bold ${Math.round(pr*.7)}px M,monospace`;
   X.textAlign='center';X.textBaseline='middle';
   X.fillText('$',player.x,player.y+.5);
-
-  // danger sparks
-  if(coinHp<.3&&fc%6===0){
-    const sa=Math.random()*Math.PI*2;
+  if(coinHp<.3&&fc%6===0){const sa=Math.random()*Math.PI*2;
     particles.push({x:player.x+Math.cos(sa)*pr,y:player.y+Math.sin(sa)*pr,
-      vx:Math.cos(sa)*2,vy:Math.sin(sa)*2,life:.5,col:'#ff4444',sz:1.5});
-  }
+      vx:Math.cos(sa)*2,vy:Math.sin(sa)*2,life:.5,col:'#ff4444',sz:1.5});}
 
   // ---- PARTICLES ----
-  particles.forEach(p=>{
-    X.globalAlpha=p.life;X.fillStyle=p.col;
-    X.beginPath();X.arc(p.x,p.y,p.sz*p.life,0,Math.PI*2);X.fill();
-    X.globalAlpha=1;
-  });
+  particles.forEach(p=>{X.globalAlpha=p.life;X.fillStyle=p.col;
+    X.beginPath();X.arc(p.x,p.y,p.sz*p.life,0,Math.PI*2);X.fill();X.globalAlpha=1;});
 
-  // ---- HUD (Figma design: ui-1) ----
-  const PAD=36;
+  // ==== HUD OVERLAY (Figma ui-1) ====
+  // Layout: bottom 100px is the HUD zone
+  // |  Balance        [=====life bar=====]       Level N  |
+  // |  $9,991                                    PAYDAY   |
+  // padding: 40px left/right, 36px from bottom
+
+  const P=40; // side padding
+  const BY=H-36; // bottom baseline for dollar amount / level name
+  const LBL_Y=BY-42; // label row ("Balance", "Level N")
+
+  // ---- RIGHT EDGE: Ghost level name (behind everything) ----
+  X.save();
+  X.translate(W-14,H/2);X.rotate(Math.PI/2);
+  X.fillStyle='rgba(235,235,235,.04)';
+  X.font='bold 72px Knapp,sans-serif';
+  X.textAlign='center';X.textBaseline='middle';
+  X.fillText(curLvl().name,0,0);
+  X.restore();
 
   // ---- TOP-RIGHT: Legend logo ----
   if(logo.complete){
-    const lw=120,lh=21;
-    X.globalAlpha=.5;
-    X.drawImage(logo,W-PAD-lw,PAD,lw,lh);
+    const lw=130,lh=23;
+    X.globalAlpha=.4;
+    X.drawImage(logo,W-P-lw,28,lw,lh);
     X.globalAlpha=1;
   }
 
   // ---- COMBO — top center ----
   if(combo>=3){
-    X.fillStyle='#2775CA';
-    X.font='bold 18px M,monospace';
+    X.fillStyle='#2775CA';X.font='bold 18px M,monospace';
     X.textAlign='center';X.textBaseline='top';
-    X.fillText(comboMul+'x '+comboLbl,W/2,PAD);
+    X.fillText(comboMul+'x '+comboLbl,W/2,28);
   }
 
-  // ---- LIFE BAR — center bottom, Figma: 6px tall, rounded 50px, inset shadow ----
-  const barW=Math.min(340,W-PAD*2-320);
-  const barH=6;
-  const barX=(W-barW)/2;
-  const barY=H-PAD-3;
-
-  // track
-  X.fillStyle='rgba(217,217,217,.08)';
-  X.beginPath();rr(barX,barY,barW,barH,50);X.fill();
-
-  // fill — green 100-80, orange 79-40, red 39-0
-  const barCol=hp>=.8?'rgba(19,204,34,.7)':hp>=.4?'rgba(255,165,0,.7)':'rgba(255,50,40,.7)';
-  const fillW=Math.max(0,barW*hp);
-  if(fillW>0){
-    X.fillStyle=barCol;
-    X.beginPath();rr(barX,barY,fillW,barH,50);X.fill();
-    // inset shadow
-    X.fillStyle='rgba(0,0,0,.15)';
-    X.beginPath();rr(barX,barY,fillW,barH*.45,50);X.fill();
-  }
-
-  // ---- BOTTOM-LEFT: Balance (Figma spec) ----
-  const blX=PAD;
-  const blY=H-PAD;
-
-  // "Balance" label — Knapp Bold 14px, green #00b84a
+  // ---- BOTTOM-LEFT: Balance ----
+  // "Balance" label
   X.fillStyle='#00b84a';
   X.font='bold 14px Knapp,sans-serif';
   X.textAlign='left';X.textBaseline='alphabetic';
-  X.fillText('Balance',blX,blY-46);
+  X.fillText('Balance',P,LBL_Y);
 
-  // Dollar amount with slot-machine ticker — Knapp Bold 30px
-  // render "$" + comma-formatted digits, each digit rolling independently
-  X.textBaseline='alphabetic';
-  const balStr=Math.max(0,Math.floor(balance)).toLocaleString();
-  const digY=blY-12;
-  let curX=blX;
-
-  // "$" prefix
-  X.fillStyle='#b2b2b2';
+  // Dollar amount — ticker digits
   X.font='bold 30px Knapp,sans-serif';
-  X.fillText('$',curX,digY);
-  curX+=X.measureText('$').width+1;
+  const balStr=Math.max(0,Math.floor(balance)).toLocaleString();
+  const charW=X.measureText('0').width;
+  let cx=P;
 
-  // render each character
-  const balChars=balStr.split('');
-  let tdi=0; // ticker digit index (skip commas)
-  for(let ci=0;ci<balChars.length;ci++){
-    const ch=balChars[ci];
-    if(ch===','){
-      X.fillStyle='#b2b2b2';
-      X.font='bold 30px Knapp,sans-serif';
-      X.fillText(',',curX,digY);
-      curX+=X.measureText(',').width;
-      continue;
+  X.fillStyle='#b2b2b2';X.fillText('$',cx,BY);
+  cx+=X.measureText('$').width+1;
+
+  const chars=balStr.split('');
+  let tdi=0;
+  for(let i=0;i<chars.length;i++){
+    if(chars[i]===','){
+      X.fillStyle='#b2b2b2';X.fillText(',',cx,BY);
+      cx+=X.measureText(',').width;continue;
     }
-    const td=tickerDigits[tdi];tdi++;
-    if(!td){
-      X.fillStyle='#b2b2b2';X.font='bold 30px Knapp,sans-serif';
-      X.fillText(ch,curX,digY);
-      curX+=X.measureText(ch).width+.5;
-      continue;
-    }
-
-    const isRolling=td.vel>0;
-    const charW=X.measureText('0').width;
-
-    if(isRolling){
-      // rolling digit — clip region, draw column of digits offset by fractional value
-      X.save();
-      X.beginPath();
-      X.rect(curX-2,digY-28,charW+4,34);
-      X.clip();
-
-      const frac=td.display%1;
-      const cur=Math.floor(td.display)%10;
-      const nxt=(cur+1)%10;
-
-      // current digit slides up, next slides in from below
-      X.font='bold 30px Knapp,sans-serif';
-      X.fillStyle='#b2b2b2';
-      X.globalAlpha=1-frac;
-      X.fillText(String(cur),curX,digY-frac*30);
-      X.globalAlpha=frac;
-      X.fillStyle='#333232';
-      X.fillText(String(nxt),curX,digY+(1-frac)*30);
-      X.globalAlpha=1;
-
-      X.restore();
+    const td=tickerDigits[tdi++];
+    if(!td||td.vel===0){
+      X.fillStyle='#b2b2b2';X.fillText(chars[i],cx,BY);
     }else{
-      X.fillStyle='#b2b2b2';
+      X.save();
+      X.beginPath();X.rect(cx-1,BY-30,charW+2,36);X.clip();
+      const frac=Math.abs(td.display%1);
+      const cur=Math.floor(td.display+.01)%10;
+      const nxt=(cur===0?9:cur-1);
       X.font='bold 30px Knapp,sans-serif';
-      X.fillText(String(Math.round(td.display)%10),curX,digY);
+      X.fillStyle='#b2b2b2';X.globalAlpha=1-frac;
+      X.fillText(String(cur),cx,BY-frac*32);
+      X.fillStyle='#555';X.globalAlpha=frac;
+      X.fillText(String(nxt),cx,BY+(1-frac)*32);
+      X.globalAlpha=1;X.restore();
     }
-    curX+=charW+.5;
+    cx+=charW+.5;
   }
 
-  // ---- BOTTOM-RIGHT: Level (Figma spec) ----
-  const brX=W-PAD;
-  const brY=H-PAD;
-
-  // level name — Knapp Bold 30px, grey #b2b2b2
-  X.fillStyle='#b2b2b2';
-  X.font='bold 30px Knapp,sans-serif';
-  X.textAlign='right';X.textBaseline='alphabetic';
-  X.fillText(curLvl().name,brX,brY-12);
-
-  // "Level N" — Knapp Bold 14px, Legend blue #008fd6
+  // ---- BOTTOM-RIGHT: Level ----
   X.fillStyle='#008fd6';
   X.font='bold 14px Knapp,sans-serif';
-  X.fillText('Level '+(lvl+1),brX,brY-46);
+  X.textAlign='right';X.textBaseline='alphabetic';
+  X.fillText('Level '+(lvl+1),W-P,LBL_Y);
 
-  // ---- RIGHT EDGE: Large rotated level name ----
-  X.save();
-  X.translate(W-14,H/2);
-  X.rotate(Math.PI/2);
-  // big level name
-  X.fillStyle='rgba(235,235,235,.06)';
-  X.font='bold 72px Knapp,sans-serif';
-  X.textAlign='center';X.textBaseline='middle';
-  X.fillText(curLvl().name,0,0);
-  X.restore();
+  X.fillStyle='#b2b2b2';
+  X.font='bold 30px Knapp,sans-serif';
+  X.fillText(curLvl().name,W-P,BY);
+
+  // ---- LIFE BAR — centered between balance and level text ----
+  // measure how much space the left and right text takes
+  X.font='bold 30px Knapp,sans-serif';
+  const leftW=P+X.measureText('$'+balStr).width+30;
+  const rightW=X.measureText(curLvl().name).width+P+30;
+  const barX2=leftW;
+  const barW2=W-leftW-rightW;
+  const barH2=6;
+  const barY2=BY-10;
+
+  if(barW2>60){
+    // track
+    X.fillStyle='rgba(217,217,217,.06)';
+    X.beginPath();rr(barX2,barY2,barW2,barH2,50);X.fill();
+    // fill with color tiers
+    const barCol2=hp>=.8?'rgba(19,204,34,.7)':hp>=.4?'rgba(255,165,0,.7)':'rgba(255,50,40,.7)';
+    const fw=Math.max(0,barW2*hp);
+    if(fw>0){
+      X.fillStyle=barCol2;
+      X.beginPath();rr(barX2,barY2,fw,barH2,50);X.fill();
+    }
+  }
 
   X.restore();
 }
