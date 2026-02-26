@@ -792,10 +792,10 @@ function update(){
   if(balance>peakBal)peakBal=balance;
   if(announceT>0)announceT--;
 
+  prevPX=player.x;prevPY=player.y;
   player.x+=(pt.x-player.x)*.2;player.y+=(pt.y-player.y)*.2;
   player.x=Math.max(zoneL+player.r,Math.min(zoneR-player.r,player.x));
   player.y=Math.max(zoneT+player.r,Math.min(zoneB-player.r,player.y));
-  prevPX=player.x;prevPY=player.y;
   if(iframes>0)iframes--;hitShrink*=.9;
 
   const sr=Math.max(4,L.spawn-Math.floor(lvlFrame/120));
