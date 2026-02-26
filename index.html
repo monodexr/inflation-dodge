@@ -367,10 +367,11 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 const c=document.getElementById('c'),X=c.getContext('2d');
 let W,H,DPR=1;
 function resize(){
-  DPR=1;
+  DPR=Math.min(window.devicePixelRatio||1,2);
   W=innerWidth;H=innerHeight;
-  c.width=W;c.height=H;
+  c.width=W*DPR;c.height=H*DPR;
   c.style.width=W+'px';c.style.height=H+'px';
+  X.setTransform(DPR,0,0,DPR,0,0);
 }
 resize();onresize=resize;
 const appIcon=new Image();appIcon.src='app-icon.png';
@@ -860,10 +861,27 @@ function updateHUD(){
 // ============ DRAW (canvas only — no HUD) ============
 function rr(cx,cy,cw,ch,cr){if(X.roundRect){X.roundRect(cx,cy,cw,ch,cr);return;}X.moveTo(cx+cr,cy);X.lineTo(cx+cw-cr,cy);X.arcTo(cx+cw,cy,cx+cw,cy+cr,cr);X.lineTo(cx+cw,cy+ch-cr);X.arcTo(cx+cw,cy+ch,cx+cw-cr,cy+ch,cr);X.lineTo(cx+cr,cy+ch);X.arcTo(cx,cy+ch,cx,cy+ch-cr,cr);X.lineTo(cx,cy+cr);X.arcTo(cx,cy,cx+cr,cy,cr);X.closePath();}
 
+// enhanced background particles
 const bgDots=[];
-for(let layer=0;layer<3;layer++){const dots=[];const count=layer===0?60:layer===1?35:18;
-  for(let i=0;i<count;i++)dots.push({x:Math.random()*2000,y:Math.random()*1400,sz:.5+layer*.6+Math.random()*.8,sp:.15+layer*.12+Math.random()*.1,a:.03+layer*.02+Math.random()*.02});
-  bgDots.push(dots);}
+for(let layer=0;layer<3;layer++){
+  const dots=[];const count=layer===0?80:layer===1?45:20;
+  for(let i=0;i<count;i++){
+    dots.push({
+      x:Math.random()*2400,y:Math.random()*1600,
+      baseX:0,baseY:0,
+      sz:.4+layer*.5+Math.random()*.6,
+      sp:.1+layer*.1+Math.random()*.08,
+      a:.02+layer*.015+Math.random()*.015,
+      pulse:Math.random()*Math.PI*2,
+      pulseSpd:.01+Math.random()*.02,
+    });
+    dots[dots.length-1].baseX=dots[dots.length-1].x;
+    dots[dots.length-1].baseY=dots[dots.length-1].y;
+  }
+  bgDots.push(dots);
+}
+// grid vertex cache for gravity well distortion
+const gridSpacing=40;
 
 function draw(){
   if(state!=='playing'){X.fillStyle='#050505';X.fillRect(0,0,W,H);return;}
@@ -871,15 +889,53 @@ function draw(){
   if(shake>.5)X.translate((Math.random()-.5)*shake*2,(Math.random()-.5)*shake*2);
   const hp=Math.max(0,balance/INIT_BAL);const L=curLvl();
 
-  X.fillStyle='#0a0a0a';X.fillRect(0,0,W,H);
+  X.fillStyle='#08080c';X.fillRect(0,0,W,H);
 
-  // parallax dots
-  bgDots.forEach(layer=>{layer.forEach(d=>{d.y+=d.sp;if(d.y>H+10){d.y=-10;d.x=Math.random()*W;}X.fillStyle=`rgba(255,255,255,${d.a})`;X.fillRect(d.x%W,d.y,d.sz,d.sz);});});
+  // parallax dots with pulse + gravity well
+  const px=player.x,py=player.y;
+  bgDots.forEach((layer,li)=>{
+    const gravStr=.08*(li+1);
+    layer.forEach(d=>{
+      d.y+=d.sp;d.pulse+=d.pulseSpd;
+      if(d.y>H+10){d.y=-10;d.x=Math.random()*W;d.baseX=d.x;}
+      // gravity well — dots subtly pull toward player
+      const dx=px-(d.x%W),dy=py-d.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<200&&dist>0){
+        const pull=gravStr*(1-dist/200);
+        d.x+=dx/dist*pull;d.y+=dy/dist*pull*.5;
+      }
+      const pa=d.a*(1+Math.sin(d.pulse)*.3);
+      X.fillStyle=`rgba(255,255,255,${pa})`;
+      X.fillRect(d.x%W,d.y,d.sz,d.sz);
+    });
+  });
 
-  // grid
-  X.strokeStyle=`rgba(255,255,255,${.02+hp*.01})`;X.lineWidth=.5;
-  for(let gx=zoneL;gx<zoneR;gx+=40){X.beginPath();X.moveTo(gx,zoneT);X.lineTo(gx,zoneB);X.stroke();}
-  for(let gy=zoneT;gy<zoneB;gy+=40){X.beginPath();X.moveTo(zoneL,gy);X.lineTo(zoneR,gy);X.stroke();}
+  // animated grid with gravity well distortion
+  const ga=.015+hp*.01;
+  X.strokeStyle=`rgba(255,255,255,${ga})`;X.lineWidth=.5;
+  for(let gx=zoneL;gx<zoneR;gx+=gridSpacing){
+    X.beginPath();
+    for(let gy=zoneT;gy<=zoneB;gy+=20){
+      const dx2=px-gx,dy2=py-gy;
+      const d2=Math.sqrt(dx2*dx2+dy2*dy2);
+      let ox=0;
+      if(d2<150&&d2>0)ox=dx2/d2*(1-d2/150)*6;
+      if(gy===zoneT)X.moveTo(gx+ox,gy);else X.lineTo(gx+ox,gy);
+    }
+    X.stroke();
+  }
+  for(let gy=zoneT;gy<zoneB;gy+=gridSpacing){
+    X.beginPath();
+    for(let gx=zoneL;gx<=zoneR;gx+=20){
+      const dx2=px-gx,dy2=py-gy;
+      const d2=Math.sqrt(dx2*dx2+dy2*dy2);
+      let oy=0;
+      if(d2<150&&d2>0)oy=dy2/d2*(1-d2/150)*6;
+      if(gx===zoneL)X.moveTo(gx,gy+oy);else X.lineTo(gx,gy+oy);
+    }
+    X.stroke();
+  }
 
   // zone walls
   X.fillStyle='#050505';
@@ -1051,7 +1107,7 @@ let pixiApp=null,pixiSprite=null;
 function initPixi(){
   if(!PIXI)return;
   pixiApp=new PIXI.Application({
-    width:W,height:H,
+    width:W*DPR,height:H*DPR,
     backgroundAlpha:0,
     resolution:1,
     autoDensity:false,
@@ -1060,17 +1116,16 @@ function initPixi(){
   const pxCanvas=pixiApp.view;
   pxCanvas.style.position='fixed';
   pxCanvas.style.top='0';pxCanvas.style.left='0';
-  pxCanvas.style.width='100%';pxCanvas.style.height='100%';
+  pxCanvas.style.width=W+'px';pxCanvas.style.height=H+'px';
   pxCanvas.style.zIndex='1';
   pxCanvas.style.pointerEvents='none';
   pxCanvas.style.cursor='none';
   document.body.insertBefore(pxCanvas,document.getElementById('screen-title'));
 
-  // create texture from game canvas
   const baseTex=PIXI.BaseTexture.from(c,{scaleMode:PIXI.SCALE_MODES.LINEAR});
   const tex=new PIXI.Texture(baseTex);
   pixiSprite=new PIXI.Sprite(tex);
-  pixiSprite.width=W;pixiSprite.height=H;
+  pixiSprite.width=W*DPR;pixiSprite.height=H*DPR;
   pixiApp.stage.addChild(pixiSprite);
 
   // bloom / glow filter
@@ -1116,7 +1171,11 @@ function initPixi(){
   const origResize=resize;
   resize=function(){
     origResize();
-    if(pixiApp){pixiApp.renderer.resize(W,H);pixiSprite.width=W;pixiSprite.height=H;}
+    if(pixiApp){
+      pixiApp.renderer.resize(W*DPR,H*DPR);
+      pixiSprite.width=W*DPR;pixiSprite.height=H*DPR;
+      pxCanvas.style.width=W+'px';pxCanvas.style.height=H+'px';
+    }
   };
 }
 
