@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>INFLATION DODGE</title>
+<title>Inflation Dodge</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=JetBrains+Mono:wght@400;700;800&family=Oswald:wght@400;500;700&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@900&display=swap" rel="stylesheet">
 <style>
 @font-face{font-family:'Knapp';src:url('fonts/Knapp-Light.otf') format('opentype');font-weight:300;font-display:swap}
 @font-face{font-family:'Knapp';src:url('fonts/Knapp-Regular.otf') format('opentype');font-weight:400;font-display:swap}
@@ -11,49 +14,296 @@
 @font-face{font-family:'M';src:url('fonts/PPNeueMontrealMono-Regular.otf') format('opentype');font-weight:400;font-display:swap}
 @font-face{font-family:'M';src:url('fonts/PPNeueMontrealMono-Bold.otf') format('opentype');font-weight:700;font-display:swap}
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Knapp',sans-serif;-webkit-font-smoothing:antialiased}
-canvas{display:block;cursor:none}
-#ui{position:fixed;inset:0;z-index:10;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center}
-#ui.menu{pointer-events:auto;cursor:pointer}
-#ui .panel{display:flex;flex-direction:column;align-items:center;max-width:400px;width:100%;padding:20px;gap:6px}
-#ui .panel>*{opacity:0;transform:translateY(8px);animation:fi .4s ease-out forwards}
-@keyframes fi{to{opacity:1;transform:none}}
-.tag{font-family:'M';font-size:10px;letter-spacing:5px;text-transform:uppercase;color:#555}
-.big{font-family:'Knapp';font-size:clamp(32px,8vw,48px);font-weight:300;color:#fff;line-height:1}
-.big em{font-style:normal;color:#ff4444}
-.big .grn{color:#78FFB4}
-.sub{font-family:'Knapp';font-size:16px;font-weight:300;color:#777}
-.sub em{font-style:normal;color:#ff4444}
-.stats{font-family:'M';font-size:11px;color:#444;line-height:2;text-align:left;margin-top:8px}
-.stats b{color:#ccc;font-weight:700}
-.stats .r{color:#ff4444}
-.stats .g{color:#78FFB4}
-.msg{font-size:13px;color:#3a3a3a;text-align:center;line-height:1.5;margin-top:10px;max-width:320px}
-.btns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}
-.btn{padding:11px 24px;background:none;border:1px solid #222;color:#666;font-family:'M';font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all .2s;border-radius:2px;pointer-events:auto}
-.btn:hover{border-color:#666;color:#fff}
-.btn.accent{background:rgba(39,117,202,.06);border-color:rgba(39,117,202,.2);color:rgba(39,117,202,.8)}
-.btn.accent:hover{border-color:rgba(39,117,202,.5);color:#fff}
-.logo{height:18px;opacity:.4;margin-bottom:12px}
-.prompt{font-family:'M';font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#D4883A;margin-top:20px;animation:br 4s ease-in-out infinite}
-@keyframes br{0%,100%{opacity:.2}50%{opacity:.8}}
-.footer{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:18px}
-.footer .sm{font-family:'M';font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#333}
-.footer a img{height:32px;border-radius:5px}
+html,body{width:100%;height:100%;overflow:hidden;background:#050505;-webkit-font-smoothing:antialiased}
+canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
+
+.font-mono{font-family:'JetBrains Mono',monospace}
+.font-display{font-family:'Oswald',sans-serif}
+.font-anton{font-family:'Anton',sans-serif}
+.font-headline{font-family:'Archivo Black',sans-serif}
+.font-heavy{font-family:'Inter',sans-serif}
+
+/* shared effects */
+.scanlines{position:fixed;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(255,255,255,0) 50%,rgba(0,0,0,.15) 50%,rgba(0,0,0,.15));background-size:100% 4px;pointer-events:none;z-index:90}
+.vignette{position:fixed;inset:0;background:radial-gradient(circle,transparent 50%,rgba(0,0,0,.7) 100%);pointer-events:none;z-index:91}
+.noise-overlay{position:fixed;inset:0;pointer-events:none;z-index:89;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.bg-grid{background-size:40px 40px;background-image:linear-gradient(to right,rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.03) 1px,transparent 1px)}
+
+/* title screen */
+@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes float-up{0%{transform:translateY(110vh) rotate(0deg);opacity:0}10%{opacity:.15}90%{opacity:.15}100%{transform:translateY(-10vh) rotate(360deg);opacity:0}}
+@keyframes pulse-red{0%,100%{opacity:1;text-shadow:0 0 10px rgba(255,51,51,.5)}50%{opacity:.5;text-shadow:0 0 20px rgba(255,51,51,0)}}
+.ticker-wrap{overflow:hidden;white-space:nowrap}
+.ticker-move{display:inline-block;animation:ticker-scroll 20s linear infinite}
+.floating-item{position:absolute;animation:float-up linear infinite}
+.text-glow-red{text-shadow:0 0 10px rgba(255,51,51,.7)}
+.text-glow-amber{text-shadow:0 0 10px rgba(212,136,58,.7)}
+
+/* gameplay HUD */
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 15px rgba(59,130,246,.5)}50%{box-shadow:0 0 25px rgba(59,130,246,.8)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+.animate-marquee{animation:marquee 20s linear infinite}
+.animate-blink{animation:blink 1s step-end infinite}
+.corner-bracket{position:absolute;width:2rem;height:2rem;border-color:#e63329;border-style:solid;pointer-events:none}
+.cb-tl{border-width:2px 0 0 2px;top:0;left:0}
+.cb-tr{border-width:2px 2px 0 0;top:0;right:0}
+.cb-bl{border-width:0 0 2px 2px;bottom:0;left:0}
+.cb-br{border-width:0 2px 2px 0;bottom:0;right:0}
+
+/* death screen */
+.glitch-text{position:relative}
+.glitch-text::before,.glitch-text::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%;opacity:.8}
+.glitch-text::before{left:2px;text-shadow:-1px 0 #ff00c1;clip-path:polygon(0 0,100% 0,100% 45%,0 45%);animation:g1 2.5s infinite linear alternate-reverse}
+.glitch-text::after{left:-2px;text-shadow:-1px 0 #00fff9;clip-path:polygon(0 55%,100% 55%,100% 100%,0 100%);animation:g2 3s infinite linear alternate-reverse}
+@keyframes g1{0%{clip-path:inset(20% 0 80% 0);transform:translate(-2px,1px)}20%{clip-path:inset(60% 0 10% 0);transform:translate(2px,-1px)}40%{clip-path:inset(40% 0 50% 0);transform:translate(-2px,2px)}60%{clip-path:inset(80% 0 5% 0);transform:translate(2px,-2px)}80%{clip-path:inset(10% 0 70% 0);transform:translate(-1px,1px)}100%{clip-path:inset(30% 0 60% 0);transform:translate(1px,-1px)}}
+@keyframes g2{0%{clip-path:inset(10% 0 60% 0);transform:translate(2px,1px)}20%{clip-path:inset(30% 0 20% 0);transform:translate(-2px,-1px)}40%{clip-path:inset(70% 0 10% 0);transform:translate(2px,2px)}60%{clip-path:inset(20% 0 50% 0);transform:translate(-2px,-2px)}80%{clip-path:inset(50% 0 30% 0);transform:translate(1px,1px)}100%{clip-path:inset(0% 0 80% 0);transform:translate(-1px,-1px)}}
+.bg-floater{position:absolute;color:rgba(255,51,51,.1);user-select:none;pointer-events:none;animation:float-up linear infinite}
+.stat-card{background:rgba(10,10,10,.8);backdrop-filter:blur(8px);border:1px solid #1f1f1f;transition:all .3s ease}
+.stat-card:hover{border-color:#333;transform:translateY(-2px);box-shadow:0 10px 30px -10px rgba(255,51,51,.1)}
+.btn-glitch{position:relative;overflow:hidden}
+.btn-glitch::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transition:.5s}
+.btn-glitch:hover::before{left:100%}
+.red-glow-text{text-shadow:0 0 20px rgba(255,51,51,.6)}
+
+/* screen management */
+.screen{display:none}
+.screen.active{display:flex}
 </style>
 </head>
-<body>
+<body class="text-white select-none">
+
+<!-- shared overlays -->
+<div class="scanlines"></div>
+<div class="vignette"></div>
+<div class="noise-overlay"></div>
+
+<!-- game canvas -->
 <canvas id="c"></canvas>
-<div id="ui" class="menu">
-  <div class="panel" id="p-menu">
-    <img class="logo" src="logo.svg" alt="Legend"/>
-    <div class="tag" style="animation-delay:0s">PRESENTS</div>
-    <div class="big" style="animation-delay:.08s">Inflation Dodge</div>
-    <div class="sub" style="animation-delay:.16s">Your savings. Your problem.</div>
-    <div class="prompt" style="animation-delay:.24s">TAP OR CLICK TO START</div>
+
+<!-- ============ TITLE SCREEN ============ -->
+<div id="screen-title" class="screen active fixed inset-0 z-20 flex-col items-center justify-center overflow-hidden cursor-pointer" style="background:#050505">
+  <div class="absolute inset-0 bg-grid opacity-30"></div>
+  <div id="chaos-bg" class="absolute inset-0 z-0 opacity-20 pointer-events-none overflow-hidden"></div>
+
+  <!-- top bar -->
+  <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-center opacity-50 z-30">
+    <div class="flex items-center gap-2">
+      <i data-lucide="trending-up" class="w-4 h-4 text-red-500"></i>
+      <span class="text-xs font-mono text-red-500">MARKET VOLATILITY: EXTREME</span>
+    </div>
+    <div class="text-xs font-mono text-gray-500">BUILD v2.0.4</div>
+  </div>
+
+  <!-- center content -->
+  <div class="relative z-20 text-center flex flex-col items-center">
+    <h1 class="font-display text-7xl md:text-9xl font-bold tracking-tighter text-white mb-2 leading-none uppercase mix-blend-difference">
+      Inflation <span class="text-[#FF3333] text-glow-red">Dodge</span>
+    </h1>
+    <p class="font-mono text-lg md:text-2xl text-gray-400 tracking-widest uppercase mb-12">
+      Your savings. <span class="text-[#FF3333]">Your problem.</span>
+    </p>
+    <button id="btn-start" class="group relative px-12 py-4 bg-transparent border-2 border-[#D4883A] text-[#D4883A] font-mono text-xl font-bold tracking-wider hover:bg-[#D4883A] hover:text-black transition-all duration-200 overflow-hidden">
+      <span class="relative z-10 flex items-center gap-2">
+        <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+        INITIATE TRADING
+      </span>
+      <div class="absolute inset-0 bg-[#D4883A] transform translate-y-full group-hover:translate-y-0 transition-transform duration-200 z-0"></div>
+    </button>
+  </div>
+
+  <!-- bottom -->
+  <div class="absolute bottom-8 flex flex-col items-center gap-2 opacity-60 z-30">
+    <div class="flex items-center gap-2 text-xs font-mono text-gray-500">
+      <i data-lucide="shield" class="w-3 h-3"></i>
+      <span>POWERED BY LEGEND</span>
+    </div>
   </div>
 </div>
+
+<!-- ============ GAMEPLAY HUD ============ -->
+<div id="screen-hud" class="screen fixed inset-0 z-10 pointer-events-none">
+  <!-- corner brackets -->
+  <div class="absolute inset-4 pointer-events-none opacity-30">
+    <div class="corner-bracket cb-tl"></div>
+    <div class="corner-bracket cb-tr"></div>
+    <div class="corner-bracket cb-bl"></div>
+    <div class="corner-bracket cb-br"></div>
+  </div>
+
+  <!-- top bar -->
+  <div class="absolute top-0 left-0 w-full p-8 flex justify-between items-start z-10">
+    <div class="flex flex-col gap-1">
+      <div class="flex items-center gap-2 text-[10px] tracking-widest text-gray-500">
+        <div class="w-1.5 h-1.5 bg-gray-600 rounded-full"></div>
+        <span>LEGEND GAMES</span>
+        <span class="text-gray-700">///</span>
+        <span class="text-gray-600">ver 2.4.0</span>
+      </div>
+    </div>
+    <div class="flex flex-col items-end gap-1">
+      <div class="flex items-center gap-2 text-[10px] tracking-widest text-red-500 font-bold">
+        <span>THREAT LEVEL: CRITICAL</span>
+        <span class="animate-blink">▲▲▲</span>
+        <div class="w-2 h-2 bg-red-600 rounded-full shadow-[0_0_10px_red]"></div>
+      </div>
+      <div class="text-[10px] text-gray-600 tracking-widest">MARKET CRASH IMMINENT</div>
+    </div>
+  </div>
+
+  <!-- bottom HUD -->
+  <div class="absolute bottom-0 left-0 w-full z-10 bg-gradient-to-t from-black via-black/90 to-transparent pt-12">
+    <div class="flex items-end justify-between px-8 pb-4 border-b border-gray-800/50">
+      <!-- balance -->
+      <div class="flex flex-col">
+        <span class="text-[10px] font-mono text-gray-500 tracking-wider mb-[-5px]">CURRENT BALANCE</span>
+        <span id="hud-balance" class="font-anton text-5xl text-white tracking-tight leading-none">$10,000<span class="text-base text-red-500 align-top mt-2 inline-block ml-2" id="hud-drain">▼ 0%</span></span>
+      </div>
+      <!-- life bar -->
+      <div class="flex-1 px-12 flex flex-col justify-end pb-1">
+        <div class="flex justify-between text-[10px] font-mono text-red-500 font-bold mb-1 tracking-widest">
+          <span>SAVINGS BUFFER /// <span id="hud-status">STABLE</span></span>
+          <span id="hud-pct">100% REMAINING</span>
+        </div>
+        <div class="w-full h-3 bg-gray-900 border border-gray-800 skew-x-[-10deg] overflow-hidden relative">
+          <div class="absolute inset-0 opacity-20" style="background-image:repeating-linear-gradient(45deg,#333 0,#333 1px,transparent 0,transparent 4px)"></div>
+          <div id="hud-bar" class="h-full bg-[#22c55e] w-full relative overflow-hidden transition-all duration-100">
+            <div class="absolute inset-0" style="background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.2) 0,rgba(0,0,0,.2) 1px,transparent 0,transparent 4px)"></div>
+          </div>
+        </div>
+      </div>
+      <!-- level -->
+      <div class="flex flex-col items-end pb-1">
+        <span class="text-[10px] font-mono text-gray-600 tracking-wider mb-1">THREAT LEVEL</span>
+        <span id="hud-level" class="font-anton text-4xl text-[#e63329] leading-none tracking-tighter">PAYDAY</span>
+      </div>
+    </div>
+    <!-- ticker -->
+    <div class="bg-[#1a0505] border-t border-red-900/30 py-1 overflow-hidden relative flex items-center h-8">
+      <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#1a0505] to-transparent z-10"></div>
+      <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#1a0505] to-transparent z-10"></div>
+      <div class="animate-marquee whitespace-nowrap text-xs font-mono text-red-500/80 tracking-widest font-bold">
+        /// RENT DUE: YESTERDAY /// CREDIT SCORE: DELETED /// MARKET COLLAPSE DETECTED /// INFLATION RATE: 240% /// WAGES: STAGNANT /// NEXT BILL: IMMINENT /// OVERDRAFT FEE $35 /// EVICTION NOTICE ///
+        /// RENT DUE: YESTERDAY /// CREDIT SCORE: DELETED /// MARKET COLLAPSE DETECTED /// INFLATION RATE: 240% /// WAGES: STAGNANT /// NEXT BILL: IMMINENT /// OVERDRAFT FEE $35 /// EVICTION NOTICE ///
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LEVEL TRANSITION OVERLAY ============ -->
+<div id="screen-level" class="fixed inset-0 z-30 flex items-center justify-center pointer-events-none opacity-0 transition-all duration-500" style="background:rgba(0,0,0,.6);backdrop-filter:blur(4px)">
+  <div class="relative p-12">
+    <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-red-600"></div>
+    <div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-red-600"></div>
+    <div class="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-red-600"></div>
+    <div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-red-600"></div>
+    <div class="text-center">
+      <div class="text-xs font-mono tracking-[0.3em] text-gray-400 mb-2 uppercase">Initializing Next Sector</div>
+      <h1 id="lvl-num" class="font-anton text-[140px] md:text-[180px] text-white leading-[0.8] tracking-tighter drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]">LEVEL 01</h1>
+      <h2 id="lvl-name" class="font-anton text-5xl md:text-6xl text-[#e63329] italic tracking-wide mt-4 drop-shadow-[0_0_15px_rgba(230,51,41,0.6)]">PAYDAY</h2>
+      <div class="mt-8 flex flex-col items-center gap-1">
+        <span class="text-[10px] font-mono tracking-widest text-gray-400 uppercase">Brace for Impact</span>
+        <div class="w-12 h-1 bg-red-600"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DEATH SCREEN ============ -->
+<div id="screen-death" class="screen fixed inset-0 z-20 flex-col items-center justify-center overflow-y-auto" style="background:#050505">
+  <div class="scanlines absolute inset-0"></div>
+  <div class="absolute inset-0" style="background:radial-gradient(circle,transparent 50%,rgba(255,51,51,.15) 100%);pointer-events:none"></div>
+  <div class="noise-overlay"></div>
+  <div class="absolute inset-0 bg-grid opacity-10"></div>
+  <div id="death-chaos" class="absolute inset-0 z-0 overflow-hidden"></div>
+
+  <div class="relative z-10 w-full max-w-5xl px-6 flex flex-col items-center py-16">
+    <!-- header -->
+    <div class="text-center mb-10 relative">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[120px] md:text-[180px] font-headline text-white/[.02] whitespace-nowrap pointer-events-none uppercase">Bankrupt</div>
+      <h2 class="font-mono text-red-500 tracking-[0.5em] text-sm mb-4 uppercase flex items-center justify-center gap-4">
+        <span class="w-8 h-px bg-red-500/50"></span>Economic Collapse<span class="w-8 h-px bg-red-500/50"></span>
+      </h2>
+      <div class="relative mb-6">
+        <h1 class="font-headline text-6xl md:text-8xl uppercase leading-[0.9] tracking-tighter text-white glitch-text" data-text="SURVIVED">SURVIVED</h1>
+        <div class="flex items-baseline justify-center gap-4 mt-2">
+          <span id="death-years" class="font-headline text-7xl md:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-[#FF3333] to-[#8a0000] drop-shadow-[0_0_25px_rgba(255,51,51,0.5)]">4</span>
+          <span class="font-headline text-3xl md:text-5xl text-white opacity-80">YEARS</span>
+        </div>
+      </div>
+      <div class="inline-flex items-center gap-3 bg-[#1a0505] border border-red-500/30 px-6 py-3 rounded transform -skew-x-12 shadow-[0_0_30px_rgba(255,51,51,.15)]">
+        <div class="skew-x-12 flex items-center gap-3">
+          <i data-lucide="trending-down" class="w-5 h-5 text-red-500"></i>
+          <span class="font-mono text-sm text-red-400 uppercase tracking-wider">Total Loss:</span>
+          <span id="death-loss" class="font-mono text-2xl text-white font-bold tracking-tight">-$11,558</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- stats grid -->
+    <div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12 relative">
+      <div class="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-white/20"></div>
+      <div class="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-white/20"></div>
+      <div class="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-white/20"></div>
+      <div class="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-white/20"></div>
+      <div class="stat-card p-6 flex flex-col relative overflow-hidden group">
+        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity"><i data-lucide="wallet" class="w-12 h-12 text-white"></i></div>
+        <span class="font-mono text-xs text-gray-500 uppercase tracking-widest mb-2">Peak Net Worth</span>
+        <span id="death-peak" class="font-mono text-3xl text-emerald-400 font-bold">$10,000</span>
+      </div>
+      <div class="stat-card p-6 flex flex-col relative overflow-hidden group">
+        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity"><i data-lucide="zap" class="w-12 h-12 text-amber-500"></i></div>
+        <span class="font-mono text-xs text-gray-500 uppercase tracking-widest mb-2">Best Combo</span>
+        <span id="death-combo" class="font-mono text-3xl text-amber-500 font-bold">1x</span>
+      </div>
+      <div class="stat-card p-6 flex flex-col relative overflow-hidden group">
+        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity"><i data-lucide="trending-down" class="w-12 h-12 text-red-500"></i></div>
+        <span class="font-mono text-xs text-gray-500 uppercase tracking-widest mb-2">Drain at Death</span>
+        <span id="death-drain" class="font-mono text-3xl text-red-500 font-bold">-$8/s</span>
+      </div>
+      <div class="stat-card p-6 flex flex-col relative overflow-hidden group">
+        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity"><i data-lucide="award" class="w-12 h-12 text-white"></i></div>
+        <span class="font-mono text-xs text-gray-500 uppercase tracking-widest mb-2">Best Level Ever</span>
+        <span id="death-best" class="font-mono text-3xl text-white font-bold">1</span>
+      </div>
+    </div>
+
+    <!-- quote -->
+    <div class="mb-10 text-center max-w-2xl px-4">
+      <p id="death-quote" class="font-mono text-gray-400 italic border-l-2 border-red-500 pl-4 text-sm md:text-base">
+        "Inflation is undefeated. Your savings didn't stand a chance."
+      </p>
+    </div>
+
+    <!-- actions -->
+    <div class="flex flex-col md:flex-row items-center justify-center gap-6 w-full">
+      <button id="btn-retry" class="btn-glitch w-full md:w-auto px-12 py-5 bg-[#FF3333] hover:bg-[#ff1a1a] text-black font-headline text-xl uppercase tracking-widest shadow-[0_0_40px_rgba(255,51,51,.4)] transition-all transform hover:scale-105 active:scale-95 cursor-pointer">
+        Restart Simulation
+      </button>
+    </div>
+
+    <!-- footer -->
+    <div class="mt-12 flex flex-col items-center gap-4 opacity-60">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-white text-black flex items-center justify-center font-headline text-lg rounded-sm">L</div>
+        <div class="flex flex-col">
+          <span class="font-headline text-xs tracking-[0.2em] text-white">LEGEND</span>
+          <span class="font-mono text-[10px] text-gray-500 tracking-widest">GAMES</span>
+        </div>
+      </div>
+      <a href="https://apps.apple.com/us/app/legend-xyz/id6504718187" target="_blank" class="border border-white/20 bg-black/50 px-4 py-2 rounded flex items-center gap-3 transition-colors hover:bg-white/10 hover:border-white/40 pointer-events-auto cursor-pointer">
+        <i data-lucide="smartphone" class="w-5 h-5"></i>
+        <div class="flex flex-col leading-none text-left">
+          <span class="text-[0.6rem] uppercase text-gray-400">Download on the</span>
+          <span class="text-xs font-bold">App Store</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
 <script>
+// ============ CANVAS ============
 const c=document.getElementById('c'),X=c.getContext('2d');
 let W,H,DPR=1;
 function resize(){
@@ -64,10 +314,15 @@ function resize(){
   X.setTransform(DPR,0,0,DPR,0,0);
 }
 resize();onresize=resize;
-const logo=new Image();logo.src='logo.svg';
 const appIcon=new Image();appIcon.src='app-icon.png';
 
-// ---- AUDIO ----
+// ============ SCREEN MANAGEMENT ============
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  if(id)document.getElementById(id).classList.add('active');
+}
+
+// ============ AUDIO ============
 let ac,mg;
 function ia(){if(ac)return;ac=new(AudioContext||webkitAudioContext)();mg=ac.createGain();mg.gain.value=.7;mg.connect(ac.destination);
   const dr=ac.createOscillator(),dg=ac.createGain();dr.type='sine';dr.frequency.value=55;dg.gain.value=.04;dr.connect(dg);dg.connect(mg);dr.start();}
@@ -78,7 +333,7 @@ function collectSnd(a){snd('sine',500+a*.2,.2,.12,800+a*.3);snd('sine',700+a*.3,
 function deathSnd(){snd('sawtooth',200,.4,1.2,25)}
 function lvlSnd(){snd('sine',800,.15,.15,1200);snd('sine',1000,.08,.2,1400)}
 
-// ---- LEVELS ----
+// ============ LEVELS ============
 const LEVELS=[
   {name:'PAYDAY',zone:1,drain:8,spd:2,spawn:24,sides:false,below:false,grow:false,formations:false,dark:false,tick:false,fakes:false,walls:false,fade:false,converge:false,legend:false,dip:false},
   {name:'COST OF LIVING',zone:1,drain:12,spd:2.8,spawn:20,sides:false,below:false,grow:false,formations:false,dark:false,tick:false,fakes:false,walls:false,fade:false,converge:false,legend:false,dip:false},
@@ -99,26 +354,26 @@ const LEVELS=[
 const LVL_DUR=720;
 const YEAR_PER_LVL=2;
 
-// ---- OBSTACLES — each type has its own color family ----
+// ============ OBSTACLES ============
 const OBS_T1=[
-  {label:'Groceries',   pct:3, w:140,h:44, spd:1,   bg:'#8B4513',  fg:'#D2691E', accent:'#F4A460'},
-  {label:'Coffee',      pct:2, w:88, h:34, spd:1.5, bg:'#5C3317',  fg:'#8B6914', accent:'#DEB887'},
-  {label:'Gas',         pct:4, w:115,h:40, spd:1.1, bg:'#4A0E4E',  fg:'#7B2D8E', accent:'#C77DFF'},
-  {label:'Subscriptions',pct:1,w:165,h:32, spd:1.4, bg:'#1A3A4A',  fg:'#2E6B8A', accent:'#5DADE2'},
-  {label:'Streaming',   pct:1, w:82, h:30, spd:1.7, bg:'#1B4332',  fg:'#2D6A4F', accent:'#52B788'},
-  {label:'Tips & Fees', pct:2, w:125,h:36, spd:1.2, bg:'#4A3728',  fg:'#7C5B44', accent:'#C19A6B'},
+  {label:'Groceries',pct:3,w:140,h:44,spd:1,bg:'#8B4513',fg:'#D2691E',accent:'#F4A460'},
+  {label:'Coffee',pct:2,w:88,h:34,spd:1.5,bg:'#5C3317',fg:'#8B6914',accent:'#DEB887'},
+  {label:'Gas',pct:4,w:115,h:40,spd:1.1,bg:'#4A0E4E',fg:'#7B2D8E',accent:'#C77DFF'},
+  {label:'Subscriptions',pct:1,w:165,h:32,spd:1.4,bg:'#1A3A4A',fg:'#2E6B8A',accent:'#5DADE2'},
+  {label:'Streaming',pct:1,w:82,h:30,spd:1.7,bg:'#1B4332',fg:'#2D6A4F',accent:'#52B788'},
+  {label:'Tips & Fees',pct:2,w:125,h:36,spd:1.2,bg:'#4A3728',fg:'#7C5B44',accent:'#C19A6B'},
 ];
 const OBS_T2=[
-  {label:'Rent',        pct:8, w:260,h:55, spd:.7,  bg:'#8B0000',  fg:'#CC0000', accent:'#FF4444'},
-  {label:'Insurance',   pct:6, w:185,h:46, spd:1,   bg:'#7B3F00',  fg:'#B85C00', accent:'#FF8C00', diag:true},
-  {label:'Tuition',     pct:10,w:210,h:50, spd:.8,  bg:'#5B0A0A',  fg:'#8B1A1A', accent:'#DC143C', bounce:true},
-  {label:'Car Payment', pct:5, w:155,h:42, spd:1.1, bg:'#3D0C5C',  fg:'#5C1A8C', accent:'#9B59B6'},
-  {label:'Medical Bill',pct:12,w:280,h:58, spd:.6,  bg:'#1A0000',  fg:'#4A0000', accent:'#FF0000'},
-  {label:'Taxes',       pct:7, w:235,h:52, spd:.75, bg:'#0D2137',  fg:'#1A3D5C', accent:'#2980B9'},
-  {label:'RATE HIKE',   pct:0, w:135,h:40, spd:1.8, bg:'#FF0000',  fg:'#FF3333', accent:'#FFFFFF', rateHike:true},
+  {label:'Rent',pct:8,w:260,h:55,spd:.7,bg:'#8B0000',fg:'#CC0000',accent:'#FF4444'},
+  {label:'Insurance',pct:6,w:185,h:46,spd:1,bg:'#7B3F00',fg:'#B85C00',accent:'#FF8C00',diag:true},
+  {label:'Tuition',pct:10,w:210,h:50,spd:.8,bg:'#5B0A0A',fg:'#8B1A1A',accent:'#DC143C',bounce:true},
+  {label:'Car Payment',pct:5,w:155,h:42,spd:1.1,bg:'#3D0C5C',fg:'#5C1A8C',accent:'#9B59B6'},
+  {label:'Medical Bill',pct:12,w:280,h:58,spd:.6,bg:'#1A0000',fg:'#4A0000',accent:'#FF0000'},
+  {label:'Taxes',pct:7,w:235,h:52,spd:.75,bg:'#0D2137',fg:'#1A3D5C',accent:'#2980B9'},
+  {label:'RATE HIKE',pct:0,w:135,h:40,spd:1.8,bg:'#FF0000',fg:'#FF3333',accent:'#FFFFFF',rateHike:true},
 ];
 
-// ---- GAME STATE ----
+// ============ GAME STATE ============
 let state='menu';
 let player,balance,drainRate,obs,pickups,particles,fc,combo,comboMul,comboLbl;
 let lvl,lvlFrame,announceT;
@@ -126,36 +381,9 @@ let zoneL,zoneR,zoneT,zoneB,ztL=0,ztR=0,ztT=0,ztB=0;
 let iframes,hitShrink,shake,flash;
 let totalLost,peakBal,bestCombo;
 let prevPX,prevPY,pt={x:0,y:0};
-let dipDone,wallObs;
-let legendCycle;
+let dipDone,wallObs,legendCycle;
 const INIT_BAL=10000;
 let bestLvl=parseInt(localStorage.getItem('id_blvl')||'0');
-
-// ticker state — each digit has a current display value and a velocity for rolling
-let tickerDigits=[];
-let tickerPrevBal=0;
-function updateTicker(){
-  const str=Math.max(0,Math.floor(balance)).toString();
-  while(tickerDigits.length<str.length)tickerDigits.push({display:0,target:0,vel:0});
-  while(tickerDigits.length>str.length)tickerDigits.pop();
-  for(let i=0;i<str.length;i++){
-    const tgt=parseInt(str[i]);
-    tickerDigits[i].target=tgt;
-    if(tickerDigits[i].display!==tgt){
-      const diff=tickerDigits[i].display-tgt;
-      tickerDigits[i].vel=Math.max(.08,Math.abs(diff)*.15);
-    }
-    // lerp toward target
-    const d=tickerDigits[i];
-    if(Math.abs(d.display-d.target)<.01){d.display=d.target;d.vel=0;}
-    else{
-      const dir=d.target>d.display?1:-1;
-      d.display+=dir*d.vel;
-      if((dir>0&&d.display>d.target)||(dir<0&&d.display<d.target))d.display=d.target;
-    }
-  }
-  tickerPrevBal=balance;
-}
 
 function initGame(){
   player={x:W/2,y:H*.65,r:18};pt.x=player.x;pt.y=player.y;prevPX=player.x;prevPY=player.y;
@@ -166,7 +394,7 @@ function initGame(){
   iframes=0;hitShrink=0;shake=0;flash=0;
   totalLost=0;peakBal=INIT_BAL;bestCombo=0;
   dipDone=false;wallObs=[];legendCycle=0;
-  tickerDigits=[];
+  showScreen('screen-hud');
   state='playing';ia();
   setLevel(0);
 }
@@ -180,127 +408,80 @@ function setLevel(n){
   ztL=W*pad;ztR=W*(1-pad);ztT=H*pad*.6;ztB=H*(1-pad*.6);
   drainRate=L.drain;
   if(L.dip&&!dipDone){dipDone=true;balance*=.7;shake=15;flash=1.5;}
-  if(n>=14){
-    legendCycle++;
-    const sc=Math.min(legendCycle,20);
-    drainRate=40+sc*5;
-    const zf2=Math.max(.3,.5-sc*.015);const p2=(1-zf2)/2;
-    ztL=W*p2;ztR=W*(1-p2);ztT=H*p2*.6;ztB=H*(1-p2*.6);
-  }
+  if(n>=14){legendCycle++;const sc=Math.min(legendCycle,20);drainRate=40+sc*5;const zf2=Math.max(.3,.5-sc*.015);const p2=(1-zf2)/2;ztL=W*p2;ztR=W*(1-p2);ztT=H*p2*.6;ztB=H*(1-p2*.6);}
+  // update level overlay
+  const lo=document.getElementById('screen-level');
+  document.getElementById('lvl-num').textContent='LEVEL '+String(n+1).padStart(2,'0');
+  document.getElementById('lvl-name').textContent=L.name;
+  lo.style.opacity='1';
+  setTimeout(()=>{lo.style.opacity='0';},2200);
 }
 function curLvl(){return LEVELS[Math.min(lvl,LEVELS.length-1)];}
 
-// ---- SPAWN ----
+// ============ SPAWN ============
 function spawnOb(){
-  const L=curLvl();
-  const pool=lvl<3?OBS_T1:(Math.random()<.35?OBS_T1:OBS_T2);
-  const t=pool[Math.floor(Math.random()*pool.length)];
-  const m=W<500?.75:1;
+  const L=curLvl();const pool=lvl<3?OBS_T1:(Math.random()<.35?OBS_T1:OBS_T2);
+  const t=pool[Math.floor(Math.random()*pool.length)];const m=W<500?.75:1;
   const szV=.82+Math.random()*.4;
   let ow=Math.round(t.w*m*szV),oh=Math.round(t.h*(.88+Math.random()*.24)),sx,sy,vx,vy;
   const spd=t.spd*L.spd*(1+lvl*.02);
-
-  const fromSide=L.sides&&Math.random()<.2;
-  const fromBelow=L.below&&Math.random()<.1;
-
-  if(fromBelow){
-    sx=zoneL+Math.random()*(zoneR-zoneL-ow);sy=zoneB+10;
-    vx=(Math.random()-.5)*.5;vy=-spd*1.3;
-  }else if(fromSide){
-    const left=Math.random()>.5;
-    sx=left?zoneL-ow-5:zoneR+5;
-    sy=zoneT+Math.random()*(zoneB-zoneT-oh);
-    vx=left?spd*1.2:-spd*1.2;vy=(Math.random()-.5)*.5;
-  }else{
-    sx=zoneL+Math.random()*(zoneR-zoneL-ow);sy=zoneT-oh-10;
-    vx=t.diag?(Math.random()-.5)*spd*.6:(Math.random()-.5)*.3;
-    vy=spd*(1+Math.random()*.3);
-  }
-
-  obs.push({x:sx,y:sy,w:ow,h:oh,ow:ow,oh:oh,vx,vy,
-    label:t.label,pct:t.pct,bpct:t.pct,
-    bg:t.bg,fg:t.fg,accent:t.accent,
-    hit:false,grazed:false,bounce:t.bounce||false,rateHike:t.rateHike||false,
-    born:fc,parked:false,fake:false});
+  const fromSide=L.sides&&Math.random()<.2;const fromBelow=L.below&&Math.random()<.1;
+  if(fromBelow){sx=zoneL+Math.random()*(zoneR-zoneL-ow);sy=zoneB+10;vx=(Math.random()-.5)*.5;vy=-spd*1.3;}
+  else if(fromSide){const left=Math.random()>.5;sx=left?zoneL-ow-5:zoneR+5;sy=zoneT+Math.random()*(zoneB-zoneT-oh);vx=left?spd*1.2:-spd*1.2;vy=(Math.random()-.5)*.5;}
+  else{sx=zoneL+Math.random()*(zoneR-zoneL-ow);sy=zoneT-oh-10;vx=t.diag?(Math.random()-.5)*spd*.6:(Math.random()-.5)*.3;vy=spd*(1+Math.random()*.3);}
+  obs.push({x:sx,y:sy,w:ow,h:oh,ow,oh,vx,vy,label:t.label,pct:t.pct,bpct:t.pct,bg:t.bg,fg:t.fg,accent:t.accent,hit:false,grazed:false,bounce:t.bounce||false,rateHike:t.rateHike||false,born:fc,parked:false,fake:false});
 }
-
 function spawnFormation(){
-  const gapX=zoneL+Math.random()*(zoneR-zoneL-60);
-  const gapW=55+Math.random()*30;
-  for(let fx=zoneL;fx<zoneR;fx+=40){
-    if(fx>gapX&&fx<gapX+gapW)continue;
-    obs.push({x:fx,y:zoneT-40,w:36,h:28,ow:36,oh:28,vx:0,vy:curLvl().spd*1.2,
-      label:'WALL',pct:3,bpct:3,bg:'#3A0000',fg:'#880000',accent:'#FF4444',
-      hit:false,grazed:false,bounce:false,rateHike:false,born:fc,parked:false,fake:false});
-  }
+  const gapX=zoneL+Math.random()*(zoneR-zoneL-60);const gapW=55+Math.random()*30;
+  for(let fx=zoneL;fx<zoneR;fx+=40){if(fx>gapX&&fx<gapX+gapW)continue;
+    obs.push({x:fx,y:zoneT-40,w:36,h:28,ow:36,oh:28,vx:0,vy:curLvl().spd*1.2,label:'WALL',pct:3,bpct:3,bg:'#3A0000',fg:'#880000',accent:'#FF4444',hit:false,grazed:false,bounce:false,rateHike:false,born:fc,parked:false,fake:false});}
 }
-
 function spawnPickup(){
   const isDefi=lvl>=3&&Math.random()<.25;
-  pickups.push({x:zoneL+20+Math.random()*(zoneR-zoneL-40),y:zoneT-30,
-    vy:2.5+Math.random()*1.5,amt:isDefi?2000:200,fake:false,collected:false,
-    type:isDefi?'defi':'bank',sz:isDefi?44:32});
+  pickups.push({x:zoneL+20+Math.random()*(zoneR-zoneL-40),y:zoneT-30,vy:2.5+Math.random()*1.5,amt:isDefi?2000:200,fake:false,collected:false,type:isDefi?'defi':'bank',sz:isDefi?44:32});
 }
+function emit(px,py,col,n,sp){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=1+Math.random()*(sp||4);particles.push({x:px,y:py,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,col,sz:1.5+Math.random()*2.5});}}
 
-// ---- PARTICLES ----
-function emit(px,py,col,n,sp){
-  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=1+Math.random()*(sp||4);
-    particles.push({x:px,y:py,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,col,sz:1.5+Math.random()*2.5});}
-}
-
-// ---- INPUT ----
+// ============ INPUT ============
 c.onmousemove=e=>{if(state==='playing'){pt.x=e.clientX;pt.y=e.clientY}};
 c.ontouchmove=e=>{e.preventDefault();if(state==='playing'){pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}};
 c.ontouchstart=e=>{e.preventDefault();if(state==='playing'){pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}};
 
-document.getElementById('ui').onclick=()=>{
-  if(state==='menu'||state==='dead'){
-    document.getElementById('ui').className='';
-    document.getElementById('ui').style.display='none';
-    initGame();
-  }
+// start button
+document.getElementById('btn-start').onclick=()=>{
+  showScreen(null);
+  initGame();
+};
+// retry button
+document.getElementById('btn-retry').onclick=()=>{
+  showScreen(null);
+  initGame();
 };
 
-// ---- UPDATE ----
+// ============ UPDATE ============
 function update(){
   if(state!=='playing')return;
   fc++;lvlFrame++;
-  zoneL+=(ztL-zoneL)*.04;zoneR+=(ztR-zoneR)*.04;
-  zoneT+=(ztT-zoneT)*.04;zoneB+=(ztB-zoneB)*.04;
+  zoneL+=(ztL-zoneL)*.04;zoneR+=(ztR-zoneR)*.04;zoneT+=(ztT-zoneT)*.04;zoneB+=(ztB-zoneB)*.04;
   const L=curLvl();
-
   if(lvlFrame>=LVL_DUR){setLevel(lvl+1);}
   if(announceT>60){announceT--;return;}
-
   const dps=drainRate+(lvl>=14?legendCycle*2:0);
   balance-=dps/60;totalLost+=dps/60;
   if(balance>peakBal)peakBal=balance;
   if(announceT>0)announceT--;
 
-  player.x+=(pt.x-player.x)*.2;
-  player.y+=(pt.y-player.y)*.2;
+  player.x+=(pt.x-player.x)*.2;player.y+=(pt.y-player.y)*.2;
   player.x=Math.max(zoneL+player.r,Math.min(zoneR-player.r,player.x));
   player.y=Math.max(zoneT+player.r,Math.min(zoneB-player.r,player.y));
   prevPX=player.x;prevPY=player.y;
-
-  if(iframes>0)iframes--;
-  hitShrink*=.9;
+  if(iframes>0)iframes--;hitShrink*=.9;
 
   const sr=Math.max(4,L.spawn-Math.floor(lvlFrame/120));
-  if(fc%sr===0){
-    if(L.formations&&Math.random()<.15)spawnFormation();
-    else spawnOb();
-    if(L.fakes&&Math.random()<.08){
-      pickups.push({x:zoneL+20+Math.random()*(zoneR-zoneL-40),y:zoneT-30,
-        vy:2+Math.random(),amt:2000,fake:true,collected:false,type:'defi',sz:36});
-    }
-  }
+  if(fc%sr===0){if(L.formations&&Math.random()<.15)spawnFormation();else spawnOb();
+    if(L.fakes&&Math.random()<.08)pickups.push({x:zoneL+20+Math.random()*(zoneR-zoneL-40),y:zoneT-30,vy:2+Math.random(),amt:2000,fake:true,collected:false,type:'defi',sz:36});}
   if(fc%(lvl<2?180:lvl<5?280:lvl<8?400:600)===0)spawnPickup();
-
-  if(L.dip&&lvlFrame>60&&lvlFrame<180&&lvlFrame%15===0){
-    pickups.push({x:zoneL+30+Math.random()*(zoneR-zoneL-60),y:zoneT-20,
-      vy:1.5+Math.random(),amt:1500,fake:false,collected:false,type:'defi',sz:32});
-  }
+  if(L.dip&&lvlFrame>60&&lvlFrame<180&&lvlFrame%15===0)pickups.push({x:zoneL+30+Math.random()*(zoneR-zoneL-60),y:zoneT-20,vy:1.5+Math.random(),amt:1500,fake:false,collected:false,type:'defi',sz:32});
 
   let ts=1;if(balance>0&&balance<500)ts=.5+(balance/500)*.5;
 
@@ -310,88 +491,39 @@ function update(){
     if(o.bounce&&!o.parked){if(o.x<zoneL||o.x+o.w>zoneR)o.vx*=-1;}
     if(L.grow&&!o.parked){const age=(fc-o.born)/60;o.w=o.ow*(1+age*.06);o.h=o.oh*(1+age*.06);}
     if(L.tick&&!o.rateHike){o.pct=o.bpct+Math.floor(lvlFrame/45);}
-    if(L.converge&&!o.parked){
-      const cx=(zoneL+zoneR)/2,cy=(zoneB+zoneT)/2;
-      const dx=cx-(o.x+o.w/2),dy=cy-(o.y+o.h/2);
-      const d=Math.sqrt(dx*dx+dy*dy)||1;
-      o.vx+=dx/d*.08;o.vy+=dy/d*.08;
-    }
-
-    // cull — generous margins so side/below spawns don't get stuck
-    if(o.y>H+80||o.y<-100||o.x<-200||o.x>W+200){
-      if(!o.parked)obs.splice(i,1);continue;
-    }
-
-    if(L.walls&&!o.parked&&o.y>zoneT+(zoneB-zoneT)*.7&&Math.random()<.002){
-      o.parked=true;o.vx=0;o.vy=0;wallObs.push(o);
-    }
-
+    if(L.converge&&!o.parked){const cx2=(zoneL+zoneR)/2,cy2=(zoneB+zoneT)/2;const dx=cx2-(o.x+o.w/2),dy=cy2-(o.y+o.h/2);const d=Math.sqrt(dx*dx+dy*dy)||1;o.vx+=dx/d*.08;o.vy+=dy/d*.08;}
+    if(o.y>H+80||o.y<-100||o.x<-200||o.x>W+200){if(!o.parked)obs.splice(i,1);continue;}
+    if(L.walls&&!o.parked&&o.y>zoneT+(zoneB-zoneT)*.7&&Math.random()<.002){o.parked=true;o.vx=0;o.vy=0;wallObs.push(o);}
     if(o.hit)continue;
-
     const pr=player.r*(1-hitShrink*.3);
-    const cx2=Math.max(o.x,Math.min(player.x,o.x+o.w));
-    const cy2=Math.max(o.y,Math.min(player.y,o.y+o.h));
-    const dx2=player.x-cx2,dy2=player.y-cy2;
-    const dq=dx2*dx2+dy2*dy2;
-
-    if(!o.grazed&&dq<(pr+10)*(pr+10)&&dq>pr*pr){
-      o.grazed=true;combo++;if(combo>bestCombo)bestCombo=combo;
-      updateCombo();
-      balance+=(80+lvl*30)*comboMul;
-      emit(cx2,cy2,'#78FFB4',5,3);
-      grazeSnd();
-    }
-
-    if(dq<pr*pr&&iframes===0){
-      o.hit=true;
-      let dmg;
-      if(o.rateHike){dmg=1200;drainRate*=2.5;}
-      else{dmg=Math.max(800,balance*(o.pct/100)*1.5+o.pct*100);}
-      balance-=dmg;totalLost+=dmg;
-      const kd=Math.sqrt(dq)||1;
-      player.x+=dx2/kd*18;player.y+=dy2/kd*18;
-      iframes=15;hitShrink=1;shake=10;flash=1;
-      combo=0;comboMul=1;comboLbl='';
-      emit(player.x,player.y,o.accent||'#ff4444',18,6);
-      hitSnd(o.pct);
-    }
+    const cx3=Math.max(o.x,Math.min(player.x,o.x+o.w));const cy3=Math.max(o.y,Math.min(player.y,o.y+o.h));
+    const dx2=player.x-cx3,dy2=player.y-cy3;const dq=dx2*dx2+dy2*dy2;
+    if(!o.grazed&&dq<(pr+10)*(pr+10)&&dq>pr*pr){o.grazed=true;combo++;if(combo>bestCombo)bestCombo=combo;updateCombo();balance+=(80+lvl*30)*comboMul;emit(cx3,cy3,'#78FFB4',5,3);grazeSnd();}
+    if(dq<pr*pr&&iframes===0){o.hit=true;let dmg;if(o.rateHike){dmg=1200;drainRate*=2.5;}else{dmg=Math.max(800,balance*(o.pct/100)*1.5+o.pct*100);}balance-=dmg;totalLost+=dmg;const kd=Math.sqrt(dq)||1;player.x+=dx2/kd*18;player.y+=dy2/kd*18;iframes=15;hitShrink=1;shake=10;flash=1;combo=0;comboMul=1;comboLbl='';emit(player.x,player.y,o.accent||'#ff4444',18,6);hitSnd(o.pct);}
   }
 
   for(let i=pickups.length-1;i>=0;i--){
     const p=pickups[i];p.y+=p.vy*ts;
     if(p.y>H+50){pickups.splice(i,1);continue;}
     if(p.collected)continue;
-    const dx3=player.x-p.x,dy3=player.y-p.y;
-    const d3=Math.sqrt(dx3*dx3+dy3*dy3);
+    const dx3=player.x-p.x,dy3=player.y-p.y;const d3=Math.sqrt(dx3*dx3+dy3*dy3);
     if(d3<35+p.sz){p.x+=dx3*.04;p.y+=dy3*.04;}
-    if(d3<player.r+p.sz*.5){
-      p.collected=true;
+    if(d3<player.r+p.sz*.5){p.collected=true;
       if(p.fake){balance-=1000;shake=8;flash=1;emit(p.x,p.y,'#ff0000',12,5);hitSnd(10);}
-      else{
-        balance+=p.amt*comboMul;
-        emit(p.x,p.y,p.type==='defi'?'#FFD700':'#78FFB4',14,6);
-        collectSnd(p.amt);
-        if(p.amt>=1500){
-          for(const o of obs){if(o.hit)continue;
-            const odx=(o.x+o.w/2)-player.x,ody=(o.y+o.h/2)-player.y;
-            const od=Math.sqrt(odx*odx+ody*ody);
-            if(od<140&&od>0){o.vx+=(odx/od)*5;o.vy+=(ody/od)*5;}}
-          shake=4;
-        }
-      }
-      pickups.splice(i,1);
-    }
+      else{balance+=p.amt*comboMul;emit(p.x,p.y,p.type==='defi'?'#FFD700':'#78FFB4',14,6);collectSnd(p.amt);
+        if(p.amt>=1500){for(const o of obs){if(o.hit)continue;const odx=(o.x+o.w/2)-player.x,ody=(o.y+o.h/2)-player.y;const od=Math.sqrt(odx*odx+ody*ody);if(od<140&&od>0){o.vx+=(odx/od)*5;o.vy+=(ody/od)*5;}}shake=4;}}
+      pickups.splice(i,1);}
   }
 
   particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.life-=.025;p.vx*=.95;p.vy*=.95;return p.life>0;});
   shake*=.82;flash*=.85;
-  updateTicker();
 
-  if(balance<=0){
-    balance=0;state='dead';deathSnd();
+  // update HTML HUD
+  updateHUD();
+
+  if(balance<=0){balance=0;state='dead';deathSnd();
     if(lvl>bestLvl){bestLvl=lvl;localStorage.setItem('id_blvl',String(bestLvl));}
-    showDeath();
-  }
+    showDeath();}
 }
 
 function updateCombo(){
@@ -403,329 +535,114 @@ function updateCombo(){
   else{comboMul=1;comboLbl='';}
 }
 
-// ---- DRAW ----
-function rr(cx,cy,cw,ch,cr){
-  if(X.roundRect){X.roundRect(cx,cy,cw,ch,cr);return;}
-  X.moveTo(cx+cr,cy);X.lineTo(cx+cw-cr,cy);X.arcTo(cx+cw,cy,cx+cw,cy+cr,cr);
-  X.lineTo(cx+cw,cy+ch-cr);X.arcTo(cx+cw,cy+ch,cx+cw-cr,cy+ch,cr);
-  X.lineTo(cx+cr,cy+ch);X.arcTo(cx,cy+ch,cx,cy+ch-cr,cr);
-  X.lineTo(cx,cy+cr);X.arcTo(cx,cy,cx+cr,cy,cr);X.closePath();
+function updateHUD(){
+  const hp=Math.max(0,balance/INIT_BAL);
+  const pct=Math.round(hp*100);
+  document.getElementById('hud-balance').innerHTML='$'+Math.max(0,Math.floor(balance)).toLocaleString()+'<span class="text-base text-red-500 align-top mt-2 inline-block ml-2">-$'+drainRate.toFixed(0)+'/s</span>';
+  document.getElementById('hud-level').textContent=curLvl().name;
+  document.getElementById('hud-pct').textContent=pct+'% REMAINING';
+  document.getElementById('hud-status').textContent=hp>=.6?'STABLE':hp>=.3?'WARNING':'CRITICAL';
+  const bar=document.getElementById('hud-bar');
+  bar.style.width=pct+'%';
+  bar.style.backgroundColor=hp>=.8?'#22c55e':hp>=.4?'#eab308':'#e63329';
 }
 
-// background dot layers (parallax depth)
+// ============ DRAW (canvas only — no HUD) ============
+function rr(cx,cy,cw,ch,cr){if(X.roundRect){X.roundRect(cx,cy,cw,ch,cr);return;}X.moveTo(cx+cr,cy);X.lineTo(cx+cw-cr,cy);X.arcTo(cx+cw,cy,cx+cw,cy+cr,cr);X.lineTo(cx+cw,cy+ch-cr);X.arcTo(cx+cw,cy+ch,cx+cw-cr,cy+ch,cr);X.lineTo(cx+cr,cy+ch);X.arcTo(cx,cy+ch,cx,cy+ch-cr,cr);X.lineTo(cx,cy+cr);X.arcTo(cx,cy,cx+cr,cy,cr);X.closePath();}
+
 const bgDots=[];
-for(let layer=0;layer<3;layer++){
-  const dots=[];
-  const count=layer===0?60:layer===1?35:18;
-  for(let i=0;i<count;i++){
-    dots.push({x:Math.random()*2000,y:Math.random()*1400,
-      sz:.5+layer*.6+Math.random()*.8,
-      sp:.15+layer*.12+Math.random()*.1,
-      a:.03+layer*.02+Math.random()*.02});
-  }
-  bgDots.push(dots);
-}
+for(let layer=0;layer<3;layer++){const dots=[];const count=layer===0?60:layer===1?35:18;
+  for(let i=0;i<count;i++)dots.push({x:Math.random()*2000,y:Math.random()*1400,sz:.5+layer*.6+Math.random()*.8,sp:.15+layer*.12+Math.random()*.1,a:.03+layer*.02+Math.random()*.02});
+  bgDots.push(dots);}
 
 function draw(){
-  if(state==='dead'||state==='menu'){X.fillStyle='#000';X.fillRect(0,0,W,H);return;}
-  if(state!=='playing')return;
-
+  if(state!=='playing'){X.fillStyle='#050505';X.fillRect(0,0,W,H);return;}
   X.save();
   if(shake>.5)X.translate((Math.random()-.5)*shake*2,(Math.random()-.5)*shake*2);
+  const hp=Math.max(0,balance/INIT_BAL);const L=curLvl();
 
-  const hp=Math.max(0,balance/INIT_BAL);
-  const L=curLvl();
-
-  // ---- BACKGROUND ----
-  X.fillStyle='#06060A';X.fillRect(0,0,W,H);
+  X.fillStyle='#0a0a0a';X.fillRect(0,0,W,H);
 
   // parallax dots
-  bgDots.forEach((layer,li)=>{
-    layer.forEach(d=>{
-      d.y+=d.sp;
-      if(d.y>H+10){d.y=-10;d.x=Math.random()*W;}
-      X.fillStyle=`rgba(255,255,255,${d.a})`;
-      X.fillRect(d.x%W,d.y,d.sz,d.sz);
-    });
-  });
+  bgDots.forEach(layer=>{layer.forEach(d=>{d.y+=d.sp;if(d.y>H+10){d.y=-10;d.x=Math.random()*W;}X.fillStyle=`rgba(255,255,255,${d.a})`;X.fillRect(d.x%W,d.y,d.sz,d.sz);});});
 
-  // subtle grid inside zone
-  X.strokeStyle=`rgba(39,117,202,${.005+hp*.005})`;X.lineWidth=.5;
-  for(let gx=zoneL;gx<zoneR;gx+=50){X.beginPath();X.moveTo(gx,zoneT);X.lineTo(gx,zoneB);X.stroke();}
-  for(let gy=zoneT;gy<zoneB;gy+=50){X.beginPath();X.moveTo(zoneL,gy);X.lineTo(zoneR,gy);X.stroke();}
+  // grid
+  X.strokeStyle=`rgba(255,255,255,${.02+hp*.01})`;X.lineWidth=.5;
+  for(let gx=zoneL;gx<zoneR;gx+=40){X.beginPath();X.moveTo(gx,zoneT);X.lineTo(gx,zoneB);X.stroke();}
+  for(let gy=zoneT;gy<zoneB;gy+=40){X.beginPath();X.moveTo(zoneL,gy);X.lineTo(zoneR,gy);X.stroke();}
 
-  // ---- ZONE WALLS ----
-  X.fillStyle='#000';
-  X.fillRect(0,0,zoneL,H);
-  X.fillRect(zoneR,0,W-zoneR,H);
-  X.fillRect(zoneL,0,zoneR-zoneL,zoneT);
-  X.fillRect(zoneL,zoneB,zoneR-zoneL,H-zoneB);
-
-  // glowing red edge (only when zone is actually shrunk)
+  // zone walls
+  X.fillStyle='#050505';
+  X.fillRect(0,0,zoneL,H);X.fillRect(zoneR,0,W-zoneR,H);
+  X.fillRect(zoneL,0,zoneR-zoneL,zoneT);X.fillRect(zoneL,zoneB,zoneR-zoneL,H-zoneB);
   const zoneShrank=ztL>2||ztR<W-2||ztT>2||ztB<H-2;
-  if(zoneShrank){
-    const pulse=.6+Math.sin(fc*.04)*.15;
-    X.save();
-    X.shadowColor='#ff2020';X.shadowBlur=18*pulse;
-    X.strokeStyle=`rgba(255,40,30,${.65+pulse*.25})`;X.lineWidth=2.5;
-    X.strokeRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);
-    X.shadowBlur=0;X.restore();
-  }
+  if(zoneShrank){const pulse=.6+Math.sin(fc*.04)*.15;X.save();X.shadowColor='#ff2020';X.shadowBlur=18*pulse;X.strokeStyle=`rgba(255,40,30,${.65+pulse*.25})`;X.lineWidth=2.5;X.strokeRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);X.shadowBlur=0;X.restore();}
 
   if(L.legend){X.fillStyle='rgba(255,200,0,.015)';X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);}
   if(flash>.05){X.fillStyle=`rgba(255,40,40,${flash*.12})`;X.fillRect(0,0,W,H);}
+  if(L.dark){X.fillStyle='rgba(0,0,0,.88)';X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);const sp=X.createRadialGradient(player.x,player.y,10,player.x,player.y,85);sp.addColorStop(0,'rgba(0,0,0,0)');sp.addColorStop(1,'rgba(0,0,0,.92)');X.fillStyle=sp;X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);}
 
-  // BANK RUN blackout
-  if(L.dark){
-    X.fillStyle='rgba(0,0,0,.88)';X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);
-    const sp=X.createRadialGradient(player.x,player.y,10,player.x,player.y,85);
-    sp.addColorStop(0,'rgba(0,0,0,0)');sp.addColorStop(1,'rgba(0,0,0,.92)');
-    X.fillStyle=sp;X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);
-  }
+  // pickups
+  pickups.forEach(p=>{if(p.collected)return;const isG=p.type==='defi';const r=p.sz*(1+Math.sin(fc*.06)*.04);
+    X.save();X.shadowColor=p.fake?'#ff0000':isG?'#FFD700':'#78FFB4';X.shadowBlur=p.fake?8:isG?14:8;X.beginPath();X.arc(p.x,p.y,r+2,0,Math.PI*2);X.strokeStyle=p.fake?'rgba(255,60,60,.6)':isG?'rgba(255,200,0,.5)':'rgba(120,255,180,.35)';X.lineWidth=2.5;X.stroke();X.shadowBlur=0;X.restore();
+    if(appIcon.complete&&!p.fake){X.save();X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);X.clip();X.drawImage(appIcon,p.x-r,p.y-r,r*2,r*2);X.restore();}
+    else{X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);X.fillStyle=p.fake?'rgba(255,30,30,.7)':'rgba(20,20,25,.8)';X.fill();}
+    const lbl=p.fake?'???':isG?'+$'+Math.floor(p.amt/1000)+'K':'+$200';X.font='bold 11px M,monospace';const tw=X.measureText(lbl).width;
+    const px=p.x-tw/2-6,py=p.y+r+5;X.fillStyle=p.fake?'rgba(255,30,30,.5)':isG?'rgba(255,200,0,.18)':'rgba(120,255,180,.12)';X.beginPath();rr(px,py,tw+12,18,9);X.fill();
+    X.fillStyle=p.fake?'#ff6666':isG?'#FFD700':'#78FFB4';X.textAlign='center';X.textBaseline='middle';X.fillText(lbl,p.x,py+9);});
 
-  // ---- LEVEL ANNOUNCEMENT (animated fade up/in, hold, fade out) ----
-  // announceT: 150→91 = freeze+fade in, 90→31 = hold, 30→0 = fade out
-  if(announceT>0){
-    let alpha,yOff;
-    if(announceT>90){
-      // fade in + slide up (150→91)
-      const t=(150-announceT)/60; // 0→1
-      alpha=Math.min(1,t*1.5);
-      yOff=20*(1-t);
-    }else if(announceT>30){
-      // hold steady (90→31)
-      alpha=1;yOff=0;
-    }else{
-      // fade out + slide up (30→0)
-      const t=announceT/30; // 1→0
-      alpha=t;
-      yOff=-12*(1-t);
-    }
-    X.save();
-    X.globalAlpha=alpha;
-    X.textAlign='center';X.textBaseline='middle';
-    // "Level N"
-    X.fillStyle='#008fd6';
-    X.font='500 20px Knapp,sans-serif';
-    X.fillText('Level '+(lvl+1),W/2,H/2-32+yOff);
-    // Level name
-    X.fillStyle='#ebebeb';
-    X.font='500 72px Knapp,sans-serif';
-    X.fillText(curLvl().name,W/2,H/2+22+yOff);
-    X.restore();
-  }
-
-  // ---- PICKUPS ----
-  pickups.forEach(p=>{
-    if(p.collected)return;
-    const isG=p.type==='defi';
-    const r=p.sz*(1+Math.sin(fc*.06)*.04);
-    X.save();
-    X.shadowColor=p.fake?'#ff0000':isG?'#FFD700':'#78FFB4';
-    X.shadowBlur=p.fake?8:isG?14:8;
-    X.beginPath();X.arc(p.x,p.y,r+2,0,Math.PI*2);
-    X.strokeStyle=p.fake?'rgba(255,60,60,.6)':isG?'rgba(255,200,0,.5)':'rgba(120,255,180,.35)';
-    X.lineWidth=2.5;X.stroke();
-    X.shadowBlur=0;X.restore();
-    if(appIcon.complete&&!p.fake){
-      X.save();X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);X.clip();
-      X.drawImage(appIcon,p.x-r,p.y-r,r*2,r*2);X.restore();
-    }else{
-      X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);
-      X.fillStyle=p.fake?'rgba(255,30,30,.7)':'rgba(20,20,25,.8)';X.fill();
-    }
-    const lbl=p.fake?'???':isG?'+$'+Math.floor(p.amt/1000)+'K':'+$200';
-    X.font='bold 11px M,monospace';
-    const tw=X.measureText(lbl).width;
-    const px=p.x-tw/2-6,py=p.y+r+5;
-    X.fillStyle=p.fake?'rgba(255,30,30,.5)':isG?'rgba(255,200,0,.18)':'rgba(120,255,180,.12)';
-    X.beginPath();rr(px,py,tw+12,18,9);X.fill();
-    X.fillStyle=p.fake?'#ff6666':isG?'#FFD700':'#78FFB4';
-    X.textAlign='center';X.textBaseline='middle';
-    X.fillText(lbl,p.x,py+9);
-  });
-
-  // ---- OBSTACLES ----
-  obs.forEach(o=>{
-    if(o.hit&&!o.parked)return;
-    X.save();
-    X.globalAlpha=o.grazed?.3:o.parked?.45:1;
-    const grad=X.createLinearGradient(o.x,o.y,o.x,o.y+o.h);
-    grad.addColorStop(0,o.fg||'#882222');grad.addColorStop(1,o.bg||'#441111');
+  // obstacles
+  obs.forEach(o=>{if(o.hit&&!o.parked)return;X.save();X.globalAlpha=o.grazed?.3:o.parked?.45:1;
+    const grad=X.createLinearGradient(o.x,o.y,o.x,o.y+o.h);grad.addColorStop(0,o.fg||'#882222');grad.addColorStop(1,o.bg||'#441111');
     X.fillStyle=grad;X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.fill();
-    X.strokeStyle=(o.accent||'#ff4444')+'88';X.lineWidth=o.rateHike?3:1.5;
-    X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.stroke();
-    const hl=X.createLinearGradient(o.x,o.y,o.x,o.y+o.h*.3);
-    hl.addColorStop(0,'rgba(255,255,255,.08)');hl.addColorStop(1,'rgba(255,255,255,0)');
-    X.fillStyle=hl;X.beginPath();rr(o.x+1,o.y+1,o.w-2,o.h*.3,8);X.fill();
-    const pctStr=o.rateHike?'RATE HIKE':'+'+Math.floor(o.pct)+'%';
-    X.fillStyle=o.accent||'#ff6644';
-    X.font=`bold ${Math.min(Math.round(o.h*.5),22)}px M,monospace`;
-    X.textAlign='left';X.textBaseline='middle';
-    X.fillText(pctStr,o.x+12,o.y+o.h/2);
-    if(o.label&&!o.rateHike){
-      X.fillStyle='rgba(255,255,255,.9)';
-      X.font=`500 ${Math.min(Math.round(o.h*.36),16)}px Knapp,sans-serif`;
-      X.textAlign='right';
-      X.fillText(o.label.toUpperCase(),o.x+o.w-12,o.y+o.h/2);
-    }
-    X.restore();
-  });
+    X.strokeStyle=(o.accent||'#ff4444')+'88';X.lineWidth=o.rateHike?3:1.5;X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.stroke();
+    const hl=X.createLinearGradient(o.x,o.y,o.x,o.y+o.h*.3);hl.addColorStop(0,'rgba(255,255,255,.08)');hl.addColorStop(1,'rgba(255,255,255,0)');X.fillStyle=hl;X.beginPath();rr(o.x+1,o.y+1,o.w-2,o.h*.3,8);X.fill();
+    const pctStr=o.rateHike?'RATE HIKE':'+'+Math.floor(o.pct)+'%';X.fillStyle=o.accent||'#ff6644';X.font=`bold ${Math.min(Math.round(o.h*.5),22)}px M,monospace`;X.textAlign='left';X.textBaseline='middle';X.fillText(pctStr,o.x+12,o.y+o.h/2);
+    if(o.label&&!o.rateHike){X.fillStyle='rgba(255,255,255,.9)';X.font=`500 ${Math.min(Math.round(o.h*.36),16)}px Knapp,sans-serif`;X.textAlign='right';X.fillText(o.label.toUpperCase(),o.x+o.w-12,o.y+o.h/2);}
+    X.restore();});
 
-  // ---- PLAYER ----
-  const pr=player.r*(1-hitShrink*.3);
-  const coinHp=Math.max(0,Math.min(1,balance/INIT_BAL));
-  const pg=X.createRadialGradient(player.x,player.y,0,player.x,player.y,32+combo*1.5);
-  pg.addColorStop(0,`rgba(39,117,202,${.12+combo*.006})`);pg.addColorStop(1,'rgba(0,0,0,0)');
-  X.fillStyle=pg;X.beginPath();X.arc(player.x,player.y,32+combo*1.5,0,Math.PI*2);X.fill();
-  X.beginPath();X.arc(player.x,player.y,pr,0,Math.PI*2);
-  const cg=X.createRadialGradient(player.x-2,player.y-2,0,player.x,player.y,pr);
-  cg.addColorStop(0,coinHp>.3?'rgba(100,200,255,.9)':'rgba(120,60,60,.6)');
-  cg.addColorStop(1,coinHp>.3?'rgba(39,117,202,.8)':'rgba(80,30,30,.5)');
-  X.fillStyle=cg;
-  if(iframes>0&&Math.floor(fc/3)%2===0)X.fillStyle='rgba(255,255,255,.3)';
-  if(L.fade){X.globalAlpha=.3+Math.abs(Math.sin(fc*.05))*.7;}
-  X.fill();X.globalAlpha=1;
-  X.beginPath();X.arc(player.x,player.y,pr+2.5,0,Math.PI*2);
-  X.strokeStyle=coinHp>.3?`rgba(100,180,255,${.2+combo*.01})`:'rgba(255,60,60,.3)';
-  X.lineWidth=1.2;X.stroke();
-  X.fillStyle=coinHp>.3?'#fff':'#aaa';
-  X.font=`bold ${Math.round(pr*.7)}px M,monospace`;
-  X.textAlign='center';X.textBaseline='middle';
-  X.fillText('$',player.x,player.y+.5);
-  if(coinHp<.3&&fc%6===0){const sa=Math.random()*Math.PI*2;
-    particles.push({x:player.x+Math.cos(sa)*pr,y:player.y+Math.sin(sa)*pr,
-      vx:Math.cos(sa)*2,vy:Math.sin(sa)*2,life:.5,col:'#ff4444',sz:1.5});}
+  // player
+  const pr=player.r*(1-hitShrink*.3);const coinHp=Math.max(0,Math.min(1,balance/INIT_BAL));
+  const pg=X.createRadialGradient(player.x,player.y,0,player.x,player.y,32+combo*1.5);pg.addColorStop(0,`rgba(39,117,202,${.12+combo*.006})`);pg.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=pg;X.beginPath();X.arc(player.x,player.y,32+combo*1.5,0,Math.PI*2);X.fill();
+  X.beginPath();X.arc(player.x,player.y,pr,0,Math.PI*2);const cg=X.createRadialGradient(player.x-2,player.y-2,0,player.x,player.y,pr);cg.addColorStop(0,coinHp>.3?'rgba(100,200,255,.9)':'rgba(120,60,60,.6)');cg.addColorStop(1,coinHp>.3?'rgba(39,117,202,.8)':'rgba(80,30,30,.5)');X.fillStyle=cg;
+  if(iframes>0&&Math.floor(fc/3)%2===0)X.fillStyle='rgba(255,255,255,.3)';if(L.fade){X.globalAlpha=.3+Math.abs(Math.sin(fc*.05))*.7;}X.fill();X.globalAlpha=1;
+  X.beginPath();X.arc(player.x,player.y,pr+2.5,0,Math.PI*2);X.strokeStyle=coinHp>.3?`rgba(100,180,255,${.2+combo*.01})`:'rgba(255,60,60,.3)';X.lineWidth=1.2;X.stroke();
+  X.fillStyle=coinHp>.3?'#fff':'#aaa';X.font=`bold ${Math.round(pr*.7)}px M,monospace`;X.textAlign='center';X.textBaseline='middle';X.fillText('$',player.x,player.y+.5);
+  if(coinHp<.3&&fc%6===0){const sa=Math.random()*Math.PI*2;particles.push({x:player.x+Math.cos(sa)*pr,y:player.y+Math.sin(sa)*pr,vx:Math.cos(sa)*2,vy:Math.sin(sa)*2,life:.5,col:'#ff4444',sz:1.5});}
 
-  // ---- PARTICLES ----
-  particles.forEach(p=>{X.globalAlpha=p.life;X.fillStyle=p.col;
-    X.beginPath();X.arc(p.x,p.y,p.sz*p.life,0,Math.PI*2);X.fill();X.globalAlpha=1;});
-
-  // ==== HUD — matched to Figma ui-1 exactly ====
-
-  // ---- TOP CENTER: Legend logo, full opacity ----
-  if(logo.complete){
-    const lw=160,lh=28;
-    X.drawImage(logo,W/2-lw/2,24,lw,lh);
-  }
-
-  // ---- COMBO — center screen ----
-  if(combo>=3){
-    X.fillStyle='#2775CA';X.font='bold 16px M,monospace';
-    X.textAlign='center';X.textBaseline='middle';
-    X.fillText(comboMul+'x '+comboLbl,W/2,H/2+70);
-  }
-
-  // ---- BOTTOM HUD — three columns ----
-  const P=48;
-  const BOT=H-48;
-  const LBL_OFF=24;
-
-  // -- Left: Balance --
-  // "Balance" label
-  X.fillStyle='#00b84a';
-  X.font='500 14px Knapp,sans-serif';
-  X.textAlign='left';X.textBaseline='alphabetic';
-  X.fillText('Balance',P,BOT-LBL_OFF-4);
-
-  // Dollar amount with ticker
-  X.font='500 30px Knapp,sans-serif';
-  const balStr=Math.max(0,Math.floor(balance)).toLocaleString();
-  const cW=X.measureText('0').width;
-  let cx=P;
-
-  X.fillStyle='#b2b2b2';
-  X.fillText('$',cx,BOT);
-  cx+=X.measureText('$').width+1;
-
-  const chars=balStr.split('');
-  let tdi=0;
-  for(let i=0;i<chars.length;i++){
-    if(chars[i]===','){
-      X.fillStyle='#b2b2b2';X.font='500 30px Knapp,sans-serif';
-      X.fillText(',',cx,BOT);cx+=X.measureText(',').width;continue;
-    }
-    const td=tickerDigits[tdi++];
-    if(!td||td.vel===0){
-      X.fillStyle='#b2b2b2';X.font='500 30px Knapp,sans-serif';
-      X.fillText(chars[i],cx,BOT);
-    }else{
-      X.save();
-      X.beginPath();X.rect(cx-1,BOT-28,cW+2,34);X.clip();
-      const frac=Math.abs(td.display%1);
-      const cur=Math.floor(td.display+.01)%10;
-      const nxt=(cur===0?9:cur-1);
-      X.font='500 30px Knapp,sans-serif';
-      X.fillStyle='#b2b2b2';X.globalAlpha=1-frac;
-      X.fillText(String(cur),cx,BOT-frac*30);
-      X.fillStyle='#444';X.globalAlpha=frac;
-      X.fillText(String(nxt),cx,BOT+(1-frac)*30);
-      X.globalAlpha=1;X.restore();
-    }
-    cx+=cW+.5;
-  }
-
-  // -- Right: Level --
-  X.fillStyle='#008fd6';
-  X.font='500 14px Knapp,sans-serif';
-  X.textAlign='right';X.textBaseline='alphabetic';
-  X.fillText('Level '+(lvl+1),W-P,BOT-LBL_OFF-4);
-
-  X.fillStyle='#b2b2b2';
-  X.font='500 30px Knapp,sans-serif';
-  X.fillText(curLvl().name,W-P,BOT);
-
-  // -- Center: Life bar (Figma: 338px wide, 6px tall, rounded 50px) --
-  const barW=Math.min(338,W*.28);
-  const barH=6;
-  const barX=W/2-barW/2;
-  const barY=BOT-12;
-
-  // track
-  X.fillStyle='rgba(217,217,217,.06)';
-  X.beginPath();rr(barX,barY,barW,barH,50);X.fill();
-  // fill
-  const barCol=hp>=.8?'rgba(19,204,34,.7)':hp>=.4?'rgba(255,165,0,.7)':'rgba(255,50,40,.7)';
-  const fw=Math.max(0,barW*hp);
-  if(fw>0){
-    X.fillStyle=barCol;
-    X.beginPath();rr(barX,barY,fw,barH,50);X.fill();
-  }
+  // particles
+  particles.forEach(p=>{X.globalAlpha=p.life;X.fillStyle=p.col;X.beginPath();X.arc(p.x,p.y,p.sz*p.life,0,Math.PI*2);X.fill();X.globalAlpha=1;});
 
   X.restore();
 }
 
-// ---- DEATH ----
+// ============ DEATH ============
 function showDeath(){
-  const ui=document.getElementById('ui');
-  const L=curLvl();
   const yrs=((lvl+1)*YEAR_PER_LVL).toFixed(0);
-  ui.style.display='flex';
-  ui.className='menu';
-  ui.querySelector('.panel').id='p-dead';
-  ui.querySelector('.panel').innerHTML=`
-    <div class="tag" style="animation-delay:0s">LEVEL ${lvl+1} — ${L.name}</div>
-    <div class="big" style="animation-delay:.08s">Survived <em>${yrs}</em> years</div>
-    <div class="sub" style="animation-delay:.16s">Lost <em>$${Math.floor(totalLost).toLocaleString()}</em> to inflation</div>
-    <div class="stats" style="animation-delay:.24s">
-      Peak balance: <b>$${Math.floor(peakBal).toLocaleString()}</b><br>
-      Best combo: <b class="g">${bestCombo>0?bestCombo+'x':'none'}</b><br>
-      Drain at death: <b class="r">-$${drainRate.toFixed(0)}/s</b><br>
-      Best level ever: <b>${bestLvl+1}</b>
-    </div>
-    <div class="msg" style="animation-delay:.32s">${lvl<3?'Inflation is undefeated. Your savings didn\'t stand a chance.':'The average American loses ~40% of their purchasing power over 30 years. What if your money fought back?'}</div>
-    <div class="btns" style="animation-delay:.4s">
-      <button class="btn" onclick="document.getElementById('ui').style.display='none';initGame()">Try Again</button>
-    </div>
-    <div class="footer" style="animation-delay:.5s">
-      <img class="logo" src="logo.svg" alt="Legend"/>
-      <div class="sm">Powered by Legend</div>
-      <a href="https://apps.apple.com/us/app/legend-xyz/id6504718187" target="_blank"><img src="https://legend.xyz/footer/cta-app-store@2x.webp" alt="App Store"/></a>
-    </div>
-  `;
+  document.getElementById('death-years').textContent=yrs;
+  document.getElementById('death-loss').textContent='-$'+Math.floor(totalLost).toLocaleString();
+  document.getElementById('death-peak').textContent='$'+Math.floor(peakBal).toLocaleString();
+  document.getElementById('death-combo').textContent=bestCombo>0?bestCombo+'x':'—';
+  document.getElementById('death-drain').textContent='-$'+drainRate.toFixed(0)+'/s';
+  document.getElementById('death-best').textContent=String(bestLvl+1);
+  document.getElementById('death-quote').textContent=lvl<3?'"Inflation is undefeated. Your savings didn\'t stand a chance."':'"The average American loses ~40% of their purchasing power over 30 years. What if your money fought back?"';
+  showScreen('screen-death');
+  // create floating chaos
+  const dc=document.getElementById('death-chaos');dc.innerHTML='';
+  const syms=['%','$','📉','💸','⬇','🏷️'];const cols=['#FF3333','#333','#1a1a1a','#5c1414'];
+  for(let i=0;i<20;i++){const el=document.createElement('div');el.classList.add('bg-floater');el.innerText=syms[Math.floor(Math.random()*syms.length)];el.style.fontSize=Math.floor(Math.random()*60+20)+'px';el.style.left=Math.random()*100+'vw';el.style.color=cols[Math.floor(Math.random()*cols.length)];el.style.opacity=Math.random()*.1+.05;el.style.animationDuration=(Math.random()*15+10)+'s';el.style.animationDelay=(Math.random()*-20)+'s';dc.appendChild(el);}
+  lucide.createIcons();
 }
 
-// ---- LOOP ----
+// ============ TITLE CHAOS ============
+(function(){
+  const cc=document.getElementById('chaos-bg');
+  const syms=['%','$','🏷️','📈','💸','-10%'];const cols=['#FF3333','#D4883A','#333','#555'];
+  for(let i=0;i<20;i++){const el=document.createElement('div');el.classList.add('floating-item');el.innerText=syms[Math.floor(Math.random()*syms.length)];el.style.fontSize=Math.floor(Math.random()*40+20)+'px';el.style.left=Math.random()*100+'vw';el.style.color=cols[Math.floor(Math.random()*cols.length)];el.style.animationDuration=(Math.random()*10+10)+'s';el.style.animationDelay=(Math.random()*-20)+'s';el.style.fontWeight='bold';cc.appendChild(el);}
+})();
+
+// ============ INIT ============
+lucide.createIcons();
 function loop(){update();draw();requestAnimationFrame(loop);}
 loop();
 </script>
