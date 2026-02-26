@@ -597,8 +597,21 @@ function draw(){
     X.fillStyle=grad;X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.fill();
     X.strokeStyle=(o.accent||'#ff4444')+'88';X.lineWidth=o.rateHike?3:1.5;X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.stroke();
     const hl=X.createLinearGradient(o.x,o.y,o.x,o.y+o.h*.3);hl.addColorStop(0,'rgba(255,255,255,.08)');hl.addColorStop(1,'rgba(255,255,255,0)');X.fillStyle=hl;X.beginPath();rr(o.x+1,o.y+1,o.w-2,o.h*.3,8);X.fill();
-    const pctStr=o.rateHike?'RATE HIKE':'+'+Math.floor(o.pct)+'%';X.fillStyle=o.accent||'#ff6644';X.font=`bold ${Math.min(Math.round(o.h*.5),22)}px M,monospace`;X.textAlign='left';X.textBaseline='middle';X.fillText(pctStr,o.x+12,o.y+o.h/2);
-    if(o.label&&!o.rateHike){X.fillStyle='rgba(255,255,255,.9)';X.font=`500 ${Math.min(Math.round(o.h*.36),16)}px Knapp,sans-serif`;X.textAlign='right';X.fillText(o.label.toUpperCase(),o.x+o.w-12,o.y+o.h/2);}
+    // clip so text never bleeds outside the brick
+    X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.clip();
+    const pctStr=o.rateHike?'RATE HIKE':'+'+Math.floor(o.pct)+'%';
+    const pctSz=Math.min(Math.round(o.h*.45),20);
+    X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
+    X.textAlign='left';X.textBaseline='middle';
+    const pctW=X.measureText(pctStr).width;
+    X.fillText(pctStr,o.x+10,o.y+o.h/2);
+    if(o.label&&!o.rateHike){
+      const lblSz=Math.min(Math.round(o.h*.34),14);
+      X.fillStyle='rgba(255,255,255,.85)';X.font=`500 ${lblSz}px Knapp,sans-serif`;
+      X.textAlign='right';
+      const space=o.w-pctW-28;
+      if(space>20)X.fillText(o.label.toUpperCase(),o.x+o.w-10,o.y+o.h/2);
+    }
     X.restore();});
 
   // player
