@@ -391,14 +391,91 @@ function showScreen(id){
 
 // ============ AUDIO ============
 let ac,mg;
-function ia(){if(ac)return;ac=new(AudioContext||webkitAudioContext)();mg=ac.createGain();mg.gain.value=.7;mg.connect(ac.destination);
-  const dr=ac.createOscillator(),dg=ac.createGain();dr.type='sine';dr.frequency.value=55;dg.gain.value=.04;dr.connect(dg);dg.connect(mg);dr.start();}
-function snd(tp,f,v,d,fe){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain();o.type=tp;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(mg);o.start();if(fe)o.frequency.exponentialRampToValueAtTime(fe,ac.currentTime+d*.8);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.stop(ac.currentTime+d+.02)}
-function hitSnd(p){snd('sawtooth',100+p*8,.3,.18,50)}
-function grazeSnd(){snd('sine',1400,.12,.07,800)}
-function collectSnd(a){snd('sine',500+a*.2,.2,.12,800+a*.3);snd('sine',700+a*.3,.1,.18,1200+a*.4)}
-function deathSnd(){snd('sawtooth',200,.4,1.2,25)}
-function lvlSnd(){snd('sine',800,.15,.15,1200);snd('sine',1000,.08,.2,1400)}
+function ia(){
+  if(ac)return;ac=new(AudioContext||webkitAudioContext)();
+  mg=ac.createGain();mg.gain.value=.6;mg.connect(ac.destination);
+  // ambient drone — deep sub bass
+  const dr=ac.createOscillator(),dg=ac.createGain();
+  dr.type='sine';dr.frequency.value=45;dg.gain.value=.03;
+  dr.connect(dg);dg.connect(mg);dr.start();
+  // second drone layer — detuned
+  const dr2=ac.createOscillator(),dg2=ac.createGain();
+  dr2.type='sine';dr2.frequency.value=47;dg2.gain.value=.02;
+  dr2.connect(dg2);dg2.connect(mg);dr2.start();
+}
+function snd(tp,f,v,d,fe){
+  if(!ac)return;
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type=tp;o.frequency.value=f;g.gain.value=v;
+  o.connect(g);g.connect(mg);o.start();
+  if(fe)o.frequency.exponentialRampToValueAtTime(fe,ac.currentTime+d*.8);
+  g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);
+  o.stop(ac.currentTime+d+.02);
+}
+function noise(v,d){
+  if(!ac)return;
+  const buf=ac.createBuffer(1,ac.sampleRate*d,ac.sampleRate);
+  const data=buf.getChannelData(0);
+  for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1);
+  const src=ac.createBufferSource(),g=ac.createGain(),flt=ac.createBiquadFilter();
+  src.buffer=buf;flt.type='bandpass';flt.frequency.value=2000;flt.Q.value=1;
+  g.gain.value=v;src.connect(flt);flt.connect(g);g.connect(mg);
+  g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);
+  src.start();src.stop(ac.currentTime+d);
+}
+// hit — meaty impact, varies by severity
+function hitSnd(p){
+  snd('sawtooth',80+p*6,.25,.2,30);
+  snd('square',60,.1,.15,20);
+  noise(.08,.1);
+}
+// graze — quick satisfying "zing" that rises with combo
+function grazeSnd(){
+  const pitch=1200+Math.min(combo*80,800);
+  snd('sine',pitch,.1,.06,pitch*1.5);
+  snd('triangle',pitch*.75,.04,.04,pitch);
+}
+// collect pickup — bright sparkly chord
+function collectSnd(a){
+  const big=a>=1500;
+  snd('sine',big?600:500,.15,.15,big?1200:900);
+  snd('sine',big?900:700,.08,.2,big?1600:1100);
+  snd('triangle',big?1200:900,.05,.1,big?2000:1400);
+  if(big)noise(.03,.08);
+}
+// combo milestone sounds
+function comboSnd(c){
+  if(c===3){snd('sine',800,.08,.1,1200);}
+  else if(c===5){snd('sine',1000,.1,.12,1500);snd('sine',1200,.06,.15,1800);}
+  else if(c===10){snd('sine',1200,.12,.15,1800);snd('sine',1500,.08,.2,2200);snd('triangle',800,.05,.1,1200);}
+  else if(c===20){snd('sine',1500,.15,.2,2400);snd('sine',1800,.1,.25,2800);snd('triangle',1000,.08,.15,1800);snd('sine',2200,.06,.3,3000);}
+}
+// death — dramatic multi-layer crash
+function deathSnd(){
+  snd('sawtooth',200,.3,.6,20);
+  snd('sawtooth',150,.2,.8,15);
+  snd('square',80,.15,1,10);
+  noise(.12,.3);
+  setTimeout(()=>{if(ac)snd('sine',300,.1,.5,50);},200);
+  setTimeout(()=>{if(ac){snd('sine',200,.06,.4,30);noise(.04,.2);}},500);
+}
+// level transition — rising tension chord
+function lvlSnd(){
+  snd('sine',600,.1,.2,1200);
+  snd('sine',800,.07,.25,1400);
+  snd('triangle',400,.05,.15,800);
+  setTimeout(()=>{if(ac)snd('sine',1000,.08,.15,1600);},100);
+}
+// zone shrink warning — ominous low pulse
+function zoneSnd(){snd('sine',80,.08,.4,40);snd('triangle',120,.05,.3,60);}
+// balance warning
+let lastBalWarn=0;
+function balanceWarnSnd(){
+  const now=Date.now();if(now-lastBalWarn<3000)return;lastBalWarn=now;
+  snd('square',400,.06,.3,200);snd('sine',500,.04,.2,250);
+}
+// UI click
+function clickSnd(){snd('sine',1800,.05,.03,900);snd('triangle',2200,.03,.02,1100);}
 
 // ============ LEVELS ============
 const LEVELS=[
@@ -518,13 +595,11 @@ document.addEventListener('touchstart',e=>{if(state==='playing'){pt.x=e.touches[
 
 // start button
 document.getElementById('btn-start').onclick=()=>{
-  showScreen(null);
-  initGame();
+  clickSnd();showScreen(null);initGame();
 };
 // retry button
 document.getElementById('btn-retry').onclick=()=>{
-  showScreen(null);
-  initGame();
+  clickSnd();showScreen(null);initGame();
 };
 
 // ============ CHALLENGE SYSTEM ============
@@ -744,6 +819,11 @@ function update(){
   particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.life-=.025;p.vx*=.95;p.vy*=.95;return p.life>0;});
   shake*=.82;flash*=.85;
 
+  // audio cues
+  const hp2=balance/INIT_BAL;
+  if(hp2<.25&&hp2>0)balanceWarnSnd();
+  if(fc%120===0&&(ztL>2||ztR<W-2))zoneSnd();
+
   // update HTML HUD
   updateHUD();
 
@@ -754,12 +834,14 @@ function update(){
 }
 
 function updateCombo(){
+  const prev=comboMul;
   if(combo>=50){comboMul=10;comboLbl='LEGEND';}
   else if(combo>=20){comboMul=5;comboLbl='UNKILLABLE';}
   else if(combo>=10){comboMul=3;comboLbl='DEGEN';}
   else if(combo>=5){comboMul=2;comboLbl='RISK TAKER';}
   else if(combo>=3){comboMul=1.5;comboLbl='CLOSE CALL';}
   else{comboMul=1;comboLbl='';}
+  if(comboMul>prev)comboSnd(combo);
 }
 
 function updateHUD(){
