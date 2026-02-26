@@ -103,9 +103,15 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
     <h1 class="font-display text-7xl md:text-9xl font-bold tracking-tighter text-white mb-2 leading-none uppercase mix-blend-difference">
       Inflation <span class="text-[#FF3333] text-glow-red">Dodge</span>
     </h1>
-    <p class="font-mono text-lg md:text-2xl text-gray-400 tracking-widest uppercase mb-12">
+    <p class="font-mono text-lg md:text-2xl text-gray-400 tracking-widest uppercase mb-8">
       Your savings. <span class="text-[#FF3333]">Your problem.</span>
     </p>
+    <!-- challenge dare (shown when ?challenge= param present) -->
+    <div id="challenge-dare" class="hidden flex-col items-center mb-8">
+      <div class="font-mono text-xs text-gray-500 uppercase tracking-[0.3em] mb-1"><span id="dare-name">SOMEONE</span> SURVIVED</div>
+      <div class="font-anton text-4xl text-[#FF3333]"><span id="dare-score">0</span> years</div>
+      <div class="font-mono text-sm text-gray-400 mt-1">Can you beat it?</div>
+    </div>
     <button id="btn-start" class="group relative px-12 py-4 bg-transparent border-2 border-[#D4883A] text-[#D4883A] font-mono text-xl font-bold tracking-wider hover:bg-[#D4883A] hover:text-black transition-all duration-200 overflow-hidden">
       <span class="relative z-10 flex items-center gap-2">
         <i data-lucide="play" class="w-5 h-5 fill-current"></i>
@@ -113,17 +119,6 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
       </span>
       <div class="absolute inset-0 bg-[#D4883A] transform translate-y-full group-hover:translate-y-0 transition-transform duration-200 z-0"></div>
     </button>
-  </div>
-
-  <!-- challenge dare (shown when ?c= param present) -->
-  <div id="challenge-dare" class="hidden absolute top-1/3 z-30 w-full text-center">
-    <div class="inline-block bg-[#1a0505] border border-red-500/30 px-8 py-4 rounded -skew-x-6 shadow-[0_0_30px_rgba(255,51,51,.15)]">
-      <div class="skew-x-6">
-        <p class="font-mono text-xs text-red-400 uppercase tracking-widest mb-1">You've been challenged</p>
-        <p class="font-mono text-2xl text-white font-bold"><span id="dare-name" class="text-[#D4883A]">Someone</span> survived <span id="dare-score" class="text-[#FF3333]">$0</span></p>
-        <p class="font-mono text-sm text-gray-400 mt-1">Can you beat that?</p>
-      </div>
-    </div>
   </div>
 
   <!-- bottom -->
@@ -311,12 +306,15 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
   <div class="flex flex-col items-center gap-6 max-w-lg w-full px-6">
     <div class="text-xs font-mono text-gray-400 uppercase tracking-widest">Share your score</div>
     <canvas id="share-canvas" width="600" height="400" class="w-full rounded border border-gray-800"></canvas>
+    <div class="flex items-center gap-2 w-full max-w-sm">
+      <input id="share-name" type="text" placeholder="Your name" maxlength="20" class="flex-1 px-4 py-3 bg-black border border-gray-700 text-white font-mono text-xs uppercase tracking-wider outline-none focus:border-[#D4883A] transition-colors pointer-events-auto" />
+      <button id="share-copy" class="whitespace-nowrap px-5 py-3 bg-transparent border border-gray-600 hover:border-white text-white font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Copy Link</button>
+    </div>
     <div class="flex items-center gap-3">
       <button id="share-save" class="whitespace-nowrap px-6 py-3 bg-[#FF3333] hover:bg-[#ff1a1a] text-black font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Save Image</button>
-      <button id="share-copy" class="whitespace-nowrap px-6 py-3 bg-transparent border border-gray-600 hover:border-white text-white font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Copy Link</button>
       <button id="share-close" class="whitespace-nowrap px-6 py-3 bg-transparent border border-gray-600 hover:border-gray-400 text-gray-400 font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Close</button>
     </div>
-    <div id="share-copied" class="hidden text-xs font-mono text-green-400 uppercase tracking-widest">Link copied to clipboard</div>
+    <div id="share-copied" class="hidden text-xs font-mono text-green-400 uppercase tracking-widest">Link copied!</div>
   </div>
 </div>
 
@@ -560,12 +558,10 @@ function renderShareCard(){
   sx.fillText('INFLATION DODGE — POWERED BY LEGEND',sw/2,375);
 }
 
-function getChallengeUrl(){
+function getChallengeUrl(name){
   const base=location.origin+location.pathname;
-  const name=prompt('Your name (for the dare):');
-  if(!name)return null;
-  const yrs=((lvl+1)*YEAR_PER_LVL).toFixed(0);
-  return base+'?c='+encodeURIComponent(name)+'&y='+yrs+'&l='+Math.floor(totalLost);
+  const yrs=((lvl+1)*YEAR_PER_LVL);
+  return base+'?challenge='+yrs+'&by='+encodeURIComponent(name);
 }
 
 document.getElementById('btn-challenge').onclick=()=>{
@@ -580,26 +576,27 @@ document.getElementById('share-save').onclick=()=>{
   link.click();
 };
 document.getElementById('share-copy').onclick=()=>{
-  const url=getChallengeUrl();
-  if(url){
-    navigator.clipboard.writeText(url).then(()=>{
-      document.getElementById('share-copied').classList.remove('hidden');
-      setTimeout(()=>document.getElementById('share-copied').classList.add('hidden'),2000);
-    });
-  }
+  const name=document.getElementById('share-name').value.trim()||'Anon';
+  const url=getChallengeUrl(name);
+  navigator.clipboard.writeText(url).then(()=>{
+    document.getElementById('share-copied').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('share-copied').classList.add('hidden'),2000);
+  });
 };
 document.getElementById('share-close').onclick=()=>{
   document.getElementById('share-modal').style.display='none';
 };
 
-// detect challenge URL on load
+// detect challenge URL on load — format: ?challenge=YEARS&by=NAME
 (function(){
   const p=new URLSearchParams(location.search);
-  const cName=p.get('c'),cYrs=p.get('y'),cLost=p.get('l');
-  if(cName){
-    document.getElementById('challenge-dare').classList.remove('hidden');
-    document.getElementById('dare-name').textContent=decodeURIComponent(cName);
-    document.getElementById('dare-score').textContent=cYrs+' years';
+  const cYrs=p.get('challenge'),cName=p.get('by');
+  if(cYrs){
+    const dare=document.getElementById('challenge-dare');
+    dare.classList.remove('hidden');
+    dare.style.display='flex';
+    document.getElementById('dare-name').textContent=(cName?decodeURIComponent(cName):'SOMEONE').toUpperCase();
+    document.getElementById('dare-score').textContent=cYrs;
   }
 })();
 
