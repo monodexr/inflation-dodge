@@ -134,7 +134,7 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
       <span class="text-[#e63329] font-mono text-[10px] tracking-[0.3em] font-bold animate-pulse">INITIALIZING...</span>
     </div>
     <div class="relative text-center cursor-default mb-2">
-      <h1 class="font-anton text-[5rem] md:text-[9rem] leading-[0.85] text-white tracking-tight uppercase">
+      <h1 class="font-anton text-[3.5rem] md:text-[9rem] leading-[0.85] text-white tracking-tight uppercase">
         <div class="glitch-word">INFLATION</div>
         <div class="glitch-word">DODGE</div>
       </h1>
@@ -210,60 +210,59 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
   </div>
 
   <!-- top bar -->
-  <div class="absolute top-0 left-0 w-full p-8 flex justify-between items-start z-10">
-    <div class="flex flex-col gap-1">
-      <div class="flex items-center gap-2 text-[10px] tracking-widest text-gray-500">
-        <div class="w-1.5 h-1.5 bg-gray-600 rounded-full"></div>
-        <span>LEGEND GAMES</span>
-        <span class="text-gray-700">///</span>
-        <span class="text-gray-600">ver 2.4.0</span>
-      </div>
+  <div class="absolute top-0 left-0 w-full p-4 md:p-8 flex justify-between items-start z-10">
+    <div class="flex items-center gap-2 text-[9px] md:text-[10px] tracking-widest text-gray-500">
+      <div class="w-1.5 h-1.5 bg-gray-600 rounded-full"></div>
+      <span class="hidden md:inline">LEGEND GAMES ///</span>
+      <span class="md:hidden">LEGEND</span>
     </div>
-    <div class="flex flex-col items-end gap-1">
-      <div class="flex items-center gap-2 text-[10px] tracking-widest text-red-500 font-bold">
-        <span>THREAT LEVEL: CRITICAL</span>
-        <span class="animate-blink">▲▲▲</span>
-        <div class="w-2 h-2 bg-red-600 rounded-full shadow-[0_0_10px_red] animate-pulse"></div>
-      </div>
-      <div class="text-[10px] text-gray-600 tracking-widest">MARKET CRASH IMMINENT</div>
+    <div class="flex items-center gap-2 text-[9px] md:text-[10px] tracking-widest text-red-500 font-bold">
+      <span class="hidden md:inline">THREAT LEVEL: CRITICAL</span>
+      <span class="animate-blink">▲▲▲</span>
+      <div class="w-2 h-2 bg-red-600 rounded-full shadow-[0_0_10px_red] animate-pulse"></div>
     </div>
   </div>
-  <!-- debug text — left side below header -->
-  <div class="absolute top-32 left-8 text-[10px] text-gray-600 font-mono leading-tight z-10">
+  <!-- debug text — hidden on mobile -->
+  <div class="absolute top-32 left-8 text-[10px] text-gray-600 font-mono leading-tight z-10 hidden md:block">
     <div>GRID.SYS.INIT</div>
     <div>RENDER_SCALE: 100%</div>
     <div id="hud-fps">FPS: 60</div>
   </div>
-  <!-- debug text — right side vertically centered -->
-  <div class="absolute top-1/2 right-8 -translate-y-1/2 text-right text-[10px] text-gray-500 font-mono z-10">
+  <div class="absolute top-1/2 right-8 -translate-y-1/2 text-right text-[10px] text-gray-500 font-mono z-10 hidden md:block">
     <div class="mb-1">SECTOR: 7G</div>
     <div class="mb-1">GRAVITY: 9.8m/s</div>
     <div>WIND: 0</div>
   </div>
 
-  <!-- bottom HUD -->
-  <div class="absolute bottom-0 left-0 w-full z-10 bg-gradient-to-t from-black via-black/90 to-transparent pt-12">
-    <div class="flex items-end justify-between px-8 pb-4 border-b border-gray-800/50">
-      <!-- balance -->
-      <div class="flex flex-col pb-1">
-        <span class="text-[10px] font-mono text-gray-500 tracking-wider mb-1">CURRENT BALANCE</span>
-        <span id="hud-balance" class="font-anton text-5xl text-white tracking-tight leading-none">$10,000<span class="text-base text-red-500 align-top mt-2 inline-block ml-2" id="hud-drain">▼ 0%</span></span>
+  <!-- bottom HUD — responsive -->
+  <div class="absolute bottom-0 left-0 w-full z-10 bg-gradient-to-t from-black via-black/90 to-transparent pt-8 md:pt-12">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between px-4 md:px-8 pb-3 md:pb-4 border-b border-gray-800/50 gap-2 md:gap-0">
+      <!-- mobile: balance + level in one row -->
+      <div class="flex items-end justify-between md:justify-start md:flex-col md:pb-1 w-full md:w-auto">
+        <div class="flex flex-col">
+          <span class="text-[8px] md:text-[10px] font-mono text-gray-500 tracking-wider mb-0.5">CURRENT BALANCE</span>
+          <span id="hud-balance" class="font-anton text-3xl md:text-5xl text-white tracking-tight leading-none">$10,000<span class="text-xs md:text-base text-red-500 ml-1.5">-$0/s</span></span>
+        </div>
+        <div class="flex flex-col items-end md:hidden">
+          <span class="text-[8px] font-mono text-gray-600 tracking-wider mb-0.5">THREAT</span>
+          <span id="hud-level-m" class="font-anton text-xl text-[#e63329] leading-none tracking-tighter">PAYDAY</span>
+        </div>
       </div>
       <!-- life bar -->
-      <div class="flex-1 px-12 flex flex-col justify-end pb-1">
-        <div class="flex justify-between text-[10px] font-mono text-red-500 font-bold mb-1 tracking-widest">
-          <span>SAVINGS BUFFER /// <span id="hud-status">STABLE</span></span>
-          <span id="hud-pct">100% REMAINING</span>
+      <div class="flex-1 md:px-8 flex flex-col justify-end md:pb-1 w-full md:w-auto">
+        <div class="flex justify-between text-[8px] md:text-[10px] font-mono text-red-500 font-bold mb-1 tracking-wider md:tracking-widest">
+          <span><span class="hidden md:inline">SAVINGS BUFFER /// </span><span id="hud-status">STABLE</span></span>
+          <span id="hud-pct">100%</span>
         </div>
-        <div class="w-full h-3 bg-gray-900 border border-gray-800 skew-x-[-10deg] overflow-hidden relative">
+        <div class="w-full h-2 md:h-3 bg-gray-900 border border-gray-800 skew-x-[-10deg] overflow-hidden relative">
           <div class="absolute inset-0 opacity-20" style="background-image:repeating-linear-gradient(45deg,#333 0,#333 1px,transparent 0,transparent 4px)"></div>
           <div id="hud-bar" class="h-full bg-[#22c55e] w-full relative overflow-hidden transition-all duration-100">
             <div class="absolute inset-0" style="background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.2) 0,rgba(0,0,0,.2) 1px,transparent 0,transparent 4px)"></div>
           </div>
         </div>
       </div>
-      <!-- level -->
-      <div class="flex flex-col items-end pb-1">
+      <!-- level — desktop only (mobile is inline above) -->
+      <div class="hidden md:flex flex-col items-end pb-1">
         <span class="text-[10px] font-mono text-gray-600 tracking-wider mb-1">THREAT LEVEL</span>
         <span id="hud-level" class="font-anton text-4xl text-[#e63329] leading-none tracking-tighter">PAYDAY</span>
       </div>
@@ -289,8 +288,8 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
     <div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-red-600"></div>
     <div class="text-center">
       <div class="text-xs font-mono tracking-[0.3em] text-gray-400 mb-2 uppercase">Initializing Next Sector</div>
-      <h1 id="lvl-num" class="font-anton text-[140px] md:text-[180px] text-white leading-[0.8] tracking-tighter drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]">LEVEL 01</h1>
-      <h2 id="lvl-name" class="font-anton text-5xl md:text-6xl text-[#e63329] italic tracking-wide mt-4 drop-shadow-[0_0_15px_rgba(230,51,41,0.6)]">PAYDAY</h2>
+      <h1 id="lvl-num" class="font-anton text-[80px] md:text-[180px] text-white leading-[0.8] tracking-tighter drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]">LEVEL 01</h1>
+      <h2 id="lvl-name" class="font-anton text-3xl md:text-6xl text-[#e63329] italic tracking-wide mt-2 md:mt-4 drop-shadow-[0_0_15px_rgba(230,51,41,0.6)]">PAYDAY</h2>
       <div class="mt-8 flex flex-col items-center gap-1">
         <span class="text-[10px] font-mono tracking-widest text-gray-400 uppercase">Brace for Impact</span>
         <div class="w-12 h-1 bg-red-600"></div>
@@ -308,10 +307,10 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
     <div class="flex flex-col items-center text-center mb-6">
       <span class="text-[#e63329] font-mono text-[9px] tracking-[0.5em] font-bold mb-3 opacity-70">INFLATION WINS AGAIN</span>
       <div class="flex flex-col items-center leading-none cursor-default">
-        <h1 class="font-anton text-[5rem] md:text-[7rem] text-white tracking-tight uppercase glitch-word" data-text="SURVIVED">SURVIVED</h1>
-        <div class="flex items-baseline gap-4 -mt-4">
-          <span id="death-years" class="font-anton text-[5rem] md:text-[9rem] text-[#e63329] glitch-word drop-shadow-[0_0_15px_rgba(230,51,41,.3)]" data-text="2">2</span>
-          <span class="font-anton text-[3rem] md:text-[4rem] text-white/90 glitch-word" data-text="YEARS">YEARS</span>
+        <h1 class="font-anton text-[3.5rem] md:text-[7rem] text-white tracking-tight uppercase glitch-word" data-text="SURVIVED">SURVIVED</h1>
+        <div class="flex items-baseline gap-3 md:gap-4 -mt-2 md:-mt-4">
+          <span id="death-years" class="font-anton text-[4rem] md:text-[9rem] text-[#e63329] glitch-word drop-shadow-[0_0_15px_rgba(230,51,41,.3)]" data-text="2">2</span>
+          <span class="font-anton text-[2rem] md:text-[4rem] text-white/90 glitch-word" data-text="YEARS">YEARS</span>
         </div>
       </div>
       <div class="flex items-center gap-3 mt-5">
@@ -341,34 +340,26 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 
     <!-- scores -->
     <div class="w-full mb-1"><span class="font-mono text-[8px] text-white/25 uppercase tracking-[0.35em]">SCORES</span></div>
-    <div class="flex items-stretch gap-2 w-full mb-6">
-      <div class="stat-block clip-parallelogram flex-1 flex items-center justify-between px-5 py-3 border border-[#10b981]/30 bg-[#10b981]/5">
-        <div class="flex flex-col gap-0.5">
-          <span class="font-mono text-[7px] text-[#10b981]/50 uppercase tracking-[0.25em]">YOUR RANK</span>
-          <span id="death-rank" class="stat-value font-anton text-2xl text-[#10b981]" style="text-shadow:0 0 10px rgba(16,185,129,.4)">#? ALL TIME</span>
-        </div>
+    <div class="grid grid-cols-2 gap-2 w-full mb-6">
+      <div class="stat-block clip-parallelogram flex flex-col items-center justify-center py-3 px-3 border border-[#10b981]/30 bg-[#10b981]/5">
+        <span class="font-mono text-[7px] text-[#10b981]/50 uppercase tracking-[0.25em] mb-1">YOUR RANK</span>
+        <span id="death-rank" class="stat-value font-anton text-xl md:text-2xl text-[#10b981]" style="text-shadow:0 0 10px rgba(16,185,129,.4)">#? ALL TIME</span>
       </div>
-      <div class="flex items-center font-mono text-[9px] text-white/15 px-1">VS</div>
-      <div class="stat-block clip-parallelogram flex-1 flex items-center justify-between px-5 py-3 border border-[#f59e0b]/30 bg-[#f59e0b]/5">
-        <div class="flex items-center gap-2">
-          <div class="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-pulse flex-shrink-0"></div>
-          <div class="flex flex-col gap-0.5">
-            <span class="font-mono text-[7px] text-[#f59e0b]/50 uppercase tracking-[0.25em]">#1 — TOP SCORE</span>
-            <span class="stat-value font-anton text-2xl text-[#f59e0b]" style="text-shadow:0 0 10px rgba(245,158,11,.4)">114 YRS</span>
-          </div>
-        </div>
+      <div class="stat-block clip-parallelogram flex flex-col items-center justify-center py-3 px-3 border border-[#f59e0b]/30 bg-[#f59e0b]/5">
+        <span class="font-mono text-[7px] text-[#f59e0b]/50 uppercase tracking-[0.25em] mb-1">#1 — TOP SCORE</span>
+        <span class="stat-value font-anton text-xl md:text-2xl text-[#f59e0b]" style="text-shadow:0 0 10px rgba(245,158,11,.4)">114 YRS</span>
       </div>
     </div>
 
     <div class="w-full border-t border-white/[.06] mb-5"></div>
 
     <!-- actions -->
-    <div class="flex items-center justify-center gap-3 w-full mb-6">
-      <button id="btn-retry" class="btn-cycle relative bg-transparent text-[#e63329] border border-[#e63329]/60 px-8 py-3 clip-parallelogram cursor-pointer pointer-events-auto" style="animation:btn-blink 2.4s step-end infinite">
-        <span class="font-anton text-base tracking-widest uppercase" id="death-cta-text">RESTART</span>
+    <div class="flex items-center justify-center gap-2 md:gap-3 w-full mb-6 flex-wrap">
+      <button id="btn-retry" class="btn-cycle relative bg-transparent text-[#e63329] border border-[#e63329]/60 px-6 md:px-8 py-2.5 md:py-3 clip-parallelogram cursor-pointer pointer-events-auto" style="animation:btn-blink 2.4s step-end infinite">
+        <span class="font-anton text-sm md:text-base tracking-widest uppercase" id="death-cta-text">RESTART</span>
       </button>
-      <button id="btn-challenge" class="px-5 py-3 border border-white/15 text-white/40 font-mono text-[10px] uppercase tracking-widest hover:bg-white/5 hover:text-white/80 transition-all clip-parallelogram cursor-pointer pointer-events-auto">CHALLENGE</button>
-      <button id="btn-leaderboard" class="px-5 py-3 border border-white/15 text-white/40 font-mono text-[10px] uppercase tracking-widest hover:bg-white/5 hover:text-white/80 transition-all clip-parallelogram cursor-pointer pointer-events-auto">LEADERBOARD</button>
+      <button id="btn-challenge" class="px-4 md:px-5 py-2.5 md:py-3 border border-white/15 text-white/40 font-mono text-[9px] md:text-[10px] uppercase tracking-wider md:tracking-widest hover:bg-white/5 hover:text-white/80 transition-all clip-parallelogram cursor-pointer pointer-events-auto">CHALLENGE</button>
+      <button id="btn-leaderboard" class="px-4 md:px-5 py-2.5 md:py-3 border border-white/15 text-white/40 font-mono text-[9px] md:text-[10px] uppercase tracking-wider md:tracking-widest hover:bg-white/5 hover:text-white/80 transition-all clip-parallelogram cursor-pointer pointer-events-auto">LEADERBOARD</button>
     </div>
 
     <!-- footer with real assets -->
@@ -438,14 +429,14 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 
   <!-- table -->
   <main class="relative z-20 w-full px-8 md:px-16 mt-4 flex-1 flex flex-col min-h-0 overflow-hidden">
-    <div class="grid gap-4 py-3 font-mono text-[9px] text-white/20 uppercase tracking-[0.25em] font-bold" style="grid-template-columns:80px 1fr 140px 140px">
+    <div class="grid gap-2 md:gap-4 py-3 font-mono text-[9px] text-white/20 uppercase tracking-[0.25em] font-bold" style="grid-template-columns:40px 1fr 70px 70px">
       <div>RANK</div><div>PLAYER</div><div class="text-right">SURVIVED</div><div class="text-right">BALANCE</div>
     </div>
     <div class="w-full border-t border-white/[.06] mb-1"></div>
     <div id="lb-rows" class="flex-1 overflow-y-auto" style="scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent"></div>
     <!-- your row -->
     <div class="w-full border-t border-white/[.06] mt-2 mb-2"></div>
-    <div id="lb-you" class="clip-parallelogram border border-[#e63329]/40 bg-[#e63329]/[.06] grid gap-4 py-4 items-center mb-4" style="grid-template-columns:80px 1fr 140px 140px"></div>
+    <div id="lb-you" class="clip-parallelogram border border-[#e63329]/40 bg-[#e63329]/[.06] grid gap-2 md:gap-4 py-3 md:py-4 items-center mb-4" style="grid-template-columns:40px 1fr 70px 70px"></div>
   </main>
 
   <!-- bottom ticker -->
@@ -861,7 +852,7 @@ function openLeaderboard(){
   });
   // render rows
   const rows=document.getElementById('lb-rows');rows.innerHTML='';
-  const gc='grid-template-columns:80px 1fr 140px 140px';
+  const gc='grid-template-columns:40px 1fr 70px 70px';
   LB_DUMMY.forEach((p,i)=>{
     const isFirst=i===0;
     const fadeA=Math.max(.2,1-i*.08);
@@ -981,6 +972,7 @@ function updateHUD(){
   const pct=Math.round(hp*100);
   document.getElementById('hud-balance').innerHTML='$'+Math.max(0,Math.floor(balance)).toLocaleString()+'<span class="text-base text-red-500 align-top mt-2 inline-block ml-2">-$'+drainRate.toFixed(0)+'/s</span>';
   document.getElementById('hud-level').textContent=curLvl().name;
+  const lm=document.getElementById('hud-level-m');if(lm)lm.textContent=curLvl().name;
   document.getElementById('hud-pct').textContent=pct+'% REMAINING';
   document.getElementById('hud-status').textContent=hp>=.6?'STABLE':hp>=.3?'WARNING':'CRITICAL';
   const bar=document.getElementById('hud-bar');
