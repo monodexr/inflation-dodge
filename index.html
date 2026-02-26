@@ -54,7 +54,15 @@ canvas{display:block;cursor:none}
 </div>
 <script>
 const c=document.getElementById('c'),X=c.getContext('2d');
-let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+let W,H,DPR=1;
+function resize(){
+  DPR=window.devicePixelRatio||1;
+  W=innerWidth;H=innerHeight;
+  c.width=W*DPR;c.height=H*DPR;
+  c.style.width=W+'px';c.style.height=H+'px';
+  X.setTransform(DPR,0,0,DPR,0,0);
+}
+resize();onresize=resize;
 const logo=new Image();logo.src='logo.svg';
 const appIcon=new Image();appIcon.src='app-icon.png';
 
@@ -569,113 +577,105 @@ function draw(){
   particles.forEach(p=>{X.globalAlpha=p.life;X.fillStyle=p.col;
     X.beginPath();X.arc(p.x,p.y,p.sz*p.life,0,Math.PI*2);X.fill();X.globalAlpha=1;});
 
-  // ==== HUD OVERLAY (Figma ui-1) ====
-  // Layout: bottom 100px is the HUD zone
-  // |  Balance        [=====life bar=====]       Level N  |
-  // |  $9,991                                    PAYDAY   |
-  // padding: 40px left/right, 36px from bottom
+  // ==== HUD — matched to Figma ui-1 exactly ====
 
-  const P=40; // side padding
-  const BY=H-36; // bottom baseline for dollar amount / level name
-  const LBL_Y=BY-42; // label row ("Balance", "Level N")
-
-  // ---- RIGHT EDGE: Ghost level name (behind everything) ----
-  X.save();
-  X.translate(W-14,H/2);X.rotate(Math.PI/2);
-  X.fillStyle='rgba(235,235,235,.04)';
-  X.font='bold 72px Knapp,sans-serif';
-  X.textAlign='center';X.textBaseline='middle';
-  X.fillText(curLvl().name,0,0);
-  X.restore();
-
-  // ---- TOP-RIGHT: Legend logo ----
+  // ---- TOP CENTER: Legend logo, full opacity ----
   if(logo.complete){
-    const lw=130,lh=23;
-    X.globalAlpha=.4;
-    X.drawImage(logo,W-P-lw,28,lw,lh);
-    X.globalAlpha=1;
+    const lw=160,lh=28;
+    X.drawImage(logo,W/2-lw/2,24,lw,lh);
   }
 
-  // ---- COMBO — top center ----
+  // ---- CENTER: Persistent level display ----
+  X.textAlign='center';X.textBaseline='middle';
+  // "Level N" — Knapp Bold 20px, Legend blue
+  X.fillStyle='#008fd6';
+  X.font='bold 20px Knapp,sans-serif';
+  X.fillText('Level '+(lvl+1),W/2,H/2-30);
+  // Level name — Knapp Bold 72px, near-white
+  X.fillStyle='rgba(235,235,235,.85)';
+  X.font='bold 72px Knapp,sans-serif';
+  X.fillText(curLvl().name,W/2,H/2+24);
+
+  // ---- COMBO — below level name ----
   if(combo>=3){
-    X.fillStyle='#2775CA';X.font='bold 18px M,monospace';
-    X.textAlign='center';X.textBaseline='top';
-    X.fillText(comboMul+'x '+comboLbl,W/2,28);
+    X.fillStyle='#2775CA';X.font='bold 16px M,monospace';
+    X.fillText(comboMul+'x '+comboLbl,W/2,H/2+70);
   }
 
-  // ---- BOTTOM-LEFT: Balance ----
+  // ---- BOTTOM HUD — three columns ----
+  const P=48;
+  const BOT=H-48;
+  const LBL_OFF=24;
+
+  // -- Left: Balance --
   // "Balance" label
   X.fillStyle='#00b84a';
   X.font='bold 14px Knapp,sans-serif';
   X.textAlign='left';X.textBaseline='alphabetic';
-  X.fillText('Balance',P,LBL_Y);
+  X.fillText('Balance',P,BOT-LBL_OFF-4);
 
-  // Dollar amount — ticker digits
+  // Dollar amount with ticker
   X.font='bold 30px Knapp,sans-serif';
   const balStr=Math.max(0,Math.floor(balance)).toLocaleString();
-  const charW=X.measureText('0').width;
+  const cW=X.measureText('0').width;
   let cx=P;
 
-  X.fillStyle='#b2b2b2';X.fillText('$',cx,BY);
+  X.fillStyle='#b2b2b2';
+  X.fillText('$',cx,BOT);
   cx+=X.measureText('$').width+1;
 
   const chars=balStr.split('');
   let tdi=0;
   for(let i=0;i<chars.length;i++){
     if(chars[i]===','){
-      X.fillStyle='#b2b2b2';X.fillText(',',cx,BY);
-      cx+=X.measureText(',').width;continue;
+      X.fillStyle='#b2b2b2';X.font='bold 30px Knapp,sans-serif';
+      X.fillText(',',cx,BOT);cx+=X.measureText(',').width;continue;
     }
     const td=tickerDigits[tdi++];
     if(!td||td.vel===0){
-      X.fillStyle='#b2b2b2';X.fillText(chars[i],cx,BY);
+      X.fillStyle='#b2b2b2';X.font='bold 30px Knapp,sans-serif';
+      X.fillText(chars[i],cx,BOT);
     }else{
       X.save();
-      X.beginPath();X.rect(cx-1,BY-30,charW+2,36);X.clip();
+      X.beginPath();X.rect(cx-1,BOT-28,cW+2,34);X.clip();
       const frac=Math.abs(td.display%1);
       const cur=Math.floor(td.display+.01)%10;
       const nxt=(cur===0?9:cur-1);
       X.font='bold 30px Knapp,sans-serif';
       X.fillStyle='#b2b2b2';X.globalAlpha=1-frac;
-      X.fillText(String(cur),cx,BY-frac*32);
-      X.fillStyle='#555';X.globalAlpha=frac;
-      X.fillText(String(nxt),cx,BY+(1-frac)*32);
+      X.fillText(String(cur),cx,BOT-frac*30);
+      X.fillStyle='#444';X.globalAlpha=frac;
+      X.fillText(String(nxt),cx,BOT+(1-frac)*30);
       X.globalAlpha=1;X.restore();
     }
-    cx+=charW+.5;
+    cx+=cW+.5;
   }
 
-  // ---- BOTTOM-RIGHT: Level ----
+  // -- Right: Level --
   X.fillStyle='#008fd6';
   X.font='bold 14px Knapp,sans-serif';
   X.textAlign='right';X.textBaseline='alphabetic';
-  X.fillText('Level '+(lvl+1),W-P,LBL_Y);
+  X.fillText('Level '+(lvl+1),W-P,BOT-LBL_OFF-4);
 
   X.fillStyle='#b2b2b2';
   X.font='bold 30px Knapp,sans-serif';
-  X.fillText(curLvl().name,W-P,BY);
+  X.fillText(curLvl().name,W-P,BOT);
 
-  // ---- LIFE BAR — centered between balance and level text ----
-  // measure how much space the left and right text takes
-  X.font='bold 30px Knapp,sans-serif';
-  const leftW=P+X.measureText('$'+balStr).width+30;
-  const rightW=X.measureText(curLvl().name).width+P+30;
-  const barX2=leftW;
-  const barW2=W-leftW-rightW;
-  const barH2=6;
-  const barY2=BY-10;
+  // -- Center: Life bar (Figma: 338px wide, 6px tall, rounded 50px) --
+  const barW=Math.min(338,W*.28);
+  const barH=6;
+  const barX=W/2-barW/2;
+  const barY=BOT-12;
 
-  if(barW2>60){
-    // track
-    X.fillStyle='rgba(217,217,217,.06)';
-    X.beginPath();rr(barX2,barY2,barW2,barH2,50);X.fill();
-    // fill with color tiers
-    const barCol2=hp>=.8?'rgba(19,204,34,.7)':hp>=.4?'rgba(255,165,0,.7)':'rgba(255,50,40,.7)';
-    const fw=Math.max(0,barW2*hp);
-    if(fw>0){
-      X.fillStyle=barCol2;
-      X.beginPath();rr(barX2,barY2,fw,barH2,50);X.fill();
-    }
+  // track
+  X.fillStyle='rgba(217,217,217,.06)';
+  X.beginPath();rr(barX,barY,barW,barH,50);X.fill();
+  // fill
+  const barCol=hp>=.8?'rgba(19,204,34,.7)':hp>=.4?'rgba(255,165,0,.7)':'rgba(255,50,40,.7)';
+  const fw=Math.max(0,barW*hp);
+  if(fw>0){
+    X.fillStyle=barCol;
+    X.beginPath();rr(barX,barY,fw,barH,50);X.fill();
   }
 
   X.restore();
