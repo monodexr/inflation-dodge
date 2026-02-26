@@ -320,6 +320,37 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
   </div>
 </div>
 
+<!-- ============ LEADERBOARD MODAL ============ -->
+<div id="lb-modal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(0,0,0,.9)">
+  <div class="flex flex-col items-center w-full max-w-xl px-6">
+    <!-- header -->
+    <div class="w-full text-center mb-6">
+      <div class="text-xs font-mono text-gray-500 uppercase tracking-widest mb-2">Daily Competition</div>
+      <div class="flex items-center justify-center gap-3 mb-4">
+        <div class="w-8 h-px bg-red-500/50"></div>
+        <span class="font-anton text-3xl text-white tracking-tight">DAY <span id="lb-day" class="text-[#D4883A]">1</span> / 7</span>
+        <div class="w-8 h-px bg-red-500/50"></div>
+      </div>
+      <!-- prize ticker -->
+      <div class="inline-block bg-[#0a1a0a] border border-green-500/30 px-6 py-3 rounded">
+        <div class="text-[10px] font-mono text-green-500/60 uppercase tracking-widest mb-1">Today's Prize — Earning 8.14% APY</div>
+        <div class="font-anton text-4xl text-green-400 tracking-tight" id="lb-prize">$1,000.00</div>
+      </div>
+    </div>
+    <!-- scores -->
+    <div class="w-full border border-gray-800 rounded overflow-hidden mb-6">
+      <div class="grid grid-cols-[40px_1fr_100px_80px] bg-gray-900/50 px-4 py-2 text-[10px] font-mono text-gray-500 uppercase tracking-widest border-b border-gray-800">
+        <span>#</span><span>Player</span><span class="text-right">Years</span><span class="text-right">Balance</span>
+      </div>
+      <div id="lb-rows"></div>
+    </div>
+    <!-- your rank -->
+    <div id="lb-you" class="w-full border border-[#D4883A]/30 bg-[#D4883A]/5 rounded px-4 py-3 mb-6 grid grid-cols-[40px_1fr_100px_80px] text-sm font-mono items-center">
+    </div>
+    <button id="lb-close" class="whitespace-nowrap px-6 py-3 bg-transparent border border-gray-600 hover:border-gray-400 text-gray-400 font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Close</button>
+  </div>
+</div>
+
 <script>
 // ============ CANVAS ============
 const c=document.getElementById('c'),X=c.getContext('2d');
@@ -571,6 +602,67 @@ document.getElementById('share-close').onclick=()=>{
     document.getElementById('dare-score').textContent=cYrs+' years';
   }
 })();
+
+// ============ LEADERBOARD ============
+const LB_DUMMY=[
+  {name:'CryptoKing',yrs:14,bal:2840},
+  {name:'hodlqueen',yrs:12,bal:1920},
+  {name:'degen_ape',yrs:11,bal:3100},
+  {name:'satoshi99',yrs:10,bal:1540},
+  {name:'yieldfarmer',yrs:9,bal:2200},
+  {name:'ser_ponzi',yrs:8,bal:1180},
+  {name:'rektnoob',yrs:7,bal:880},
+  {name:'moon_boi',yrs:6,bal:620},
+  {name:'paper_hands',yrs:5,bal:410},
+  {name:'ngmi_andy',yrs:4,bal:200},
+];
+let lbPrize=1000.00;
+let lbTickerInterval=null;
+
+function openLeaderboard(){
+  const modal=document.getElementById('lb-modal');
+  modal.style.display='flex';
+  // day calc (day 1 = launch day, increment daily)
+  const launch=new Date('2026-02-26');
+  const now=new Date();
+  const day=Math.max(1,Math.min(7,Math.floor((now-launch)/(1000*60*60*24))+1));
+  document.getElementById('lb-day').textContent=String(day);
+  // prize ticker — 8.14% APY on $1000 = ~$0.000223/s
+  lbPrize=1000.00;
+  const perSec=1000*0.0814/(365.25*24*3600);
+  if(lbTickerInterval)clearInterval(lbTickerInterval);
+  lbTickerInterval=setInterval(()=>{
+    lbPrize+=perSec*.1;
+    document.getElementById('lb-prize').textContent='$'+lbPrize.toFixed(6);
+  },100);
+  // render rows
+  const rows=document.getElementById('lb-rows');
+  rows.innerHTML='';
+  LB_DUMMY.forEach((p,i)=>{
+    const isFirst=i===0;
+    rows.innerHTML+=`<div class="grid grid-cols-[40px_1fr_100px_80px] px-4 py-2.5 text-sm font-mono items-center border-b border-gray-800/50 ${isFirst?'bg-[#D4883A]/10':'hover:bg-white/[.02]'} transition-colors">
+      <span class="${isFirst?'text-[#D4883A] font-bold':'text-gray-500'}">${i+1}</span>
+      <span class="${isFirst?'text-white font-bold':'text-gray-300'}">${p.name}</span>
+      <span class="text-right ${isFirst?'text-white font-bold':'text-gray-400'}">${p.yrs} yrs</span>
+      <span class="text-right ${isFirst?'text-green-400 font-bold':'text-gray-500'}">$${p.bal.toLocaleString()}</span>
+    </div>`;
+  });
+  // your score
+  const yrs=state==='dead'?((lvl+1)*YEAR_PER_LVL):0;
+  const you=document.getElementById('lb-you');
+  if(state==='dead'){
+    const rank=LB_DUMMY.filter(p=>p.yrs>yrs).length+1;
+    you.innerHTML=`<span class="text-[#D4883A] font-bold">${rank>10?'—':rank}</span><span class="text-[#D4883A] font-bold">YOU</span><span class="text-right text-white font-bold">${yrs} yrs</span><span class="text-right text-gray-400">$${Math.floor(balance).toLocaleString()}</span>`;
+    you.style.display='grid';
+  }else{
+    you.style.display='none';
+  }
+}
+document.getElementById('btn-leaderboard').onclick=()=>openLeaderboard();
+document.getElementById('lb-close').onclick=()=>{
+  document.getElementById('lb-modal').style.display='none';
+  if(lbTickerInterval){clearInterval(lbTickerInterval);lbTickerInterval=null;}
+};
 
 // ============ UPDATE ============
 function update(){
