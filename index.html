@@ -107,7 +107,7 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 <div id="scan-sweep" class="scan-sweep" style="display:none"></div>
 
 <!-- ============ TITLE SCREEN ============ -->
-<div id="screen-title" class="screen active fixed inset-0 z-20 flex-col overflow-hidden" style="background:#0a0a0a;cursor:crosshair">
+<div id="screen-title" class="screen active fixed inset-0 z-20 flex-col overflow-hidden" style="background:#0a0a0a;cursor:crosshair;opacity:0;transition:opacity .3s ease">
   <!-- floating pills background -->
   <div id="pill-container" class="absolute inset-0 overflow-hidden pointer-events-none z-0"></div>
 
@@ -1273,6 +1273,7 @@ try{initPixi();}catch(e){console.warn('Pixi init failed, using Canvas 2D fallbac
 
 // ============ INIT ============
 lucide.createIcons();
+document.fonts.ready.then(()=>{const ts=document.getElementById('screen-title');if(ts)ts.style.opacity='1';});
 function loop(){
   update();
   draw();
