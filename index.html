@@ -806,25 +806,30 @@ function draw(){
     X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.clip();
     const pctStr=o.rateHike?'RATE HIKE':'+'+Math.floor(o.pct)+'%';
     const pctSz=Math.min(Math.round(o.h*.42),18);
-    const lblSz=Math.min(Math.round(o.h*.34),14);
-    const pad=10;
-    X.font=`bold ${pctSz}px M,monospace`;
-    const pctW=X.measureText(pctStr).width;
-    X.font=`500 ${lblSz}px Knapp,sans-serif`;
-    const lblW=o.label&&!o.rateHike?X.measureText(o.label.toUpperCase()).width:0;
-    const totalW=pctW+(lblW>0?12+lblW:0);
-    const fits=totalW+pad*2<=o.w;
+    const lblSz=Math.min(Math.round(o.h*.32),13);
+    const pad=8;
     X.textBaseline='middle';
-    if(fits&&lblW>0){
-      // both fit: pct left, label right
-      X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
-      X.textAlign='left';X.fillText(pctStr,o.x+pad,o.y+o.h/2);
-      X.fillStyle='rgba(255,255,255,.85)';X.font=`500 ${lblSz}px Knapp,sans-serif`;
-      X.textAlign='right';X.fillText(o.label.toUpperCase(),o.x+o.w-pad,o.y+o.h/2);
-    }else if(o.label&&!o.rateHike){
-      // only label fits or brick is small: center the label
-      X.fillStyle='rgba(255,255,255,.85)';X.font=`500 ${lblSz}px Knapp,sans-serif`;
-      X.textAlign='center';X.fillText(o.label.toUpperCase(),o.x+o.w/2,o.y+o.h/2);
+    // always show percentage
+    X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
+    const pctW=X.measureText(pctStr).width;
+    // check if label fits beside it
+    if(o.label&&!o.rateHike){
+      X.font=`500 ${lblSz}px Knapp,sans-serif`;
+      const lblW=X.measureText(o.label.toUpperCase()).width;
+      if(pctW+lblW+pad*3<o.w){
+        // both fit: pct left, label right
+        X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
+        X.textAlign='left';X.fillText(pctStr,o.x+pad,o.y+o.h/2);
+        X.fillStyle='rgba(255,255,255,.85)';X.font=`500 ${lblSz}px Knapp,sans-serif`;
+        X.textAlign='right';X.fillText(o.label.toUpperCase(),o.x+o.w-pad,o.y+o.h/2);
+      }else{
+        // tight: pct left, label right but smaller
+        const tSz=Math.max(9,lblSz-2);
+        X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
+        X.textAlign='left';X.fillText(pctStr,o.x+pad,o.y+o.h/2);
+        X.fillStyle='rgba(255,255,255,.6)';X.font=`500 ${tSz}px Knapp,sans-serif`;
+        X.textAlign='right';X.fillText(o.label.toUpperCase(),o.x+o.w-pad,o.y+o.h/2);
+      }
     }else{
       // rate hike or no label: center pct
       X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
