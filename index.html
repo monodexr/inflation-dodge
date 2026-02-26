@@ -367,11 +367,10 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 const c=document.getElementById('c'),X=c.getContext('2d');
 let W,H,DPR=1;
 function resize(){
-  DPR=window.devicePixelRatio||1;
+  DPR=1;
   W=innerWidth;H=innerHeight;
-  c.width=W*DPR;c.height=H*DPR;
+  c.width=W;c.height=H;
   c.style.width=W+'px';c.style.height=H+'px';
-  X.setTransform(DPR,0,0,DPR,0,0);
 }
 resize();onresize=resize;
 const appIcon=new Image();appIcon.src='app-icon.png';
@@ -384,6 +383,7 @@ function showScreen(id){
   document.getElementById('fx-scanlines').style.display=fx;
   document.getElementById('fx-vignette').style.display=fx;
   document.getElementById('fx-noise').style.display=fx;
+  document.body.style.cursor=id==='screen-hud'||!id?'none':'';
 }
 
 // ============ AUDIO ============
@@ -957,8 +957,8 @@ function initPixi(){
   pixiApp=new PIXI.Application({
     width:W,height:H,
     backgroundAlpha:0,
-    resolution:window.devicePixelRatio||1,
-    autoDensity:true,
+    resolution:1,
+    autoDensity:false,
     antialias:false,
   });
   const pxCanvas=pixiApp.view;
@@ -967,6 +967,7 @@ function initPixi(){
   pxCanvas.style.width='100%';pxCanvas.style.height='100%';
   pxCanvas.style.zIndex='1';
   pxCanvas.style.pointerEvents='none';
+  pxCanvas.style.cursor='none';
   document.body.insertBefore(pxCanvas,document.getElementById('screen-title'));
 
   // create texture from game canvas
@@ -977,47 +978,43 @@ function initPixi(){
   pixiApp.stage.addChild(pixiSprite);
 
   // bloom / glow filter
-  const bloomFrag=`
+  const fxFrag=`
     precision mediump float;
     varying vec2 vTextureCoord;
     uniform sampler2D uSampler;
-    uniform float uBloom;
+    uniform float uFlash;
     uniform float uTime;
     void main(){
       vec2 uv=vTextureCoord;
       vec4 col=texture2D(uSampler,uv);
-      // sample blur for bloom
-      float b=uBloom;
-      vec4 bloom=vec4(0.0);
-      float total=0.0;
-      for(float x=-2.0;x<=2.0;x+=1.0){
-        for(float y=-2.0;y<=2.0;y+=1.0){
-          vec2 off=vec2(x,y)*b*0.002;
-          vec4 s=texture2D(uSampler,uv+off);
-          float w=1.0/(1.0+length(vec2(x,y)));
-          bloom+=s*w;total+=w;
+      // subtle chromatic aberration (only on edges, not center)
+      float dist=length(uv-0.5);
+      float ca=dist*0.0008+uFlash*0.002;
+      float r=texture2D(uSampler,uv+vec2(ca,0.0)).r;
+      float bl=texture2D(uSampler,uv-vec2(ca,0.0)).b;
+      vec4 final=vec4(r,col.g,bl,col.a);
+      // slight bloom ONLY on bright pixels (threshold)
+      vec4 bright=max(col-0.4,0.0)*1.5;
+      vec4 bloomSample=vec4(0.0);
+      for(float x=-1.0;x<=1.0;x+=1.0){
+        for(float y=-1.0;y<=1.0;y+=1.0){
+          vec4 s=max(texture2D(uSampler,uv+vec2(x,y)*0.003)-0.4,0.0)*1.5;
+          bloomSample+=s;
         }
       }
-      bloom/=total;
-      // chromatic aberration
-      float ca=0.001+sin(uTime*0.5)*0.0003;
-      float r=texture2D(uSampler,uv+vec2(ca,0.0)).r;
-      float g=col.g;
-      float bl=texture2D(uSampler,uv-vec2(ca,0.0)).b;
-      vec4 chromatic=vec4(r,g,bl,col.a);
-      // combine
-      vec4 final=mix(chromatic,bloom,0.15);
-      // subtle vignette boost
-      float vig=1.0-smoothstep(0.4,1.4,length(uv-0.5)*2.0);
-      final.rgb*=mix(0.85,1.0,vig);
+      bloomSample/=9.0;
+      final.rgb+=bloomSample.rgb*0.3*(0.5+uFlash*2.0);
+      // vignette
+      float vig=1.0-smoothstep(0.5,1.5,dist*2.0);
+      final.rgb*=mix(0.88,1.0,vig);
       gl_FragColor=final;
     }
   `;
-  const bloomFilter=new PIXI.Filter(undefined,bloomFrag,{
-    uBloom:1.2,
+  const fxFilter=new PIXI.Filter(undefined,fxFrag,{
+    uFlash:0.0,
     uTime:0.0,
   });
-  pixiApp.stage.filters=[bloomFilter];
+  pixiApp.stage.filters=[fxFilter];
 
   // resize handler
   const origResize=resize;
@@ -1041,7 +1038,7 @@ function loop(){
     const f=pixiApp.stage.filters;
     if(f&&f[0]&&f[0].uniforms){
       f[0].uniforms.uTime=performance.now()/1000;
-      f[0].uniforms.uBloom=state==='playing'?1.2+flash*2:0.5;
+      f[0].uniforms.uFlash=state==='playing'?flash:0;
     }
     pixiApp.render();
   }
