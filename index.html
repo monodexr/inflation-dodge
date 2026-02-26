@@ -600,20 +600,32 @@ function draw(){
     X.fillStyle=grad;X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.fill();
     X.strokeStyle=(o.accent||'#ff4444')+'88';X.lineWidth=o.rateHike?3:1.5;X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.stroke();
     const hl=X.createLinearGradient(o.x,o.y,o.x,o.y+o.h*.3);hl.addColorStop(0,'rgba(255,255,255,.08)');hl.addColorStop(1,'rgba(255,255,255,0)');X.fillStyle=hl;X.beginPath();rr(o.x+1,o.y+1,o.w-2,o.h*.3,8);X.fill();
-    // clip so text never bleeds outside the brick
     X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.clip();
     const pctStr=o.rateHike?'RATE HIKE':'+'+Math.floor(o.pct)+'%';
-    const pctSz=Math.min(Math.round(o.h*.45),20);
-    X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
-    X.textAlign='left';X.textBaseline='middle';
+    const pctSz=Math.min(Math.round(o.h*.42),18);
+    const lblSz=Math.min(Math.round(o.h*.34),14);
+    const pad=10;
+    X.font=`bold ${pctSz}px M,monospace`;
     const pctW=X.measureText(pctStr).width;
-    X.fillText(pctStr,o.x+10,o.y+o.h/2);
-    if(o.label&&!o.rateHike){
-      const lblSz=Math.min(Math.round(o.h*.34),14);
+    X.font=`500 ${lblSz}px Knapp,sans-serif`;
+    const lblW=o.label&&!o.rateHike?X.measureText(o.label.toUpperCase()).width:0;
+    const totalW=pctW+(lblW>0?12+lblW:0);
+    const fits=totalW+pad*2<=o.w;
+    X.textBaseline='middle';
+    if(fits&&lblW>0){
+      // both fit: pct left, label right
+      X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
+      X.textAlign='left';X.fillText(pctStr,o.x+pad,o.y+o.h/2);
       X.fillStyle='rgba(255,255,255,.85)';X.font=`500 ${lblSz}px Knapp,sans-serif`;
-      X.textAlign='right';
-      const space=o.w-pctW-28;
-      if(space>20)X.fillText(o.label.toUpperCase(),o.x+o.w-10,o.y+o.h/2);
+      X.textAlign='right';X.fillText(o.label.toUpperCase(),o.x+o.w-pad,o.y+o.h/2);
+    }else if(o.label&&!o.rateHike){
+      // only label fits or brick is small: center the label
+      X.fillStyle='rgba(255,255,255,.85)';X.font=`500 ${lblSz}px Knapp,sans-serif`;
+      X.textAlign='center';X.fillText(o.label.toUpperCase(),o.x+o.w/2,o.y+o.h/2);
+    }else{
+      // rate hike or no label: center pct
+      X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
+      X.textAlign='center';X.fillText(pctStr,o.x+o.w/2,o.y+o.h/2);
     }
     X.restore();});
 
