@@ -376,6 +376,7 @@ resize();onresize=resize;
 const appIcon=new Image();appIcon.src='app-icon.png';
 
 // ============ SCREEN MANAGEMENT ============
+let lvlOverlayTimer=null;
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   if(id)document.getElementById(id).classList.add('active');
@@ -384,6 +385,8 @@ function showScreen(id){
   document.getElementById('fx-vignette').style.display=fx;
   document.getElementById('fx-noise').style.display=fx;
   document.body.style.cursor=id==='screen-hud'||!id?'none':'';
+  if(id!=='screen-hud')document.getElementById('screen-level').style.opacity='0';
+  if(lvlOverlayTimer){clearTimeout(lvlOverlayTimer);lvlOverlayTimer=null;}
 }
 
 // ============ AUDIO ============
@@ -447,6 +450,7 @@ let totalLost,peakBal,bestCombo;
 let prevPX,prevPY,pt={x:0,y:0};
 let dipDone,wallObs,legendCycle;
 let trailPts=[];
+let endBalance=0;
 const INIT_BAL=10000;
 let bestLvl=parseInt(localStorage.getItem('id_blvl')||'0');
 
@@ -467,19 +471,19 @@ function initGame(){
 function setLevel(n){
   lvl=n;lvlFrame=0;
   const L=LEVELS[Math.min(n,LEVELS.length-1)];
-  announceT=70;
+  announceT=72;
   lvlSnd();
-  const zf=L.zone;const pad=(1-zf)/2;
-  ztL=W*pad;ztR=W*(1-pad);ztT=H*pad*.6;ztB=H*(1-pad*.6);
+  const zf=L.zone;const pad2=(1-zf)/2;
+  ztL=W*pad2;ztR=W*(1-pad2);ztT=H*pad2*.6;ztB=H*(1-pad2*.6);
   drainRate=L.drain;
   if(L.dip&&!dipDone){dipDone=true;balance*=.7;shake=15;flash=1.5;}
-  if(n>=14){legendCycle++;const sc=Math.min(legendCycle,20);drainRate=40+sc*5;const zf2=Math.max(.3,.5-sc*.015);const p2=(1-zf2)/2;ztL=W*p2;ztR=W*(1-p2);ztT=H*p2*.6;ztB=H*(1-p2*.6);}
-  // update level overlay
+  if(n>=14){legendCycle++;const sc=Math.min(legendCycle,20);drainRate=40+sc*5;const zf2=Math.max(.3,.5-sc*.015);const p3=(1-zf2)/2;ztL=W*p3;ztR=W*(1-p3);ztT=H*p3*.6;ztB=H*(1-p3*.6);}
   const lo=document.getElementById('screen-level');
   document.getElementById('lvl-num').textContent='LEVEL '+String(n+1).padStart(2,'0');
   document.getElementById('lvl-name').textContent=L.name;
   lo.style.opacity='1';
-  setTimeout(()=>{lo.style.opacity='0';},1200);
+  if(lvlOverlayTimer)clearTimeout(lvlOverlayTimer);
+  lvlOverlayTimer=setTimeout(()=>{lo.style.opacity='0';lvlOverlayTimer=null;},1200);
 }
 function curLvl(){return LEVELS[Math.min(lvl,LEVELS.length-1)];}
 
@@ -509,7 +513,7 @@ function emit(px,py,col,n,sp){for(let i=0;i<n;i++){const a=Math.random()*Math.PI
 
 // ============ INPUT ============
 document.addEventListener('mousemove',e=>{if(state==='playing'){pt.x=e.clientX;pt.y=e.clientY}});
-document.addEventListener('touchmove',e=>{if(state==='playing'){pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}},{passive:true});
+document.addEventListener('touchmove',e=>{if(state==='playing'){e.preventDefault();pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}},{passive:false});
 document.addEventListener('touchstart',e=>{if(state==='playing'){pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}},{passive:true});
 
 // start button
@@ -668,7 +672,7 @@ function openLeaderboard(){
   const you=document.getElementById('lb-you');
   if(state==='dead'){
     const rank=LB_DUMMY.filter(p=>p.yrs>yrs).length+1;
-    you.innerHTML=`<span class="text-[#D4883A] font-bold">${rank>10?'—':rank}</span><span class="text-[#D4883A] font-bold">YOU</span><span class="text-right text-white font-bold">${yrs} yrs</span><span class="text-right text-gray-400">$${Math.floor(balance).toLocaleString()}</span>`;
+    you.innerHTML=`<span class="text-[#D4883A] font-bold">${rank>10?'—':rank}</span><span class="text-[#D4883A] font-bold">YOU</span><span class="text-right text-white font-bold">${yrs} yrs</span><span class="text-right text-gray-400">$${endBalance.toLocaleString()}</span>`;
     you.style.display='grid';
   }else{
     you.style.display='none';
@@ -687,7 +691,7 @@ function update(){
   zoneL+=(ztL-zoneL)*.04;zoneR+=(ztR-zoneR)*.04;zoneT+=(ztT-zoneT)*.04;zoneB+=(ztB-zoneB)*.04;
   const L=curLvl();
   if(lvlFrame>=LVL_DUR){setLevel(lvl+1);}
-  if(announceT>60){announceT--;return;}
+  if(announceT>12){announceT--;return;}
   const dps=drainRate+(lvl>=14?legendCycle*2:0);
   balance-=dps/60;totalLost+=dps/60;
   if(balance>peakBal)peakBal=balance;
@@ -743,7 +747,8 @@ function update(){
   // update HTML HUD
   updateHUD();
 
-  if(balance<=0){balance=0;state='dead';deathSnd();
+  if(balance<=0){
+    endBalance=Math.max(0,Math.floor(balance));balance=0;state='dead';deathSnd();
     if(lvl>bestLvl){bestLvl=lvl;localStorage.setItem('id_blvl',String(bestLvl));}
     showDeath();}
 }
@@ -926,8 +931,16 @@ function showDeath(){
   showScreen('screen-death');
   // create floating chaos
   const dc=document.getElementById('death-chaos');dc.innerHTML='';
-  const syms=['%','$','📉','💸','⬇','🏷️'];const cols=['#FF3333','#333','#1a1a1a','#5c1414'];
-  for(let i=0;i<20;i++){const el=document.createElement('div');el.classList.add('bg-floater');el.innerText=syms[Math.floor(Math.random()*syms.length)];el.style.fontSize=Math.floor(Math.random()*60+20)+'px';el.style.left=Math.random()*100+'vw';el.style.color=cols[Math.floor(Math.random()*cols.length)];el.style.opacity=Math.random()*.1+.05;el.style.animationDuration=(Math.random()*15+10)+'s';el.style.animationDelay=(Math.random()*-20)+'s';dc.appendChild(el);}
+  const dSyms=['%','$','-8%','+12%','FEE','TAX','$$$','DEBT'];
+  for(let i=0;i<12;i++){const el=document.createElement('div');el.classList.add('bg-floater');
+    el.innerText=dSyms[Math.floor(Math.random()*dSyms.length)];
+    el.style.fontSize=Math.floor(Math.random()*30+14)+'px';
+    el.style.left=Math.random()*100+'vw';el.style.color='#ffffff';
+    el.style.opacity=String(Math.random()*.04+.02);
+    el.style.animationDuration=(Math.random()*15+12)+'s';
+    el.style.animationDelay=(Math.random()*-20)+'s';
+    el.style.fontFamily='JetBrains Mono,monospace';el.style.fontWeight='bold';
+    dc.appendChild(el);}
   lucide.createIcons();
 }
 
