@@ -122,6 +122,32 @@ let legendCycle;
 const INIT_BAL=10000;
 let bestLvl=parseInt(localStorage.getItem('id_blvl')||'0');
 
+// ticker state — each digit has a current display value and a velocity for rolling
+let tickerDigits=[];
+let tickerPrevBal=0;
+function updateTicker(){
+  const str=Math.max(0,Math.floor(balance)).toString();
+  while(tickerDigits.length<str.length)tickerDigits.push({display:0,target:0,vel:0});
+  while(tickerDigits.length>str.length)tickerDigits.pop();
+  for(let i=0;i<str.length;i++){
+    const tgt=parseInt(str[i]);
+    tickerDigits[i].target=tgt;
+    if(tickerDigits[i].display!==tgt){
+      const diff=tickerDigits[i].display-tgt;
+      tickerDigits[i].vel=Math.max(.08,Math.abs(diff)*.15);
+    }
+    // lerp toward target
+    const d=tickerDigits[i];
+    if(Math.abs(d.display-d.target)<.01){d.display=d.target;d.vel=0;}
+    else{
+      const dir=d.target>d.display?1:-1;
+      d.display+=dir*d.vel;
+      if((dir>0&&d.display>d.target)||(dir<0&&d.display<d.target))d.display=d.target;
+    }
+  }
+  tickerPrevBal=balance;
+}
+
 function initGame(){
   player={x:W/2,y:H*.65,r:18};pt.x=player.x;pt.y=player.y;prevPX=player.x;prevPY=player.y;
   balance=INIT_BAL;drainRate=8;obs=[];pickups=[];particles=[];fc=0;
@@ -349,6 +375,7 @@ function update(){
 
   particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.life-=.025;p.vx*=.95;p.vy*=.95;return p.life>0;});
   shake*=.82;flash*=.85;
+  updateTicker();
 
   if(balance<=0){
     balance=0;state='dead';deathSnd();
@@ -563,37 +590,147 @@ function draw(){
     X.globalAlpha=1;
   });
 
-  // ---- HUD — bottom, padded, large, styled ----
-  const PAD=32;
-  const HUD_Y=H-PAD;
-  const dc=drainRate<20?'#78FFB4':drainRate<40?'#FFD666':'#ff4444';
+  // ---- HUD (Figma design: ui-1) ----
+  const PAD=36;
 
-  // purchasing power bar — full width, above text
-  const barY=HUD_Y-72;
-  X.fillStyle='#0E0E12';X.beginPath();rr(PAD,barY,W-PAD*2,5,2.5);X.fill();
-  X.fillStyle=hp>.5?'#2775CA':hp>.2?'#FFD666':'#ff4444';
-  X.beginPath();rr(PAD,barY,Math.max(0,(W-PAD*2)*hp),5,2.5);X.fill();
-
-  // bottom-left: BALANCE
-  X.fillStyle='#555';X.font='bold 11px M,monospace';X.textAlign='left';X.letterSpacing='2px';
-  X.fillText('BALANCE',PAD,HUD_Y-48);
-  X.fillStyle=dc;X.font='bold 36px M,monospace';
-  X.fillText('$'+Math.max(0,Math.floor(balance)).toLocaleString(),PAD,HUD_Y-14);
-  // drain rate
-  X.globalAlpha=.5;X.fillStyle=dc;X.font='bold 13px M,monospace';
-  X.fillText('-$'+drainRate.toFixed(0)+'/s',PAD,HUD_Y+4);X.globalAlpha=1;
-
-  // bottom-right: LEVEL
-  X.fillStyle='#555';X.font='bold 11px M,monospace';X.textAlign='right';
-  X.fillText('LEVEL '+(lvl+1),W-PAD,HUD_Y-48);
-  X.fillStyle='#fff';X.font='bold 32px M,monospace';
-  X.fillText(curLvl().name,W-PAD,HUD_Y-14);
-
-  // combo — top center, bigger
-  if(combo>=3){
-    X.fillStyle='#2775CA';X.font='bold 18px M,monospace';X.textAlign='center';
-    X.fillText(comboMul+'x '+comboLbl,W/2,28);
+  // ---- TOP-RIGHT: Legend logo ----
+  if(logo.complete){
+    const lw=120,lh=21;
+    X.globalAlpha=.5;
+    X.drawImage(logo,W-PAD-lw,PAD,lw,lh);
+    X.globalAlpha=1;
   }
+
+  // ---- COMBO — top center ----
+  if(combo>=3){
+    X.fillStyle='#2775CA';
+    X.font='bold 18px M,monospace';
+    X.textAlign='center';X.textBaseline='top';
+    X.fillText(comboMul+'x '+comboLbl,W/2,PAD);
+  }
+
+  // ---- LIFE BAR — center bottom, Figma: 6px tall, rounded 50px, inset shadow ----
+  const barW=Math.min(340,W-PAD*2-320);
+  const barH=6;
+  const barX=(W-barW)/2;
+  const barY=H-PAD-3;
+
+  // track
+  X.fillStyle='rgba(217,217,217,.08)';
+  X.beginPath();rr(barX,barY,barW,barH,50);X.fill();
+
+  // fill — green 100-80, orange 79-40, red 39-0
+  const barCol=hp>=.8?'rgba(19,204,34,.7)':hp>=.4?'rgba(255,165,0,.7)':'rgba(255,50,40,.7)';
+  const fillW=Math.max(0,barW*hp);
+  if(fillW>0){
+    X.fillStyle=barCol;
+    X.beginPath();rr(barX,barY,fillW,barH,50);X.fill();
+    // inset shadow
+    X.fillStyle='rgba(0,0,0,.15)';
+    X.beginPath();rr(barX,barY,fillW,barH*.45,50);X.fill();
+  }
+
+  // ---- BOTTOM-LEFT: Balance (Figma spec) ----
+  const blX=PAD;
+  const blY=H-PAD;
+
+  // "Balance" label — Knapp Bold 14px, green #00b84a
+  X.fillStyle='#00b84a';
+  X.font='bold 14px Knapp,sans-serif';
+  X.textAlign='left';X.textBaseline='alphabetic';
+  X.fillText('Balance',blX,blY-46);
+
+  // Dollar amount with slot-machine ticker — Knapp Bold 30px
+  // render "$" + comma-formatted digits, each digit rolling independently
+  X.textBaseline='alphabetic';
+  const balStr=Math.max(0,Math.floor(balance)).toLocaleString();
+  const digY=blY-12;
+  let curX=blX;
+
+  // "$" prefix
+  X.fillStyle='#b2b2b2';
+  X.font='bold 30px Knapp,sans-serif';
+  X.fillText('$',curX,digY);
+  curX+=X.measureText('$').width+1;
+
+  // render each character
+  const balChars=balStr.split('');
+  let tdi=0; // ticker digit index (skip commas)
+  for(let ci=0;ci<balChars.length;ci++){
+    const ch=balChars[ci];
+    if(ch===','){
+      X.fillStyle='#b2b2b2';
+      X.font='bold 30px Knapp,sans-serif';
+      X.fillText(',',curX,digY);
+      curX+=X.measureText(',').width;
+      continue;
+    }
+    const td=tickerDigits[tdi];tdi++;
+    if(!td){
+      X.fillStyle='#b2b2b2';X.font='bold 30px Knapp,sans-serif';
+      X.fillText(ch,curX,digY);
+      curX+=X.measureText(ch).width+.5;
+      continue;
+    }
+
+    const isRolling=td.vel>0;
+    const charW=X.measureText('0').width;
+
+    if(isRolling){
+      // rolling digit — clip region, draw column of digits offset by fractional value
+      X.save();
+      X.beginPath();
+      X.rect(curX-2,digY-28,charW+4,34);
+      X.clip();
+
+      const frac=td.display%1;
+      const cur=Math.floor(td.display)%10;
+      const nxt=(cur+1)%10;
+
+      // current digit slides up, next slides in from below
+      X.font='bold 30px Knapp,sans-serif';
+      X.fillStyle='#b2b2b2';
+      X.globalAlpha=1-frac;
+      X.fillText(String(cur),curX,digY-frac*30);
+      X.globalAlpha=frac;
+      X.fillStyle='#333232';
+      X.fillText(String(nxt),curX,digY+(1-frac)*30);
+      X.globalAlpha=1;
+
+      X.restore();
+    }else{
+      X.fillStyle='#b2b2b2';
+      X.font='bold 30px Knapp,sans-serif';
+      X.fillText(String(Math.round(td.display)%10),curX,digY);
+    }
+    curX+=charW+.5;
+  }
+
+  // ---- BOTTOM-RIGHT: Level (Figma spec) ----
+  const brX=W-PAD;
+  const brY=H-PAD;
+
+  // level name — Knapp Bold 30px, grey #b2b2b2
+  X.fillStyle='#b2b2b2';
+  X.font='bold 30px Knapp,sans-serif';
+  X.textAlign='right';X.textBaseline='alphabetic';
+  X.fillText(curLvl().name,brX,brY-12);
+
+  // "Level N" — Knapp Bold 14px, Legend blue #008fd6
+  X.fillStyle='#008fd6';
+  X.font='bold 14px Knapp,sans-serif';
+  X.fillText('Level '+(lvl+1),brX,brY-46);
+
+  // ---- RIGHT EDGE: Large rotated level name ----
+  X.save();
+  X.translate(W-14,H/2);
+  X.rotate(Math.PI/2);
+  // big level name
+  X.fillStyle='rgba(235,235,235,.06)';
+  X.font='bold 72px Knapp,sans-serif';
+  X.textAlign='center';X.textBaseline='middle';
+  X.fillText(curLvl().name,0,0);
+  X.restore();
 
   X.restore();
 }
