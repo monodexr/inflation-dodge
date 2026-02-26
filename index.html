@@ -84,7 +84,7 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
 <!-- ============ TITLE SCREEN ============ -->
 <div id="screen-title" class="screen active fixed inset-0 z-20 flex-col items-center justify-center overflow-hidden cursor-pointer" style="background:#050505">
   <div class="absolute inset-0 bg-grid opacity-30"></div>
-  <div id="chaos-bg" class="absolute inset-0 z-0 opacity-20 pointer-events-none overflow-hidden"></div>
+  <div id="chaos-bg" class="absolute inset-0 z-0 opacity-100 pointer-events-none overflow-hidden"></div>
 
   <!-- top bar -->
   <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-center opacity-50 z-30">
@@ -650,8 +650,20 @@ function showDeath(){
 // ============ TITLE CHAOS ============
 (function(){
   const cc=document.getElementById('chaos-bg');
-  const syms=['%','$','🏷️','📈','💸','-10%'];const cols=['#FF3333','#D4883A','#333','#555'];
-  for(let i=0;i<20;i++){const el=document.createElement('div');el.classList.add('floating-item');el.innerText=syms[Math.floor(Math.random()*syms.length)];el.style.fontSize=Math.floor(Math.random()*40+20)+'px';el.style.left=Math.random()*100+'vw';el.style.color=cols[Math.floor(Math.random()*cols.length)];el.style.animationDuration=(Math.random()*10+10)+'s';el.style.animationDelay=(Math.random()*-20)+'s';el.style.fontWeight='bold';cc.appendChild(el);}
+  const syms=['%','$','+3%','-8%','$$$','FEE','TAX','+12%'];
+  for(let i=0;i<10;i++){
+    const el=document.createElement('div');el.classList.add('floating-item');
+    el.innerText=syms[Math.floor(Math.random()*syms.length)];
+    el.style.fontSize=Math.floor(Math.random()*30+14)+'px';
+    el.style.left=Math.random()*100+'vw';
+    el.style.color='#ffffff';
+    el.style.opacity=String(Math.random()*.04+.02);
+    el.style.animationDuration=(Math.random()*15+12)+'s';
+    el.style.animationDelay=(Math.random()*-20)+'s';
+    el.style.fontFamily='JetBrains Mono,monospace';
+    el.style.fontWeight='bold';
+    cc.appendChild(el);
+  }
 })();
 
 // ============ INIT ============
