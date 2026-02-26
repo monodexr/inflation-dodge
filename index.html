@@ -405,7 +405,7 @@ function initGame(){
 function setLevel(n){
   lvl=n;lvlFrame=0;
   const L=LEVELS[Math.min(n,LEVELS.length-1)];
-  announceT=150;
+  announceT=100;
   lvlSnd();
   const zf=L.zone;const pad=(1-zf)/2;
   ztL=W*pad;ztR=W*(1-pad);ztT=H*pad*.6;ztB=H*(1-pad*.6);
@@ -417,7 +417,7 @@ function setLevel(n){
   document.getElementById('lvl-num').textContent='LEVEL '+String(n+1).padStart(2,'0');
   document.getElementById('lvl-name').textContent=L.name;
   lo.style.opacity='1';
-  setTimeout(()=>{lo.style.opacity='0';},2200);
+  setTimeout(()=>{lo.style.opacity='0';},1500);
 }
 function curLvl(){return LEVELS[Math.min(lvl,LEVELS.length-1)];}
 
