@@ -93,17 +93,21 @@ const YEAR_PER_LVL=2; // each level = ~2 "years"
 
 // ============ OBSTACLES ============
 const OBS_T1=[
-  {label:'Groceries',pct:3,w:150,h:38,spd:1,col:'#cc5544'},
-  {label:'Coffee',pct:2,w:120,h:34,spd:1.3,col:'#bb6644'},
-  {label:'Gas',pct:4,w:140,h:38,spd:1,col:'#cc4433'},
-  {label:'Subscriptions',pct:1,w:160,h:34,spd:1.4,col:'#aa5555'},
+  {label:'Groceries',pct:3,w:140,h:42,spd:1,col:'#cc5544'},
+  {label:'Coffee',pct:2,w:90,h:32,spd:1.5,col:'#bb6644'},
+  {label:'Gas',pct:4,w:110,h:36,spd:1.1,col:'#cc4433'},
+  {label:'Subscriptions',pct:1,w:170,h:30,spd:1.4,col:'#aa5555'},
+  {label:'Streaming',pct:1,w:80,h:28,spd:1.7,col:'#996655'},
+  {label:'Tips & Fees',pct:2,w:120,h:34,spd:1.2,col:'#bb5533'},
 ];
 const OBS_T2=[
-  {label:'Rent',pct:8,w:220,h:44,spd:.8,col:'#ee3322'},
-  {label:'Insurance',pct:6,w:170,h:40,spd:1,col:'#dd4433',diag:true},
-  {label:'Tuition',pct:10,w:160,h:40,spd:.9,col:'#ff2211',bounce:true},
-  {label:'Car Payment',pct:5,w:160,h:38,spd:1.1,col:'#cc5544'},
-  {label:'RATE HIKE',pct:0,w:130,h:36,spd:1.8,col:'#ff0000',rateHike:true},
+  {label:'Rent',pct:8,w:260,h:52,spd:.7,col:'#ee3322'},
+  {label:'Insurance',pct:6,w:180,h:44,spd:1,col:'#dd4433',diag:true},
+  {label:'Tuition',pct:10,w:200,h:48,spd:.8,col:'#ff2211',bounce:true},
+  {label:'Car Payment',pct:5,w:150,h:40,spd:1.1,col:'#cc5544'},
+  {label:'Medical Bill',pct:12,w:280,h:56,spd:.6,col:'#ff1100'},
+  {label:'Taxes',pct:7,w:230,h:50,spd:.75,col:'#dd2200'},
+  {label:'RATE HIKE',pct:0,w:130,h:38,spd:1.8,col:'#ff0000',rateHike:true},
 ];
 
 // ============ GAME STATE ============
@@ -165,7 +169,8 @@ function spawnOb(){
   const pool=lvl<3?OBS_T1:(Math.random()<.35?OBS_T1:OBS_T2);
   const t=pool[Math.floor(Math.random()*pool.length)];
   const m=W<500?.75:1;
-  let ow=t.w*m,oh=t.h,sx,sy,vx,vy;
+  const szVar=.8+Math.random()*.5;
+  let ow=Math.round(t.w*m*szVar),oh=Math.round(t.h*(.85+Math.random()*.3)),sx,sy,vx,vy;
   const spd=t.spd*L.spd*(1+lvl*.02);
 
   const fromSide=L.sides&&Math.random()<.2;
@@ -206,7 +211,7 @@ function spawnPickup(){
   const a=isDefi?2000:200;
   pickups.push({x:zoneL+20+Math.random()*(zoneR-zoneL-40),y:zoneT-30,
     vy:2.5+Math.random()*1.5,amt:a,fake:false,collected:false,
-    type:isDefi?'defi':'bank',sz:isDefi?34:24});
+    type:isDefi?'defi':'bank',sz:isDefi?42:30});
 }
 
 // ============ PARTICLES ============
