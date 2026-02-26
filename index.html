@@ -161,6 +161,11 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
         <span class="text-gray-700">///</span>
         <span class="text-gray-600">ver 2.4.0</span>
       </div>
+      <div class="mt-4 text-[10px] text-gray-700 font-mono leading-relaxed">
+        <div>GRID.SYS.INIT</div>
+        <div>RENDER_SCALE: 100%</div>
+        <div>FPS: 60</div>
+      </div>
     </div>
     <div class="flex flex-col items-end gap-1">
       <div class="flex items-center gap-2 text-[10px] tracking-widest text-red-500 font-bold">
@@ -169,6 +174,11 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
         <div class="w-2 h-2 bg-red-600 rounded-full shadow-[0_0_10px_red]"></div>
       </div>
       <div class="text-[10px] text-gray-600 tracking-widest">MARKET CRASH IMMINENT</div>
+      <div class="mt-4 text-[10px] text-gray-700 font-mono leading-relaxed text-right">
+        <div>SECTOR: 7G</div>
+        <div>GRAVITY: 9.8m/s</div>
+        <div>WIND: 0</div>
+      </div>
     </div>
   </div>
 
@@ -381,10 +391,9 @@ let lvlOverlayTimer=null;
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   if(id)document.getElementById(id).classList.add('active');
-  const fx=id==='screen-death'||id==='screen-title'?'none':'';
-  document.getElementById('fx-scanlines').style.display=fx;
-  document.getElementById('fx-vignette').style.display=fx;
-  document.getElementById('fx-noise').style.display=fx;
+  document.getElementById('fx-scanlines').style.display='none';
+  document.getElementById('fx-vignette').style.display='none';
+  document.getElementById('fx-noise').style.display='none';
   document.body.style.cursor=id==='screen-hud'||!id?'none':'';
   if(id!=='screen-hud')document.getElementById('screen-level').style.opacity='0';
   if(lvlOverlayTimer){clearTimeout(lvlOverlayTimer);lvlOverlayTimer=null;}
@@ -500,23 +509,24 @@ const LEVELS=[
 const LVL_DUR=720;
 const YEAR_PER_LVL=2;
 
-// ============ OBSTACLES ============
+// ============ OBSTACLES (stroke pills, color-coded) ============
 const OBS_T1=[
-  {label:'Groceries',pct:3,w:140,h:44,spd:1,bg:'#8B4513',fg:'#D2691E',accent:'#F4A460'},
-  {label:'Coffee',pct:2,w:88,h:34,spd:1.5,bg:'#5C3317',fg:'#8B6914',accent:'#DEB887'},
-  {label:'Gas',pct:4,w:115,h:40,spd:1.1,bg:'#4A0E4E',fg:'#7B2D8E',accent:'#C77DFF'},
-  {label:'Subscriptions',pct:1,w:165,h:32,spd:1.4,bg:'#1A3A4A',fg:'#2E6B8A',accent:'#5DADE2'},
-  {label:'Streaming',pct:1,w:82,h:30,spd:1.7,bg:'#1B4332',fg:'#2D6A4F',accent:'#52B788'},
-  {label:'Tips & Fees',pct:2,w:125,h:36,spd:1.2,bg:'#4A3728',fg:'#7C5B44',accent:'#C19A6B'},
+  {label:'GROCERIES',pct:3,w:160,h:36,spd:1,col:'#f59e0b'},
+  {label:'COFFEE',pct:2,w:120,h:32,spd:1.5,col:'#22c55e'},
+  {label:'GAS',pct:4,w:100,h:32,spd:1.1,col:'#22c55e'},
+  {label:'SUBSCRIPTIONS',pct:1,w:180,h:32,spd:1.4,col:'#3b82f6'},
+  {label:'STREAMING',pct:1,w:140,h:30,spd:1.7,col:'#3b82f6'},
+  {label:'TIPS & FEES',pct:2,w:150,h:34,spd:1.2,col:'#ef4444'},
 ];
 const OBS_T2=[
-  {label:'Rent',pct:8,w:260,h:55,spd:.7,bg:'#8B0000',fg:'#CC0000',accent:'#FF4444'},
-  {label:'Insurance',pct:6,w:185,h:46,spd:1,bg:'#7B3F00',fg:'#B85C00',accent:'#FF8C00',diag:true},
-  {label:'Tuition',pct:10,w:210,h:50,spd:.8,bg:'#5B0A0A',fg:'#8B1A1A',accent:'#DC143C',bounce:true},
-  {label:'Car Payment',pct:5,w:155,h:42,spd:1.1,bg:'#3D0C5C',fg:'#5C1A8C',accent:'#9B59B6'},
-  {label:'Medical Bill',pct:12,w:280,h:58,spd:.6,bg:'#1A0000',fg:'#4A0000',accent:'#FF0000'},
-  {label:'Taxes',pct:7,w:235,h:52,spd:.75,bg:'#0D2137',fg:'#1A3D5C',accent:'#2980B9'},
-  {label:'RATE HIKE',pct:0,w:135,h:40,spd:1.8,bg:'#FF0000',fg:'#FF3333',accent:'#FFFFFF',rateHike:true},
+  {label:'RENT',pct:8,w:200,h:40,spd:.7,col:'#ef4444'},
+  {label:'INSURANCE',pct:6,w:180,h:36,spd:1,col:'#f59e0b',diag:true},
+  {label:'TUITION',pct:10,w:190,h:38,spd:.8,col:'#ef4444',bounce:true},
+  {label:'CAR PAYMENT',pct:5,w:180,h:36,spd:1.1,col:'#a855f7'},
+  {label:'MEDICAL BILL',pct:12,w:210,h:40,spd:.6,col:'#ef4444'},
+  {label:'TAXES',pct:7,w:170,h:36,spd:.75,col:'#3b82f6'},
+  {label:'UTILITIES',pct:9,w:160,h:34,spd:.9,col:'#f59e0b'},
+  {label:'COST OF LIVING',pct:0,w:200,h:40,spd:1.8,col:'#ef4444',rateHike:true},
 ];
 
 // ============ GAME STATE ============
@@ -577,12 +587,12 @@ function spawnOb(){
   if(fromBelow){sx=zoneL+Math.random()*(zoneR-zoneL-ow);sy=zoneB+10;vx=(Math.random()-.5)*.5;vy=-spd*1.3;}
   else if(fromSide){const left=Math.random()>.5;sx=left?zoneL-ow-5:zoneR+5;sy=zoneT+Math.random()*(zoneB-zoneT-oh);vx=left?spd*1.2:-spd*1.2;vy=(Math.random()-.5)*.5;}
   else{sx=zoneL+Math.random()*(zoneR-zoneL-ow);sy=zoneT-oh-10;vx=t.diag?(Math.random()-.5)*spd*.6:(Math.random()-.5)*.3;vy=spd*(1+Math.random()*.3);}
-  obs.push({x:sx,y:sy,w:ow,h:oh,ow,oh,vx,vy,label:t.label,pct:t.pct,bpct:t.pct,bg:t.bg,fg:t.fg,accent:t.accent,hit:false,grazed:false,bounce:t.bounce||false,rateHike:t.rateHike||false,born:fc,parked:false,fake:false});
+  obs.push({x:sx,y:sy,w:ow,h:oh,ow,oh,vx,vy,label:t.label,pct:t.pct,bpct:t.pct,col:t.col,hit:false,grazed:false,bounce:t.bounce||false,rateHike:t.rateHike||false,born:fc,parked:false,fake:false});
 }
 function spawnFormation(){
   const gapX=zoneL+Math.random()*(zoneR-zoneL-60);const gapW=55+Math.random()*30;
   for(let fx=zoneL;fx<zoneR;fx+=40){if(fx>gapX&&fx<gapX+gapW)continue;
-    obs.push({x:fx,y:zoneT-40,w:36,h:28,ow:36,oh:28,vx:0,vy:curLvl().spd*1.2,label:'WALL',pct:3,bpct:3,bg:'#3A0000',fg:'#880000',accent:'#FF4444',hit:false,grazed:false,bounce:false,rateHike:false,born:fc,parked:false,fake:false});}
+    obs.push({x:fx,y:zoneT-40,w:36,h:28,ow:36,oh:28,vx:0,vy:curLvl().spd*1.2,label:'',pct:3,bpct:3,col:'#ef4444',hit:false,grazed:false,bounce:false,rateHike:false,born:fc,parked:false,fake:false});}
 }
 function spawnPickup(){
   const isDefi=lvl>=3&&Math.random()<.25;
@@ -802,7 +812,7 @@ function update(){
     const cx3=Math.max(o.x,Math.min(player.x,o.x+o.w));const cy3=Math.max(o.y,Math.min(player.y,o.y+o.h));
     const dx2=player.x-cx3,dy2=player.y-cy3;const dq=dx2*dx2+dy2*dy2;
     if(!o.grazed&&dq<(pr+10)*(pr+10)&&dq>pr*pr){o.grazed=true;combo++;if(combo>bestCombo)bestCombo=combo;updateCombo();balance+=(80+lvl*30)*comboMul;emit(cx3,cy3,'#78FFB4',5,3);grazeSnd();}
-    if(dq<pr*pr&&iframes===0){o.hit=true;let dmg;if(o.rateHike){dmg=1200;drainRate*=2.5;}else{dmg=Math.max(800,balance*(o.pct/100)*1.5+o.pct*100);}balance-=dmg;totalLost+=dmg;const kd=Math.sqrt(dq)||1;player.x+=dx2/kd*18;player.y+=dy2/kd*18;iframes=15;hitShrink=1;shake=10;flash=1;combo=0;comboMul=1;comboLbl='';emit(player.x,player.y,o.accent||'#ff4444',18,6);hitSnd(o.pct);}
+    if(dq<pr*pr&&iframes===0){o.hit=true;let dmg;if(o.rateHike){dmg=1200;drainRate*=2.5;}else{dmg=Math.max(800,balance*(o.pct/100)*1.5+o.pct*100);}balance-=dmg;totalLost+=dmg;const kd=Math.sqrt(dq)||1;player.x+=dx2/kd*18;player.y+=dy2/kd*18;iframes=15;hitShrink=1;shake=10;flash=1;combo=0;comboMul=1;comboLbl='';emit(player.x,player.y,o.col||'#ff4444',18,6);hitSnd(o.pct);}
   }
 
   for(let i=pickups.length-1;i>=0;i--){
@@ -889,53 +899,25 @@ function draw(){
   if(shake>.5)X.translate((Math.random()-.5)*shake*2,(Math.random()-.5)*shake*2);
   const hp=Math.max(0,balance/INIT_BAL);const L=curLvl();
 
-  X.fillStyle='#08080c';X.fillRect(0,0,W,H);
+  X.fillStyle='#0a0a0a';X.fillRect(0,0,W,H);
 
-  // parallax dots with pulse + gravity well
-  const px=player.x,py=player.y;
-  bgDots.forEach((layer,li)=>{
-    const gravStr=.08*(li+1);
-    layer.forEach(d=>{
-      d.y+=d.sp;d.pulse+=d.pulseSpd;
-      if(d.y>H+10){d.y=-10;d.x=Math.random()*W;d.baseX=d.x;}
-      // gravity well — dots subtly pull toward player
-      const dx=px-(d.x%W),dy=py-d.y;
-      const dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<200&&dist>0){
-        const pull=gravStr*(1-dist/200);
-        d.x+=dx/dist*pull;d.y+=dy/dist*pull*.5;
-      }
-      const pa=d.a*(1+Math.sin(d.pulse)*.3);
-      X.fillStyle=`rgba(255,255,255,${pa})`;
-      X.fillRect(d.x%W,d.y,d.sz,d.sz);
-    });
-  });
+  // crisp grid — matches CSS bg-grid from design
+  X.strokeStyle='rgba(255,255,255,.03)';X.lineWidth=1;
+  for(let gx=zoneL;gx<zoneR;gx+=40){X.beginPath();X.moveTo(gx,zoneT);X.lineTo(gx,zoneB);X.stroke();}
+  for(let gy=zoneT;gy<zoneB;gy+=40){X.beginPath();X.moveTo(zoneL,gy);X.lineTo(zoneR,gy);X.stroke();}
 
-  // animated grid with gravity well distortion
-  const ga=.015+hp*.01;
-  X.strokeStyle=`rgba(255,255,255,${ga})`;X.lineWidth=.5;
-  for(let gx=zoneL;gx<zoneR;gx+=gridSpacing){
-    X.beginPath();
-    for(let gy=zoneT;gy<=zoneB;gy+=20){
-      const dx2=px-gx,dy2=py-gy;
-      const d2=Math.sqrt(dx2*dx2+dy2*dy2);
-      let ox=0;
-      if(d2<150&&d2>0)ox=dx2/d2*(1-d2/150)*6;
-      if(gy===zoneT)X.moveTo(gx+ox,gy);else X.lineTo(gx+ox,gy);
-    }
-    X.stroke();
-  }
-  for(let gy=zoneT;gy<zoneB;gy+=gridSpacing){
-    X.beginPath();
-    for(let gx=zoneL;gx<=zoneR;gx+=20){
-      const dx2=px-gx,dy2=py-gy;
-      const d2=Math.sqrt(dx2*dx2+dy2*dy2);
-      let oy=0;
-      if(d2<150&&d2>0)oy=dy2/d2*(1-d2/150)*6;
-      if(gx===zoneL)X.moveTo(gx,gy+oy);else X.lineTo(gx,gy+oy);
-    }
-    X.stroke();
-  }
+  // radial mask — grid fades at edges like the design's mask-image
+  const radMask=X.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.6);
+  radMask.addColorStop(0,'rgba(0,0,0,0)');radMask.addColorStop(.4,'rgba(0,0,0,0)');radMask.addColorStop(1,'rgba(10,10,10,1)');
+  X.fillStyle=radMask;X.fillRect(0,0,W,H);
+
+  // moving scanline (subtle red-tinted, sweeps down every 6s)
+  const scanY=(fc*1.5)%(H+100)-50;
+  X.fillStyle='rgba(230,51,41,.02)';
+  X.fillRect(0,scanY,W,80);
+  const scanGrad=X.createLinearGradient(0,scanY,0,scanY+80);
+  scanGrad.addColorStop(0,'rgba(230,51,41,0)');scanGrad.addColorStop(.5,'rgba(230,51,41,.03)');scanGrad.addColorStop(1,'rgba(230,51,41,0)');
+  X.fillStyle=scanGrad;X.fillRect(0,scanY,W,80);
 
   // zone walls
   X.fillStyle='#050505';
@@ -957,45 +939,38 @@ function draw(){
     const px=p.x-tw/2-6,py=p.y+r+5;X.fillStyle=p.fake?'rgba(255,30,30,.5)':isG?'rgba(255,200,0,.18)':'rgba(120,255,180,.12)';X.beginPath();rr(px,py,tw+12,18,9);X.fill();
     X.fillStyle=p.fake?'#ff6666':isG?'#FFD700':'#78FFB4';X.textAlign='center';X.textBaseline='middle';X.fillText(lbl,p.x,py+9);});
 
-  // obstacles
-  obs.forEach(o=>{if(o.hit&&!o.parked)return;X.save();X.globalAlpha=o.grazed?.3:o.parked?.45:1;
-    const grad=X.createLinearGradient(o.x,o.y,o.x,o.y+o.h);grad.addColorStop(0,o.fg||'#882222');grad.addColorStop(1,o.bg||'#441111');
-    X.fillStyle=grad;X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.fill();
-    X.strokeStyle=(o.accent||'#ff4444')+'88';X.lineWidth=o.rateHike?3:1.5;X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.stroke();
-    const hl=X.createLinearGradient(o.x,o.y,o.x,o.y+o.h*.3);hl.addColorStop(0,'rgba(255,255,255,.08)');hl.addColorStop(1,'rgba(255,255,255,0)');X.fillStyle=hl;X.beginPath();rr(o.x+1,o.y+1,o.w-2,o.h*.3,8);X.fill();
-    X.beginPath();rr(o.x,o.y,o.w,o.h,10);X.clip();
-    const pctStr=o.rateHike?'RATE HIKE':'+'+Math.floor(o.pct)+'%';
-    const pctSz=Math.min(Math.round(o.h*.42),18);
-    const lblSz=Math.min(Math.round(o.h*.32),13);
-    const pad=8;
-    X.textBaseline='middle';
-    // always show percentage
-    X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
-    const pctW=X.measureText(pctStr).width;
-    // check if label fits beside it
-    if(o.label&&!o.rateHike){
-      X.font=`500 ${lblSz}px Knapp,sans-serif`;
-      const lblW=X.measureText(o.label.toUpperCase()).width;
-      if(pctW+lblW+pad*3<o.w){
-        // both fit: pct left, label right
-        X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
-        X.textAlign='left';X.fillText(pctStr,o.x+pad,o.y+o.h/2);
-        X.fillStyle='rgba(255,255,255,.85)';X.font=`500 ${lblSz}px Knapp,sans-serif`;
-        X.textAlign='right';X.fillText(o.label.toUpperCase(),o.x+o.w-pad,o.y+o.h/2);
-      }else{
-        // tight: pct left, label right but smaller
-        const tSz=Math.max(9,lblSz-2);
-        X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
-        X.textAlign='left';X.fillText(pctStr,o.x+pad,o.y+o.h/2);
-        X.fillStyle='rgba(255,255,255,.6)';X.font=`500 ${tSz}px Knapp,sans-serif`;
-        X.textAlign='right';X.fillText(o.label.toUpperCase(),o.x+o.w-pad,o.y+o.h/2);
-      }
-    }else{
-      // rate hike or no label: center pct
-      X.fillStyle=o.accent||'#ff6644';X.font=`bold ${pctSz}px M,monospace`;
-      X.textAlign='center';X.fillText(pctStr,o.x+o.w/2,o.y+o.h/2);
-    }
-    X.restore();});
+  // obstacles — stroke-only pills matching gameplay design
+  obs.forEach(o=>{
+    if(o.hit&&!o.parked)return;
+    X.save();
+    X.globalAlpha=o.grazed?.25:o.parked?.4:1;
+    const c2=o.col||'#ef4444';
+    const r=o.h/2;
+    // subtle tinted fill
+    X.fillStyle=c2;X.globalAlpha*=.06;
+    X.beginPath();rr(o.x,o.y,o.w,o.h,r);X.fill();
+    // restore alpha for stroke + text
+    X.globalAlpha=o.grazed?.25:o.parked?.4:1;
+    // stroke border
+    X.strokeStyle=c2;X.globalAlpha*=.6;
+    X.lineWidth=1.5;
+    X.beginPath();rr(o.x,o.y,o.w,o.h,r);X.stroke();
+    // glow
+    X.save();X.shadowColor=c2;X.shadowBlur=8;
+    X.beginPath();rr(o.x,o.y,o.w,o.h,r);X.stroke();
+    X.restore();
+    // text: "LABEL +PCT%"  centered
+    X.globalAlpha=o.grazed?.3:o.parked?.45:.9;
+    const txt=o.label?(o.label+(o.rateHike?'':' +'+Math.floor(o.pct)+'%')):'+'+Math.floor(o.pct)+'%';
+    const sz=Math.min(Math.round(o.h*.38),14);
+    X.fillStyle=c2;
+    X.font=`bold ${sz}px "Space Mono","JetBrains Mono",monospace`;
+    X.textAlign='center';X.textBaseline='middle';
+    // clip to pill
+    X.beginPath();rr(o.x,o.y,o.w,o.h,r);X.clip();
+    X.fillText(txt,o.x+o.w/2,o.y+o.h/2);
+    X.restore();
+  });
 
   // cursor trail
   if(fc%2===0){
@@ -1135,35 +1110,43 @@ function initPixi(){
     uniform sampler2D uSampler;
     uniform float uFlash;
     uniform float uTime;
+    uniform float uGlitch;
     void main(){
       vec2 uv=vTextureCoord;
+      // VHS glitch — horizontal displacement on random scanlines
+      float glitchAmt=uGlitch;
+      if(glitchAmt>0.0){
+        float line=floor(uv.y*200.0);
+        float rnd=fract(sin(line*43.758+uTime*100.0)*43758.5453);
+        if(rnd>0.92)uv.x+=glitchAmt*(rnd-0.5)*0.1;
+      }
       vec4 col=texture2D(uSampler,uv);
-      // subtle chromatic aberration (only on edges, not center)
+      // chromatic aberration (edges + glitch boost)
       float dist=length(uv-0.5);
-      float ca=dist*0.0008+uFlash*0.002;
+      float ca=dist*0.0006+uFlash*0.002+glitchAmt*0.004;
       float r=texture2D(uSampler,uv+vec2(ca,0.0)).r;
       float bl=texture2D(uSampler,uv-vec2(ca,0.0)).b;
       vec4 final=vec4(r,col.g,bl,col.a);
-      // slight bloom ONLY on bright pixels (threshold)
-      vec4 bright=max(col-0.4,0.0)*1.5;
+      // selective bloom
       vec4 bloomSample=vec4(0.0);
       for(float x=-1.0;x<=1.0;x+=1.0){
         for(float y=-1.0;y<=1.0;y+=1.0){
-          vec4 s=max(texture2D(uSampler,uv+vec2(x,y)*0.003)-0.4,0.0)*1.5;
+          vec4 s=max(texture2D(uSampler,uv+vec2(x,y)*0.002)-0.35,0.0)*1.5;
           bloomSample+=s;
         }
       }
       bloomSample/=9.0;
-      final.rgb+=bloomSample.rgb*0.3*(0.5+uFlash*2.0);
+      final.rgb+=bloomSample.rgb*0.25*(0.5+uFlash*2.0);
       // vignette
       float vig=1.0-smoothstep(0.5,1.5,dist*2.0);
-      final.rgb*=mix(0.88,1.0,vig);
+      final.rgb*=mix(0.9,1.0,vig);
       gl_FragColor=final;
     }
   `;
   const fxFilter=new PIXI.Filter(undefined,fxFrag,{
     uFlash:0.0,
     uTime:0.0,
+    uGlitch:0.0,
   });
   pixiApp.stage.filters=[fxFilter];
 
@@ -1192,8 +1175,12 @@ function loop(){
     pixiSprite.texture.baseTexture.update();
     const f=pixiApp.stage.filters;
     if(f&&f[0]&&f[0].uniforms){
-      f[0].uniforms.uTime=performance.now()/1000;
+      const t=performance.now()/1000;
+      f[0].uniforms.uTime=t;
       f[0].uniforms.uFlash=state==='playing'?flash:0;
+      // VHS glitch: brief burst every ~10s, lasts ~0.15s
+      const glitchCycle=t%10;
+      f[0].uniforms.uGlitch=state==='playing'&&glitchCycle>9.85?1:0;
     }
     pixiApp.render();
   }
