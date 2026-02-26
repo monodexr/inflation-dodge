@@ -664,10 +664,11 @@ function curLvl(){return LEVELS[Math.min(lvl,LEVELS.length-1)];}
 // ============ SPAWN ============
 function spawnOb(){
   const L=curLvl();const pool=lvl<3?OBS_T1:(Math.random()<.35?OBS_T1:OBS_T2);
-  const t=pool[Math.floor(Math.random()*pool.length)];const m=W<500?.75:1;
+  const t=pool[Math.floor(Math.random()*pool.length)];const m=W<600?.7:1;
   const szV=.82+Math.random()*.4;
   let ow=Math.round(t.w*m*szV),oh=Math.round(t.h*(.88+Math.random()*.24)),sx,sy,vx,vy;
-  const spd=t.spd*L.spd*(1+lvl*.02);
+  const spdMul=W<600?.8:1;
+  const spd=t.spd*L.spd*(1+lvl*.02)*spdMul;
   const fromSide=L.sides&&Math.random()<.2;const fromBelow=L.below&&Math.random()<.1;
   if(fromBelow){sx=zoneL+Math.random()*(zoneR-zoneL-ow);sy=zoneB+10;vx=(Math.random()-.5)*.5;vy=-spd*1.3;}
   else if(fromSide){const left=Math.random()>.5;sx=left?zoneL-ow-5:zoneR+5;sy=zoneT+Math.random()*(zoneB-zoneT-oh);vx=left?spd*1.2:-spd*1.2;vy=(Math.random()-.5)*.5;}
@@ -900,10 +901,13 @@ function update(){
   player.y=Math.max(zoneT+player.r,Math.min(zoneB-player.r,player.y));
   if(iframes>0)iframes--;hitShrink*=.9;
 
-  const sr=Math.max(4,L.spawn-Math.floor(lvlFrame/120));
-  if(fc%sr===0){if(L.formations&&Math.random()<.15)spawnFormation();else spawnOb();
-    if(L.fakes&&Math.random()<.08)pickups.push({x:zoneL+20+Math.random()*(zoneR-zoneL-40),y:zoneT-30,vy:2+Math.random(),amt:2000,fake:true,collected:false,type:'defi',sz:36});}
-  if(fc%(lvl<2?180:lvl<5?280:lvl<8?400:600)===0)spawnPickup();
+  const mob=W<600;
+  const spawnMul=mob?1.5:1;
+  const sr=Math.max(4,Math.round((L.spawn-Math.floor(lvlFrame/120))*spawnMul));
+  if(fc%sr===0){if(L.formations&&!mob&&Math.random()<.15)spawnFormation();else if(L.formations&&mob&&Math.random()<.08)spawnFormation();else spawnOb();
+    if(L.fakes&&Math.random()<(mob?.04:.08))pickups.push({x:zoneL+20+Math.random()*(zoneR-zoneL-40),y:zoneT-30,vy:2+Math.random(),amt:2000,fake:true,collected:false,type:'defi',sz:36});}
+  const pickupRate=mob?.75:1;
+  if(fc%Math.round((lvl<2?180:lvl<5?280:lvl<8?400:600)*pickupRate)===0)spawnPickup();
   if(L.dip&&lvlFrame>60&&lvlFrame<180&&lvlFrame%15===0)pickups.push({x:zoneL+30+Math.random()*(zoneR-zoneL-60),y:zoneT-20,vy:1.5+Math.random(),amt:1500,fake:false,collected:false,type:'defi',sz:32});
 
   let ts=1;if(balance>0&&balance<500)ts=.5+(balance/500)*.5;
