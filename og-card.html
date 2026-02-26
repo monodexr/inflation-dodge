@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200, height=630">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg-dark:#0a0a0a;--accent-red:#e63329;--accent-amber:#f59e0b;--accent-green:#10b981}
+body{background:#0a0a0a;color:white;font-family:'Space Mono',monospace;margin:0;width:1200px;height:630px;overflow:hidden}
+.font-anton{font-family:'Anton',sans-serif}
+.bg-grid{background-size:40px 40px;background-image:linear-gradient(to right,rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.03) 1px,transparent 1px)}
+.pill{position:absolute;padding:4px 10px;border-radius:9999px;border:1px solid;font-size:11px;font-weight:bold;white-space:nowrap;font-family:'Space Mono',monospace;letter-spacing:-.02em}
+.pill.high{border-color:#e63329;color:#e63329;background:rgba(230,51,41,.06)}
+.pill.mid{border-color:#f59e0b;color:#f59e0b;background:rgba(245,158,11,.06)}
+.pill.low{border-color:#10b981;color:#10b981;background:rgba(16,185,129,.06)}
+.scanlines{background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(255,255,255,0) 50%,rgba(0,0,0,.1) 50%,rgba(0,0,0,.1));background-size:100% 4px;position:absolute;inset:0;pointer-events:none;z-index:20;opacity:.5}
+.vignette{background:radial-gradient(circle at center,transparent 40%,rgba(0,0,0,.75) 100%)}
+.hero-glow{text-shadow:0 0 30px rgba(230,51,41,.5)}
+</style>
+</head>
+<body class="relative bg-grid">
+<div class="scanlines"></div>
+<div class="absolute inset-0 vignette z-10 pointer-events-none"></div>
+
+<!-- pills -->
+<div class="pill high" style="top:10%;right:26%;transform:rotate(-12deg);opacity:.35">RENT +12%</div>
+<div class="pill high" style="bottom:28%;left:7%;transform:rotate(8deg);opacity:.35">TAXES +10%</div>
+<div class="pill mid" style="top:18%;left:42%;transform:rotate(-5deg);opacity:.22">GAS +4%</div>
+<div class="pill low" style="bottom:32%;right:14%;transform:rotate(15deg);opacity:.35">COFFEE +2%</div>
+<div class="pill mid" style="top:7%;right:7%;transform:rotate(4deg);opacity:.35">INSURANCE +7%</div>
+<div class="pill high" style="bottom:22%;left:38%;transform:rotate(-8deg);opacity:.2">GROCERIES +8%</div>
+<div class="pill low" style="top:32%;left:-1%;transform:rotate(20deg);opacity:.3">UTILITIES +9%</div>
+
+<!-- corner brackets -->
+<div class="absolute top-6 right-6 w-4 h-4 border-t border-r border-[#e63329] opacity-40 z-20"></div>
+<div class="absolute bottom-14 left-6 w-4 h-4 border-b border-l border-[#e63329] opacity-40 z-20"></div>
+
+<!-- content -->
+<div class="relative z-30 w-full h-full flex flex-col pt-10 px-10 pb-0">
+  <!-- Legend logo -->
+  <div class="mb-4">
+    <img src="logo.svg" alt="Legend" style="height:28px;opacity:.6" />
+  </div>
+
+  <!-- main -->
+  <div class="flex-1 flex items-center">
+    <!-- left: title -->
+    <div class="flex-1 relative pl-2">
+      <div class="relative z-10">
+        <h1 class="font-anton text-white text-[96px] leading-[0.85] tracking-tight uppercase">INFLATION</h1>
+        <h1 class="font-anton text-[#e63329] text-[96px] leading-[0.85] tracking-tight uppercase hero-glow">DODGE</h1>
+      </div>
+      <div class="mt-6 flex items-center gap-4">
+        <div class="h-px w-14 bg-[#e63329]"></div>
+        <p class="font-mono text-[12px] text-white/40 tracking-[0.15em] uppercase">Dodge the cost of living.</p>
+      </div>
+    </div>
+    <!-- right: tagline -->
+    <div class="w-[200px] flex flex-col justify-center items-end py-2">
+      <p class="font-mono text-[11px] text-white/25 tracking-[0.12em] uppercase text-right leading-relaxed">Free to play.<br>Compete daily.<br>Win real prizes.</p>
+    </div>
+  </div>
+</div>
+
+<!-- bottom bar -->
+<div class="absolute bottom-0 left-0 w-full h-11 bg-[#0a0a0a] border-t border-white/10 flex items-center z-40 px-6 justify-between">
+  <div class="flex items-center gap-4">
+    <span class="text-[#e63329] font-mono text-[11px] tracking-widest font-bold">DAILY COMPETITION <span class="text-white/20 mx-1">///</span> WIN REAL PRIZES <span class="text-white/20 mx-1">///</span> PLAY FREE</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="#e63329"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span class="font-mono text-[10px] text-white/30 tracking-widest font-bold">SEASON 1</span>
+  </div>
+</div>
+</body></html>
