@@ -433,18 +433,19 @@ let iframes,hitShrink,shake,flash;
 let totalLost,peakBal,bestCombo;
 let prevPX,prevPY,pt={x:0,y:0};
 let dipDone,wallObs,legendCycle;
+let trailPts=[];
 const INIT_BAL=10000;
 let bestLvl=parseInt(localStorage.getItem('id_blvl')||'0');
 
 function initGame(){
-  player={x:W/2,y:H*.65,r:18};pt.x=player.x;pt.y=player.y;prevPX=player.x;prevPY=player.y;
+  player={x:W/2,y:H*.65,r:22};pt.x=player.x;pt.y=player.y;prevPX=player.x;prevPY=player.y;
   balance=INIT_BAL;drainRate=8;obs=[];pickups=[];particles=[];fc=0;
   combo=0;comboMul=1;comboLbl='';
   lvl=0;lvlFrame=0;announceT=0;
   zoneL=0;zoneR=W;zoneT=0;zoneB=H;ztL=0;ztR=W;ztT=0;ztB=H;
   iframes=0;hitShrink=0;shake=0;flash=0;
   totalLost=0;peakBal=INIT_BAL;bestCombo=0;
-  dipDone=false;wallObs=[];legendCycle=0;
+  dipDone=false;wallObs=[];legendCycle=0;trailPts=[];
   showScreen('screen-hud');
   state='playing';ia();
   setLevel(0);
@@ -834,13 +835,58 @@ function draw(){
     }
     X.restore();});
 
-  // player
+  // cursor trail
+  if(fc%2===0){
+    const vx=player.x-prevPX,vy=player.y-prevPY;
+    const spd=Math.sqrt(vx*vx+vy*vy);
+    if(spd>1){
+      for(let ti=0;ti<Math.min(3,Math.floor(spd/3));ti++){
+        const off=Math.random()*.6;
+        trailPts.push({
+          x:player.x-vx*off+(Math.random()-.5)*4,
+          y:player.y-vy*off+(Math.random()-.5)*4,
+          life:1,sz:3+Math.random()*3
+        });
+      }
+    }
+  }
+  trailPts=trailPts.filter(t=>{
+    t.life-=.04;
+    if(t.life<=0)return false;
+    const a=t.life*.25;
+    X.fillStyle=`rgba(34,197,94,${a})`;
+    X.beginPath();X.arc(t.x,t.y,t.sz*t.life,0,Math.PI*2);X.fill();
+    return true;
+  });
+
+  // player — Legend app icon with green pulse
   const pr=player.r*(1-hitShrink*.3);const coinHp=Math.max(0,Math.min(1,balance/INIT_BAL));
-  const pg=X.createRadialGradient(player.x,player.y,0,player.x,player.y,32+combo*1.5);pg.addColorStop(0,`rgba(39,117,202,${.12+combo*.006})`);pg.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=pg;X.beginPath();X.arc(player.x,player.y,32+combo*1.5,0,Math.PI*2);X.fill();
-  X.beginPath();X.arc(player.x,player.y,pr,0,Math.PI*2);const cg=X.createRadialGradient(player.x-2,player.y-2,0,player.x,player.y,pr);cg.addColorStop(0,coinHp>.3?'rgba(100,200,255,.9)':'rgba(120,60,60,.6)');cg.addColorStop(1,coinHp>.3?'rgba(39,117,202,.8)':'rgba(80,30,30,.5)');X.fillStyle=cg;
-  if(iframes>0&&Math.floor(fc/3)%2===0)X.fillStyle='rgba(255,255,255,.3)';if(L.fade){X.globalAlpha=.3+Math.abs(Math.sin(fc*.05))*.7;}X.fill();X.globalAlpha=1;
-  X.beginPath();X.arc(player.x,player.y,pr+2.5,0,Math.PI*2);X.strokeStyle=coinHp>.3?`rgba(100,180,255,${.2+combo*.01})`:'rgba(255,60,60,.3)';X.lineWidth=1.2;X.stroke();
-  X.fillStyle=coinHp>.3?'#fff':'#aaa';X.font=`bold ${Math.round(pr*.7)}px M,monospace`;X.textAlign='center';X.textBaseline='middle';X.fillText('$',player.x,player.y+.5);
+  // green earning pulse glow
+  const pulseA=.12+Math.sin(fc*.06)*.08;
+  const glowR=28+Math.sin(fc*.04)*6+combo*1.5;
+  const pg=X.createRadialGradient(player.x,player.y,pr*.5,player.x,player.y,glowR);
+  pg.addColorStop(0,`rgba(34,197,94,${coinHp>.2?pulseA:.03})`);pg.addColorStop(1,'rgba(0,0,0,0)');
+  X.fillStyle=pg;X.beginPath();X.arc(player.x,player.y,glowR,0,Math.PI*2);X.fill();
+  // icon body
+  if(appIcon.complete){
+    X.save();
+    if(iframes>0&&Math.floor(fc/3)%2===0)X.globalAlpha=.3;
+    if(L.fade)X.globalAlpha=.3+Math.abs(Math.sin(fc*.05))*.7;
+    X.beginPath();X.arc(player.x,player.y,pr,0,Math.PI*2);X.clip();
+    X.drawImage(appIcon,player.x-pr,player.y-pr,pr*2,pr*2);
+    X.restore();
+  }else{
+    X.beginPath();X.arc(player.x,player.y,pr,0,Math.PI*2);
+    X.fillStyle=coinHp>.3?'rgba(39,117,202,.8)':'rgba(80,30,30,.5)';
+    if(iframes>0&&Math.floor(fc/3)%2===0)X.fillStyle='rgba(255,255,255,.3)';
+    X.fill();
+  }
+  // green ring (earning indicator)
+  const ringA=.2+Math.sin(fc*.06)*.15;
+  X.beginPath();X.arc(player.x,player.y,pr+2,0,Math.PI*2);
+  X.strokeStyle=coinHp>.2?`rgba(34,197,94,${ringA})`:'rgba(255,60,60,.3)';
+  X.lineWidth=2;X.stroke();
+  // danger sparks at low health
   if(coinHp<.3&&fc%6===0){const sa=Math.random()*Math.PI*2;particles.push({x:player.x+Math.cos(sa)*pr,y:player.y+Math.sin(sa)*pr,vx:Math.cos(sa)*2,vy:Math.sin(sa)*2,life:.5,col:'#ff4444',sz:1.5});}
 
   // particles
