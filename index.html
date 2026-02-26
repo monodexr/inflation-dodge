@@ -174,7 +174,7 @@ function initGame(){
 function setLevel(n){
   lvl=n;lvlFrame=0;
   const L=LEVELS[Math.min(n,LEVELS.length-1)];
-  announceT=60;
+  announceT=150;
   lvlSnd();
   const zf=L.zone;const pad=(1-zf)/2;
   ztL=W*pad;ztR=W*(1-pad);ztT=H*pad*.6;ztB=H*(1-pad*.6);
@@ -483,14 +483,37 @@ function draw(){
     X.fillStyle=sp;X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);
   }
 
-  // ---- CENTER LEVEL DISPLAY (renders behind game objects) ----
-  X.textAlign='center';X.textBaseline='middle';
-  X.fillStyle='rgba(0,136,214,.12)';
-  X.font='500 20px Knapp,sans-serif';
-  X.fillText('Level '+(lvl+1),W/2,H/2-30);
-  X.fillStyle='rgba(235,235,235,.06)';
-  X.font='500 72px Knapp,sans-serif';
-  X.fillText(curLvl().name,W/2,H/2+24);
+  // ---- LEVEL ANNOUNCEMENT (animated fade up/in, hold, fade out) ----
+  // announceT: 150→91 = freeze+fade in, 90→31 = hold, 30→0 = fade out
+  if(announceT>0){
+    let alpha,yOff;
+    if(announceT>90){
+      // fade in + slide up (150→91)
+      const t=(150-announceT)/60; // 0→1
+      alpha=Math.min(1,t*1.5);
+      yOff=20*(1-t);
+    }else if(announceT>30){
+      // hold steady (90→31)
+      alpha=1;yOff=0;
+    }else{
+      // fade out + slide up (30→0)
+      const t=announceT/30; // 1→0
+      alpha=t;
+      yOff=-12*(1-t);
+    }
+    X.save();
+    X.globalAlpha=alpha;
+    X.textAlign='center';X.textBaseline='middle';
+    // "Level N"
+    X.fillStyle='#008fd6';
+    X.font='500 20px Knapp,sans-serif';
+    X.fillText('Level '+(lvl+1),W/2,H/2-32+yOff);
+    // Level name
+    X.fillStyle='#ebebeb';
+    X.font='500 72px Knapp,sans-serif';
+    X.fillText(curLvl().name,W/2,H/2+22+yOff);
+    X.restore();
+  }
 
   // ---- PICKUPS ----
   pickups.forEach(p=>{
@@ -586,9 +609,10 @@ function draw(){
     X.drawImage(logo,W/2-lw/2,24,lw,lh);
   }
 
-  // ---- COMBO — below level name ----
+  // ---- COMBO — center screen ----
   if(combo>=3){
     X.fillStyle='#2775CA';X.font='bold 16px M,monospace';
+    X.textAlign='center';X.textBaseline='middle';
     X.fillText(comboMul+'x '+comboLbl,W/2,H/2+70);
   }
 
