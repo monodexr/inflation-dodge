@@ -3,7 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Inflation Dodge</title>
+<title>Inflation Dodge — Can You Survive?</title>
+<meta name="description" content="Your savings. Your problem. Dodge inflation or go broke. Powered by Legend.">
+<meta property="og:title" content="Inflation Dodge — Can You Survive?">
+<meta property="og:description" content="Your savings are under attack. Dodge inflation or go broke trying. Top score wins $1,000 USDC daily.">
+<meta property="og:image" content="https://monodexr.github.io/inflation-dodge/og-share.png">
+<meta property="og:url" content="https://monodexr.github.io/inflation-dodge/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Inflation Dodge — Can You Survive?">
+<meta name="twitter:description" content="Your savings are under attack. Top score wins $1,000 USDC daily.">
+<meta name="twitter:image" content="https://monodexr.github.io/inflation-dodge/og-share.png">
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=JetBrains+Mono:wght@400;700;800&family=Oswald:wght@400;500;700&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@900&display=swap" rel="stylesheet">
@@ -302,19 +312,20 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
 </div>
 
 <!-- ============ SHARE MODAL ============ -->
-<div id="share-modal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(0,0,0,.85)">
-  <div class="flex flex-col items-center gap-6 max-w-lg w-full px-6">
-    <div class="text-xs font-mono text-gray-400 uppercase tracking-widest">Share your score</div>
+<div id="share-modal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(0,0,0,.9)">
+  <div class="flex flex-col items-center gap-5 max-w-md w-full px-6">
+    <div class="text-xs font-mono text-gray-500 uppercase tracking-widest">Challenge a friend</div>
     <canvas id="share-canvas" width="600" height="400" class="w-full rounded border border-gray-800"></canvas>
-    <div class="flex items-center gap-2 w-full max-w-sm">
+    <!-- name + share in one row -->
+    <div class="flex items-center gap-2 w-full">
       <input id="share-name" type="text" placeholder="Your name" maxlength="20" class="flex-1 px-4 py-3 bg-black border border-gray-700 text-white font-mono text-xs uppercase tracking-wider outline-none focus:border-[#D4883A] transition-colors pointer-events-auto" />
-      <button id="share-copy" class="whitespace-nowrap px-5 py-3 bg-transparent border border-gray-600 hover:border-white text-white font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Copy Link</button>
+      <button id="share-copy" class="whitespace-nowrap px-6 py-3 bg-[#FF3333] hover:bg-[#ff1a1a] text-black font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Share Link</button>
     </div>
+    <div id="share-copied" class="hidden text-xs font-mono text-green-400 uppercase tracking-widest">Link copied! Share it anywhere — preview shows in iMessage & Twitter</div>
     <div class="flex items-center gap-3">
-      <button id="share-save" class="whitespace-nowrap px-6 py-3 bg-[#FF3333] hover:bg-[#ff1a1a] text-black font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Save Image</button>
-      <button id="share-close" class="whitespace-nowrap px-6 py-3 bg-transparent border border-gray-600 hover:border-gray-400 text-gray-400 font-mono text-xs font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Close</button>
+      <button id="share-save" class="whitespace-nowrap px-4 py-2 bg-transparent border border-gray-700 hover:border-gray-500 text-gray-500 font-mono text-[10px] font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Save Image</button>
+      <button id="share-close" class="whitespace-nowrap px-4 py-2 bg-transparent border border-gray-700 hover:border-gray-500 text-gray-500 font-mono text-[10px] font-bold uppercase tracking-widest cursor-pointer pointer-events-auto transition-all">Close</button>
     </div>
-    <div id="share-copied" class="hidden text-xs font-mono text-green-400 uppercase tracking-widest">Link copied!</div>
   </div>
 </div>
 
@@ -576,12 +587,17 @@ document.getElementById('share-save').onclick=()=>{
   link.href=sc.toDataURL('image/png');
   link.click();
 };
-document.getElementById('share-copy').onclick=()=>{
+document.getElementById('share-copy').onclick=async()=>{
   const name=document.getElementById('share-name').value.trim()||'Anon';
   const url=getChallengeUrl(name);
+  const yrs=((lvl+1)*YEAR_PER_LVL);
+  const text=`I survived ${yrs} years in Inflation Dodge. Can you beat me?`;
+  if(navigator.share){
+    try{await navigator.share({title:'Inflation Dodge Challenge',text,url});return;}catch(e){}
+  }
   navigator.clipboard.writeText(url).then(()=>{
     document.getElementById('share-copied').classList.remove('hidden');
-    setTimeout(()=>document.getElementById('share-copied').classList.add('hidden'),2000);
+    setTimeout(()=>document.getElementById('share-copied').classList.add('hidden'),3000);
   });
 };
 document.getElementById('share-close').onclick=()=>{
