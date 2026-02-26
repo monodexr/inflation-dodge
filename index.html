@@ -6,6 +6,7 @@
 <title>INFLATION DODGE</title>
 <style>
 @font-face{font-family:'Knapp';src:url('fonts/Knapp-Light.otf') format('opentype');font-weight:300;font-display:swap}
+@font-face{font-family:'Knapp';src:url('fonts/Knapp-Regular.otf') format('opentype');font-weight:400;font-display:swap}
 @font-face{font-family:'Knapp';src:url('fonts/Knapp-Medium.otf') format('opentype');font-weight:500;font-display:swap}
 @font-face{font-family:'M';src:url('fonts/PPNeueMontrealMono-Regular.otf') format('opentype');font-weight:400;font-display:swap}
 @font-face{font-family:'M';src:url('fonts/PPNeueMontrealMono-Bold.otf') format('opentype');font-weight:700;font-display:swap}
@@ -120,7 +121,7 @@ const OBS_T2=[
 // ---- GAME STATE ----
 let state='menu';
 let player,balance,drainRate,obs,pickups,particles,fc,combo,comboMul,comboLbl;
-let lvl,lvlFrame,lvlAnnounce,announceTxt,announceT;
+let lvl,lvlFrame,announceT;
 let zoneL,zoneR,zoneT,zoneB,ztL=0,ztR=0,ztT=0,ztB=0;
 let iframes,hitShrink,shake,flash;
 let totalLost,peakBal,bestCombo;
@@ -160,11 +161,12 @@ function initGame(){
   player={x:W/2,y:H*.65,r:18};pt.x=player.x;pt.y=player.y;prevPX=player.x;prevPY=player.y;
   balance=INIT_BAL;drainRate=8;obs=[];pickups=[];particles=[];fc=0;
   combo=0;comboMul=1;comboLbl='';
-  lvl=0;lvlFrame=0;lvlAnnounce=0;announceTxt='';announceT=0;
+  lvl=0;lvlFrame=0;announceT=0;
   zoneL=0;zoneR=W;zoneT=0;zoneB=H;ztL=0;ztR=W;ztT=0;ztB=H;
   iframes=0;hitShrink=0;shake=0;flash=0;
   totalLost=0;peakBal=INIT_BAL;bestCombo=0;
   dipDone=false;wallObs=[];legendCycle=0;
+  tickerDigits=[];
   state='playing';ia();
   setLevel(0);
 }
@@ -459,13 +461,16 @@ function draw(){
   X.fillRect(zoneL,0,zoneR-zoneL,zoneT);
   X.fillRect(zoneL,zoneB,zoneR-zoneL,H-zoneB);
 
-  // glowing red edge
-  const pulse=.6+Math.sin(fc*.04)*.15;
-  X.save();
-  X.shadowColor='#ff2020';X.shadowBlur=18*pulse;
-  X.strokeStyle=`rgba(255,40,30,${.65+pulse*.25})`;X.lineWidth=2.5;
-  X.strokeRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);
-  X.shadowBlur=0;X.restore();
+  // glowing red edge (only when zone is actually shrunk)
+  const zoneShrank=ztL>2||ztR<W-2||ztT>2||ztB<H-2;
+  if(zoneShrank){
+    const pulse=.6+Math.sin(fc*.04)*.15;
+    X.save();
+    X.shadowColor='#ff2020';X.shadowBlur=18*pulse;
+    X.strokeStyle=`rgba(255,40,30,${.65+pulse*.25})`;X.lineWidth=2.5;
+    X.strokeRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);
+    X.shadowBlur=0;X.restore();
+  }
 
   if(L.legend){X.fillStyle='rgba(255,200,0,.015)';X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);}
   if(flash>.05){X.fillStyle=`rgba(255,40,40,${flash*.12})`;X.fillRect(0,0,W,H);}
@@ -478,7 +483,14 @@ function draw(){
     X.fillStyle=sp;X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);
   }
 
-  // level announcement removed — level info is now persistent in center HUD
+  // ---- CENTER LEVEL DISPLAY (renders behind game objects) ----
+  X.textAlign='center';X.textBaseline='middle';
+  X.fillStyle='rgba(0,136,214,.12)';
+  X.font='500 20px Knapp,sans-serif';
+  X.fillText('Level '+(lvl+1),W/2,H/2-30);
+  X.fillStyle='rgba(235,235,235,.06)';
+  X.font='500 72px Knapp,sans-serif';
+  X.fillText(curLvl().name,W/2,H/2+24);
 
   // ---- PICKUPS ----
   pickups.forEach(p=>{
@@ -574,17 +586,6 @@ function draw(){
     X.drawImage(logo,W/2-lw/2,24,lw,lh);
   }
 
-  // ---- CENTER: Persistent level display ----
-  X.textAlign='center';X.textBaseline='middle';
-  // "Level N" — Knapp Bold 20px, Legend blue
-  X.fillStyle='#008fd6';
-  X.font='bold 20px Knapp,sans-serif';
-  X.fillText('Level '+(lvl+1),W/2,H/2-30);
-  // Level name — Knapp Bold 72px, near-white
-  X.fillStyle='rgba(235,235,235,.85)';
-  X.font='bold 72px Knapp,sans-serif';
-  X.fillText(curLvl().name,W/2,H/2+24);
-
   // ---- COMBO — below level name ----
   if(combo>=3){
     X.fillStyle='#2775CA';X.font='bold 16px M,monospace';
@@ -599,12 +600,12 @@ function draw(){
   // -- Left: Balance --
   // "Balance" label
   X.fillStyle='#00b84a';
-  X.font='bold 14px Knapp,sans-serif';
+  X.font='500 14px Knapp,sans-serif';
   X.textAlign='left';X.textBaseline='alphabetic';
   X.fillText('Balance',P,BOT-LBL_OFF-4);
 
   // Dollar amount with ticker
-  X.font='bold 30px Knapp,sans-serif';
+  X.font='500 30px Knapp,sans-serif';
   const balStr=Math.max(0,Math.floor(balance)).toLocaleString();
   const cW=X.measureText('0').width;
   let cx=P;
@@ -617,12 +618,12 @@ function draw(){
   let tdi=0;
   for(let i=0;i<chars.length;i++){
     if(chars[i]===','){
-      X.fillStyle='#b2b2b2';X.font='bold 30px Knapp,sans-serif';
+      X.fillStyle='#b2b2b2';X.font='500 30px Knapp,sans-serif';
       X.fillText(',',cx,BOT);cx+=X.measureText(',').width;continue;
     }
     const td=tickerDigits[tdi++];
     if(!td||td.vel===0){
-      X.fillStyle='#b2b2b2';X.font='bold 30px Knapp,sans-serif';
+      X.fillStyle='#b2b2b2';X.font='500 30px Knapp,sans-serif';
       X.fillText(chars[i],cx,BOT);
     }else{
       X.save();
@@ -630,7 +631,7 @@ function draw(){
       const frac=Math.abs(td.display%1);
       const cur=Math.floor(td.display+.01)%10;
       const nxt=(cur===0?9:cur-1);
-      X.font='bold 30px Knapp,sans-serif';
+      X.font='500 30px Knapp,sans-serif';
       X.fillStyle='#b2b2b2';X.globalAlpha=1-frac;
       X.fillText(String(cur),cx,BOT-frac*30);
       X.fillStyle='#444';X.globalAlpha=frac;
@@ -642,12 +643,12 @@ function draw(){
 
   // -- Right: Level --
   X.fillStyle='#008fd6';
-  X.font='bold 14px Knapp,sans-serif';
+  X.font='500 14px Knapp,sans-serif';
   X.textAlign='right';X.textBaseline='alphabetic';
   X.fillText('Level '+(lvl+1),W-P,BOT-LBL_OFF-4);
 
   X.fillStyle='#b2b2b2';
-  X.font='bold 30px Knapp,sans-serif';
+  X.font='500 30px Knapp,sans-serif';
   X.fillText(curLvl().name,W-P,BOT);
 
   // -- Center: Life bar (Figma: 338px wide, 6px tall, rounded 50px) --
