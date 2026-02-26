@@ -194,7 +194,7 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
 </div>
 
 <!-- ============ LEVEL TRANSITION OVERLAY ============ -->
-<div id="screen-level" class="fixed inset-0 z-30 flex items-center justify-center pointer-events-none opacity-0 transition-all duration-500" style="background:rgba(0,0,0,.6);backdrop-filter:blur(4px)">
+<div id="screen-level" class="fixed inset-0 z-30 flex items-center justify-center pointer-events-none opacity-0" style="background:rgba(0,0,0,.25);backdrop-filter:blur(2px);transition:opacity .6s ease-in-out">
   <div class="relative p-12">
     <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-red-600"></div>
     <div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-red-600"></div>
@@ -279,14 +279,14 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0;z-index:0}
     </div>
 
     <!-- actions -->
-    <div class="flex flex-col md:flex-row items-center justify-center gap-4 w-full max-w-2xl">
-      <button id="btn-retry" class="btn-glitch w-full md:w-auto px-12 py-5 bg-[#FF3333] hover:bg-[#ff1a1a] text-black font-headline text-xl uppercase tracking-widest shadow-[0_0_40px_rgba(255,51,51,.4)] transition-all transform hover:scale-105 active:scale-95 cursor-pointer pointer-events-auto">
+    <div class="flex items-center justify-center gap-3 w-full flex-wrap">
+      <button id="btn-retry" class="btn-glitch px-8 py-3.5 bg-[#FF3333] hover:bg-[#ff1a1a] text-black font-mono text-sm font-bold uppercase tracking-wider shadow-[0_0_30px_rgba(255,51,51,.3)] transition-all transform hover:scale-105 active:scale-95 cursor-pointer pointer-events-auto">
         Restart Simulation
       </button>
-      <button id="btn-challenge" class="w-full md:w-auto px-10 py-5 bg-transparent border border-gray-600 hover:border-white text-white font-headline text-lg uppercase tracking-widest hover:bg-white/5 transition-all cursor-pointer pointer-events-auto">
+      <button id="btn-challenge" class="px-8 py-3.5 bg-transparent border border-gray-600 hover:border-white text-white font-mono text-sm font-bold uppercase tracking-wider hover:bg-white/5 transition-all cursor-pointer pointer-events-auto">
         Challenge Friend
       </button>
-      <button id="btn-leaderboard" class="w-full md:w-auto px-10 py-5 bg-transparent border border-gray-600 hover:border-[#D4883A] text-gray-300 hover:text-[#D4883A] font-headline text-lg uppercase tracking-widest hover:bg-[#D4883A]/5 transition-all cursor-pointer pointer-events-auto">
+      <button id="btn-leaderboard" class="px-8 py-3.5 bg-transparent border border-gray-600 hover:border-[#D4883A] text-gray-300 hover:text-[#D4883A] font-mono text-sm font-bold uppercase tracking-wider hover:bg-[#D4883A]/5 transition-all cursor-pointer pointer-events-auto">
         Leaderboard
       </button>
     </div>
@@ -405,7 +405,7 @@ function initGame(){
 function setLevel(n){
   lvl=n;lvlFrame=0;
   const L=LEVELS[Math.min(n,LEVELS.length-1)];
-  announceT=100;
+  announceT=70;
   lvlSnd();
   const zf=L.zone;const pad=(1-zf)/2;
   ztL=W*pad;ztR=W*(1-pad);ztT=H*pad*.6;ztB=H*(1-pad*.6);
@@ -417,7 +417,7 @@ function setLevel(n){
   document.getElementById('lvl-num').textContent='LEVEL '+String(n+1).padStart(2,'0');
   document.getElementById('lvl-name').textContent=L.name;
   lo.style.opacity='1';
-  setTimeout(()=>{lo.style.opacity='0';},1500);
+  setTimeout(()=>{lo.style.opacity='0';},1200);
 }
 function curLvl(){return LEVELS[Math.min(lvl,LEVELS.length-1)];}
 
