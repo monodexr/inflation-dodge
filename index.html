@@ -85,6 +85,8 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 /* title screen — button blink */
 @keyframes btn-blink{0%{background-color:transparent;color:#e63329;border-color:rgba(230,51,41,.6);box-shadow:none}48%{background-color:transparent;color:#e63329;border-color:rgba(230,51,41,.6);box-shadow:none}50%{background-color:#e63329;color:#fff;border-color:#e63329;box-shadow:0 0 24px rgba(230,51,41,.7),inset 0 0 12px rgba(255,255,255,.1)}65%{background-color:transparent;color:#e63329;border-color:rgba(230,51,41,.6);box-shadow:none}100%{background-color:transparent;color:#e63329;border-color:rgba(230,51,41,.6);box-shadow:none}}
 .btn-cycle{transition:all .2s}.btn-cycle:hover{box-shadow:0 0 30px rgba(230,51,41,.4)}
+.clip-parallelogram{clip-path:polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%)}
+.stat-block{transition:all .3s ease}.stat-block:hover{background-color:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.3)!important;transform:translateY(-2px)}.stat-block:hover .stat-value{text-shadow:0 0 10px currentColor}
 .floating-pill{position:absolute;padding:6px 16px;border-radius:9999px;border:1px solid;font-size:.75rem;font-weight:bold;pointer-events:none;will-change:transform;white-space:nowrap;z-index:10;font-family:'JetBrains Mono',monospace}
 .trail-symbol{position:absolute;color:#e63329;font-family:'JetBrains Mono',monospace;font-weight:bold;pointer-events:none;animation:trail-fade .6s linear forwards;z-index:60}
 @keyframes trail-fade{0%{opacity:1;transform:scale(1) translateY(0)}100%{opacity:0;transform:scale(.5) translateY(-20px)}}
@@ -285,84 +287,99 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 </div>
 
 <!-- ============ DEATH SCREEN ============ -->
-<div id="screen-death" class="screen fixed inset-0 z-20 flex-col items-center justify-center overflow-y-auto" style="background:#050505">
-  <div class="scanlines absolute inset-0"></div>
-  <div class="absolute inset-0" style="background:radial-gradient(circle,transparent 50%,rgba(255,51,51,.15) 100%);pointer-events:none"></div>
-  <div class="noise-overlay"></div>
-  <div class="absolute inset-0 bg-grid opacity-10"></div>
-  <div id="death-chaos" class="absolute inset-0 z-0 overflow-hidden"></div>
+<div id="screen-death" class="screen fixed inset-0 z-20 flex-col items-center justify-center" style="background:#0a0a0a">
+  <div id="death-pills" class="absolute inset-0 overflow-hidden pointer-events-none z-0"></div>
 
-  <div class="relative z-10 w-full max-w-5xl px-6 flex flex-col items-center py-16">
-    <!-- header -->
-    <div class="text-center mb-10 relative">
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[120px] md:text-[180px] font-headline text-white/[.02] whitespace-nowrap pointer-events-none uppercase">Bankrupt</div>
-      <h2 class="font-mono text-red-500 tracking-[0.5em] text-sm mb-4 uppercase flex items-center justify-center gap-4">
-        <span class="w-8 h-px bg-red-500/50"></span>Inflation Wins Again<span class="w-8 h-px bg-red-500/50"></span>
-      </h2>
-      <div class="relative mb-6">
-        <h1 class="font-headline text-6xl md:text-8xl uppercase leading-[0.9] tracking-tighter text-white glitch-text" data-text="SURVIVED">SURVIVED</h1>
-        <div class="flex items-baseline justify-center gap-4 mt-2">
-          <span id="death-years" class="font-headline text-7xl md:text-9xl text-transparent bg-clip-text bg-gradient-to-b from-[#FF3333] to-[#8a0000] drop-shadow-[0_0_25px_rgba(255,51,51,0.5)]">4</span>
-          <span class="font-headline text-3xl md:text-5xl text-white opacity-80">YEARS</span>
+  <main class="relative z-30 flex-1 flex flex-col items-center justify-center w-full max-w-xl mx-auto px-6 py-8 h-full gap-0">
+    <!-- hero -->
+    <div class="flex flex-col items-center text-center mb-6">
+      <span class="text-[#e63329] font-mono text-[9px] tracking-[0.5em] font-bold mb-3 opacity-70">INFLATION WINS AGAIN</span>
+      <div class="flex flex-col items-center leading-none cursor-default">
+        <h1 class="font-anton text-[5rem] md:text-[7rem] text-white tracking-tight uppercase glitch-word" data-text="SURVIVED">SURVIVED</h1>
+        <div class="flex items-baseline gap-4 -mt-4">
+          <span id="death-years" class="font-anton text-[5rem] md:text-[9rem] text-[#e63329] glitch-word drop-shadow-[0_0_15px_rgba(230,51,41,.3)]" data-text="2">2</span>
+          <span class="font-anton text-[3rem] md:text-[4rem] text-white/90 glitch-word" data-text="YEARS">YEARS</span>
         </div>
       </div>
-      <div class="inline-flex items-center gap-3 bg-[#1a0505] border border-red-500/30 px-6 py-3 rounded transform -skew-x-12 shadow-[0_0_30px_rgba(255,51,51,.15)]">
-        <div class="skew-x-12 flex items-center gap-3">
-          <i data-lucide="trending-down" class="w-5 h-5 text-red-500"></i>
-          <span class="font-mono text-sm text-red-400 uppercase tracking-wider">Total Loss:</span>
-          <span id="death-loss" class="font-mono text-2xl text-white font-bold tracking-tight">-$11,558</span>
+      <div class="flex items-center gap-3 mt-5">
+        <div class="clip-parallelogram flex items-center gap-2 px-5 py-2 border border-[#e63329]/30 bg-[#e63329]/[.08]">
+          <span class="font-mono text-[8px] text-[#e63329]/50 uppercase tracking-[0.3em]">TOTAL LOSS</span>
+          <span id="death-loss" class="font-mono text-base text-white font-bold">-$11,571</span>
         </div>
       </div>
     </div>
 
-    <!-- stats grid -->
-    <div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12 relative">
-      <div class="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-white/20"></div>
-      <div class="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-white/20"></div>
-      <div class="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-white/20"></div>
-      <div class="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-white/20"></div>
-      <div class="stat-card p-6 flex flex-col relative overflow-hidden group">
-        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity"><i data-lucide="wallet" class="w-12 h-12 text-white"></i></div>
-        <span class="font-mono text-xs text-gray-500 uppercase tracking-widest mb-2">Peak Net Worth</span>
-        <span id="death-peak" class="font-mono text-3xl text-emerald-400 font-bold">$10,000</span>
+    <div class="w-full border-t border-white/[.06] mb-5"></div>
+
+    <!-- this run stats -->
+    <div class="w-full mb-1"><span class="font-mono text-[8px] text-white/25 uppercase tracking-[0.35em]">THIS RUN</span></div>
+    <div class="grid grid-cols-2 gap-2 w-full mb-5">
+      <div class="stat-block clip-parallelogram flex flex-col items-center justify-center py-3 px-2 border border-[#f59e0b]/20 bg-[#f59e0b]/5">
+        <span class="font-mono text-[7px] text-[#f59e0b]/50 uppercase tracking-wider mb-1">PEAK WORTH</span>
+        <span id="death-peak" class="stat-value font-mono text-sm text-[#f59e0b] font-bold">$10,000</span>
       </div>
-      <div class="stat-card p-6 flex flex-col relative overflow-hidden group">
-        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity"><i data-lucide="zap" class="w-12 h-12 text-amber-500"></i></div>
-        <span class="font-mono text-xs text-gray-500 uppercase tracking-widest mb-2">Best Combo</span>
-        <span id="death-combo" class="font-mono text-3xl text-amber-500 font-bold">1x</span>
-      </div>
-      <div class="stat-card p-6 flex flex-col relative overflow-hidden group">
-        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity"><i data-lucide="trending-down" class="w-12 h-12 text-red-500"></i></div>
-        <span class="font-mono text-xs text-gray-500 uppercase tracking-widest mb-2">Drain at Death</span>
-        <span id="death-drain" class="font-mono text-3xl text-red-500 font-bold">-$8/s</span>
-      </div>
-      <div class="stat-card p-6 flex flex-col relative overflow-hidden group">
-        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity"><i data-lucide="award" class="w-12 h-12 text-white"></i></div>
-        <span class="font-mono text-xs text-gray-500 uppercase tracking-widest mb-2">Best Level Ever</span>
-        <span id="death-best" class="font-mono text-3xl text-white font-bold">1</span>
+      <div class="stat-block clip-parallelogram flex flex-col items-center justify-center py-3 px-2 border border-white/10 bg-white/5">
+        <span class="font-mono text-[7px] text-white/30 uppercase tracking-wider mb-1">BEST COMBO</span>
+        <span id="death-combo" class="stat-value font-mono text-sm text-white font-bold">1x</span>
       </div>
     </div>
 
-    <!-- quote -->
-    <div class="mb-10 text-center max-w-2xl px-4">
-      <p id="death-quote" class="font-mono text-gray-400 italic border-l-2 border-red-500 pl-4 text-sm md:text-base">
-        "Inflation is undefeated. Your savings didn't stand a chance."
-      </p>
+    <div class="w-full border-t border-white/[.06] mb-5"></div>
+
+    <!-- scores -->
+    <div class="w-full mb-1"><span class="font-mono text-[8px] text-white/25 uppercase tracking-[0.35em]">SCORES</span></div>
+    <div class="flex items-stretch gap-2 w-full mb-6">
+      <div class="stat-block clip-parallelogram flex-1 flex items-center justify-between px-5 py-3 border border-[#10b981]/30 bg-[#10b981]/5">
+        <div class="flex flex-col gap-0.5">
+          <span class="font-mono text-[7px] text-[#10b981]/50 uppercase tracking-[0.25em]">YOUR RANK</span>
+          <span id="death-rank" class="stat-value font-anton text-2xl text-[#10b981]" style="text-shadow:0 0 10px rgba(16,185,129,.4)">#? ALL TIME</span>
+        </div>
+      </div>
+      <div class="flex items-center font-mono text-[9px] text-white/15 px-1">VS</div>
+      <div class="stat-block clip-parallelogram flex-1 flex items-center justify-between px-5 py-3 border border-[#f59e0b]/30 bg-[#f59e0b]/5">
+        <div class="flex items-center gap-2">
+          <div class="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-pulse flex-shrink-0"></div>
+          <div class="flex flex-col gap-0.5">
+            <span class="font-mono text-[7px] text-[#f59e0b]/50 uppercase tracking-[0.25em]">#1 — TOP SCORE</span>
+            <span class="stat-value font-anton text-2xl text-[#f59e0b]" style="text-shadow:0 0 10px rgba(245,158,11,.4)">114 YRS</span>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <div class="w-full border-t border-white/[.06] mb-5"></div>
 
     <!-- actions -->
-    <div class="flex items-center justify-center gap-3">
-      <button id="btn-retry" class="btn-glitch whitespace-nowrap px-6 py-3 bg-[#FF3333] hover:bg-[#ff1a1a] text-black font-mono text-xs font-bold uppercase tracking-widest shadow-[0_0_30px_rgba(255,51,51,.3)] transition-all hover:scale-105 active:scale-95 cursor-pointer pointer-events-auto">Restart</button>
-      <button id="btn-challenge" class="whitespace-nowrap px-6 py-3 bg-transparent border border-gray-600 hover:border-white text-white font-mono text-xs font-bold uppercase tracking-widest hover:bg-white/5 transition-all cursor-pointer pointer-events-auto">Challenge</button>
-      <button id="btn-leaderboard" class="whitespace-nowrap px-6 py-3 bg-transparent border border-gray-600 hover:border-[#D4883A] text-gray-300 hover:text-[#D4883A] font-mono text-xs font-bold uppercase tracking-widest hover:bg-[#D4883A]/5 transition-all cursor-pointer pointer-events-auto">Leaderboard</button>
+    <div class="flex items-center justify-center gap-3 w-full mb-6">
+      <button id="btn-retry" class="btn-cycle relative bg-transparent text-[#e63329] border border-[#e63329]/60 px-8 py-3 clip-parallelogram cursor-pointer pointer-events-auto" style="animation:btn-blink 2.4s step-end infinite">
+        <span class="font-anton text-base tracking-widest uppercase" id="death-cta-text">RESTART</span>
+      </button>
+      <button id="btn-challenge" class="px-5 py-3 border border-white/15 text-white/40 font-mono text-[10px] uppercase tracking-widest hover:bg-white/5 hover:text-white/80 transition-all clip-parallelogram cursor-pointer pointer-events-auto">CHALLENGE</button>
+      <button id="btn-leaderboard" class="px-5 py-3 border border-white/15 text-white/40 font-mono text-[10px] uppercase tracking-widest hover:bg-white/5 hover:text-white/80 transition-all clip-parallelogram cursor-pointer pointer-events-auto">LEADERBOARD</button>
     </div>
 
-    <!-- footer -->
-    <div class="mt-12 flex flex-col items-center gap-6 opacity-70">
-      <img src="logo.svg" alt="Legend" class="h-6" />
-      <a href="https://apps.apple.com/us/app/legend-xyz/id6504718187" target="_blank" class="pointer-events-auto cursor-pointer transition-opacity hover:opacity-100">
+    <!-- footer with real assets -->
+    <div class="flex flex-col items-center gap-3">
+      <img src="logo.svg" alt="Legend" class="h-5 opacity-40" />
+      <a href="https://apps.apple.com/us/app/legend-xyz/id6504718187" target="_blank" class="opacity-40 hover:opacity-90 transition-opacity cursor-pointer pointer-events-auto">
         <img src="https://legend.xyz/footer/cta-app-store@2x.webp" alt="Download on the App Store" class="h-10 rounded-lg" />
       </a>
+    </div>
+  </main>
+
+  <!-- bottom ticker -->
+  <div class="relative z-30 bg-[#0a0a0a] border-t border-white/10 h-10 flex items-center overflow-hidden flex-shrink-0">
+    <div class="ticker-wrap flex items-center whitespace-nowrap" style="animation:ticker-scroll 30s linear infinite">
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// GAME OVER</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// INFLATION WINS AGAIN</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// YOUR SAVINGS: GONE</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// NEXT TIME: SAME RESULT</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// RENT DUE: YESTERDAY</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// CREDIT SCORE: DELETED</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// GAME OVER</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// INFLATION WINS AGAIN</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// YOUR SAVINGS: GONE</span>
+      <span class="text-[#e63329] font-mono text-xs tracking-wider font-bold mx-4">/// NEXT TIME: SAME RESULT</span>
     </div>
   </div>
 </div>
@@ -1080,25 +1097,31 @@ function draw(){
 function showDeath(){
   const yrs=((lvl+1)*YEAR_PER_LVL).toFixed(0);
   document.getElementById('death-years').textContent=yrs;
+  document.getElementById('death-years').setAttribute('data-text',yrs);
   document.getElementById('death-loss').textContent='-$'+Math.floor(totalLost).toLocaleString();
   document.getElementById('death-peak').textContent='$'+Math.floor(peakBal).toLocaleString();
   document.getElementById('death-combo').textContent=bestCombo>0?bestCombo+'x':'—';
-  document.getElementById('death-drain').textContent='-$'+drainRate.toFixed(0)+'/s';
-  document.getElementById('death-best').textContent=String(bestLvl+1);
-  document.getElementById('death-quote').textContent=lvl<3?'"Inflation is undefeated. Your savings didn\'t stand a chance."':'"The average American loses ~40% of their purchasing power over 30 years. What if your money fought back?"';
+  // rank vs dummy leaderboard
+  const rank=LB_DUMMY.filter(p=>p.yrs>parseInt(yrs)).length+1;
+  document.getElementById('death-rank').textContent='#'+rank+' ALL TIME';
   showScreen('screen-death');
-  // create floating chaos
-  const dc=document.getElementById('death-chaos');dc.innerHTML='';
-  const dSyms=['%','$','-8%','+12%','FEE','TAX','$$$','DEBT'];
-  for(let i=0;i<12;i++){const el=document.createElement('div');el.classList.add('bg-floater');
-    el.innerText=dSyms[Math.floor(Math.random()*dSyms.length)];
-    el.style.fontSize=Math.floor(Math.random()*30+14)+'px';
-    el.style.left=Math.random()*100+'vw';el.style.color='#ffffff';
-    el.style.opacity=String(Math.random()*.04+.02);
-    el.style.animationDuration=(Math.random()*15+12)+'s';
-    el.style.animationDelay=(Math.random()*-20)+'s';
-    el.style.fontFamily='JetBrains Mono,monospace';el.style.fontWeight='bold';
-    dc.appendChild(el);}
+  // floating pills on death screen
+  const dp=document.getElementById('death-pills');dp.innerHTML='';
+  const dpData=[{text:'RENT +12%',t:'high'},{text:'GROCERIES +8%',t:'high'},{text:'GAS +4%',t:'mid'},{text:'COFFEE +2%',t:'low'},{text:'TAXES +10%',t:'high'},{text:'DEBT +15%',t:'high'},{text:'MEDICAL +20%',t:'high'},{text:'INSURANCE +7%',t:'mid'}];
+  dpData.forEach(d=>{
+    const el=document.createElement('div');el.className='floating-pill font-mono';el.innerText=d.text;
+    const cc2=d.t==='high'?'border-red-500 text-red-500 bg-red-900/10':d.t==='mid'?'border-amber-500 text-amber-500 bg-amber-900/10':'border-emerald-500 text-emerald-500 bg-emerald-900/10';
+    el.classList.add(...cc2.split(' '));el.style.opacity=(Math.random()*.2+.1).toFixed(2);
+    el.style.left=Math.random()*90+'vw';el.style.top=Math.random()*90+'vh';
+    dp.appendChild(el);
+  });
+  // restart button cycling
+  const dBtn=document.getElementById('btn-retry');
+  const dTxt=document.getElementById('death-cta-text');
+  const dPhrases=['RESTART',"TRY AGAIN?","YOU WON'T WIN"];
+  let dpi=0,dbi=null;
+  dBtn.onmouseenter=()=>{dbi=setInterval(()=>{dpi=(dpi+1)%dPhrases.length;dTxt.innerText=dPhrases[dpi];},400);};
+  dBtn.onmouseleave=()=>{clearInterval(dbi);dTxt.innerText=dPhrases[0];dpi=0;};
   lucide.createIcons();
 }
 
