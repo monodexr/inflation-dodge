@@ -214,7 +214,7 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 
   <!-- panic button indicator -->
   <div class="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-    <span id="panic-indicator" class="font-mono text-[9px] text-[#f59e0b]/60 tracking-widest font-bold uppercase">PANIC: READY [SPACE]</span>
+    <span id="panic-indicator" class="font-mono text-[9px] text-[#f59e0b]/60 tracking-widest font-bold uppercase"><span class="hidden md:inline">PANIC: READY [SPACE]</span><span class="md:hidden">PANIC: READY [2x TAP]</span></span>
   </div>
 
   <!-- bailout active indicator -->
@@ -685,6 +685,8 @@ function initGame(){
   dipDone=false;wallObs=[];legendCycle=0;trailPts=[];lastBalWarn=0;
   cameraZoom=1.8;cameraTarget=1;hudRevealed=false;
   panicAvailable=true;panicCooldown=0;
+  const pi=document.getElementById('panic-indicator');
+  if(pi)pi.innerHTML='<span class="hidden md:inline">PANIC: READY [SPACE]</span><span class="md:hidden">PANIC: READY [2x TAP]</span>';
   newsTimer=0;newsActive=null;
   bailoutActive=false;bailoutTimer=0;bailoutSpawnTimer=0;
   showScreen('screen-hud');
@@ -959,8 +961,7 @@ function update(){
   }
   if(newsActive&&fc>=newsActive.endsAt){newsActive=null;}
   // apply news effects
-  const newsSpeedMul=newsActive&&newsActive.effect==='speed'?1.5:newsActive&&newsActive.effect==='slow'?.6:1;
-  const newsDrainMul=newsActive&&newsActive.effect==='drain'?2:1;
+  const newsSpeedMul=newsActive&&newsActive.effect==='speed'?1.5:newsActive&&newsActive.effect==='slow'?.6:newsActive&&newsActive.effect==='freeze'?0:1;
   if(newsActive&&newsActive.effect==='pickups'&&fc%30===0)spawnPickup();
   if(newsActive&&newsActive.effect==='shrink'){
     obs.forEach(o=>{if(!o.hit){o.w*=.995;o.h*=.995;}});
@@ -1173,11 +1174,13 @@ function draw(){
     }else{
       X.save();X.shadowColor=p.fake?'#ff0000':isG?'#FFD700':'#78FFB4';X.shadowBlur=p.fake?8:isG?14:8;X.beginPath();X.arc(p.x,p.y,r+2,0,Math.PI*2);X.strokeStyle=p.fake?'rgba(255,60,60,.6)':isG?'rgba(255,200,0,.5)':'rgba(120,255,180,.35)';X.lineWidth=2.5;X.stroke();X.shadowBlur=0;X.restore();
     }
-    if(appIcon.complete&&!p.fake){X.save();X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);X.clip();X.drawImage(appIcon,p.x-r,p.y-r,r*2,r*2);X.restore();}
-    else{X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);X.fillStyle=p.fake?'rgba(255,30,30,.7)':'rgba(20,20,25,.8)';X.fill();}
-    const lbl=p.fake?'???':isG?'+$'+Math.floor(p.amt/1000)+'K':'+$200';X.font='bold 11px M,monospace';const tw=X.measureText(lbl).width;
-    const px=p.x-tw/2-6,py=p.y+r+5;X.fillStyle=p.fake?'rgba(255,30,30,.5)':isG?'rgba(255,200,0,.18)':'rgba(120,255,180,.12)';X.beginPath();rr(px,py,tw+12,18,9);X.fill();
-    X.fillStyle=p.fake?'#ff6666':isG?'#FFD700':'#78FFB4';X.textAlign='center';X.textBaseline='middle';X.fillText(lbl,p.x,py+9);});
+    if(!isBailout){
+      if(appIcon.complete&&!p.fake){X.save();X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);X.clip();X.drawImage(appIcon,p.x-r,p.y-r,r*2,r*2);X.restore();}
+      else{X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);X.fillStyle=p.fake?'rgba(255,30,30,.7)':'rgba(20,20,25,.8)';X.fill();}
+      const lbl=p.fake?'???':isG?'+$'+Math.floor(p.amt/1000)+'K':'+$200';X.font='bold 11px M,monospace';const tw=X.measureText(lbl).width;
+      const px2=p.x-tw/2-6,py2=p.y+r+5;X.fillStyle=p.fake?'rgba(255,30,30,.5)':isG?'rgba(255,200,0,.18)':'rgba(120,255,180,.12)';X.beginPath();rr(px2,py2,tw+12,18,9);X.fill();
+      X.fillStyle=p.fake?'#ff6666':isG?'#FFD700':'#78FFB4';X.textAlign='center';X.textBaseline='middle';X.fillText(lbl,p.x,py2+9);
+    }});
 
   // obstacles — stroke-only pills matching gameplay design
   obs.forEach(o=>{
