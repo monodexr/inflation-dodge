@@ -203,43 +203,135 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 </div>
 
 <!-- ============ HOW TO PLAY ============ -->
-<div id="screen-howto" class="fixed inset-0 flex items-center justify-center" style="background:#0a0a0a;z-index:35;display:none">
-  <div class="w-full max-w-md px-6 flex flex-col items-center">
-    <span class="text-[#e63329] font-mono text-[9px] tracking-[0.5em] font-bold mb-4 opacity-70">BRIEFING</span>
-    <h2 class="font-anton text-4xl md:text-5xl text-white tracking-tight mb-8">How to Play</h2>
+<div id="screen-howto" class="fixed inset-0 flex flex-col items-center justify-between overflow-hidden select-none" style="background:#0a0a0a;z-index:35;display:none">
+  <!-- dot grid bg -->
+  <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image:radial-gradient(#fff 1px,transparent 1px);background-size:24px 24px"></div>
+  <!-- floating pills bg -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-[15%] left-[8%] -rotate-12 border border-[#e63329] bg-[#e63329]/5 text-[#e63329] px-4 py-1.5 rounded-full text-xs font-mono font-bold opacity-20 whitespace-nowrap">RENT +15%</div>
+    <div class="absolute top-[28%] right-[12%] rotate-6 border border-[#f59e0b] bg-[#f59e0b]/5 text-[#f59e0b] px-4 py-1.5 rounded-full text-xs font-mono font-bold opacity-20 whitespace-nowrap">GROCERIES +8%</div>
+    <div class="absolute bottom-[25%] left-[15%] rotate-[35deg] border border-[#10b981] bg-[#10b981]/5 text-[#10b981] px-4 py-1.5 rounded-full text-xs font-mono font-bold opacity-20 whitespace-nowrap">GAS +4%</div>
+    <div class="absolute top-[45%] left-[3%] -rotate-[25deg] border border-[#e63329] bg-[#e63329]/5 text-[#e63329] px-4 py-1.5 rounded-full text-xs font-mono font-bold opacity-15 whitespace-nowrap">TAXES +30%</div>
+    <div class="absolute bottom-[40%] right-[5%] -rotate-[15deg] border border-[#f59e0b] bg-[#f59e0b]/5 text-[#f59e0b] px-4 py-1.5 rounded-full text-xs font-mono font-bold opacity-20 whitespace-nowrap">SUBSCRIPTIONS +6%</div>
+    <div class="absolute bottom-[15%] left-[35%] -rotate-[5deg] border border-[#10b981] bg-[#10b981]/5 text-[#10b981] px-4 py-1.5 rounded-full text-xs font-mono font-bold opacity-15 whitespace-nowrap">COFFEE +2%</div>
+  </div>
+  <!-- vignette -->
+  <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(circle,transparent 60%,rgba(0,0,0,.9) 100%)"></div>
+  <!-- corner brackets -->
+  <div class="absolute top-6 left-6 w-10 h-10 border-t-2 border-l-2 border-[#e63329] opacity-70 md:w-12 md:h-12 md:top-8 md:left-8"></div>
+  <div class="absolute top-6 right-6 w-10 h-10 border-t-2 border-r-2 border-[#e63329] opacity-70 md:w-12 md:h-12 md:top-8 md:right-8"></div>
+  <div class="absolute bottom-16 left-6 w-10 h-10 border-b-2 border-l-2 border-[#e63329] opacity-70 md:w-12 md:h-12 md:bottom-16 md:left-8"></div>
+  <div class="absolute bottom-16 right-6 w-10 h-10 border-b-2 border-r-2 border-[#e63329] opacity-70 md:w-12 md:h-12 md:bottom-16 md:right-8"></div>
 
-    <div class="w-full flex flex-col gap-5 mb-8">
-      <div class="flex items-start gap-4">
-        <span class="font-anton text-2xl text-[#e63329] w-8 flex-shrink-0">1</span>
-        <p class="font-mono text-xs md:text-sm text-gray-400 leading-relaxed"><span class="text-white font-bold">Move</span> your mouse or finger to dodge <span class="text-[#e63329] font-bold">inflation</span> flying at you</p>
+  <!-- content -->
+  <div class="relative z-50 flex flex-col h-full w-full max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6 items-center justify-between">
+    <!-- header -->
+    <header class="flex flex-col items-center w-full mt-2 md:mt-4">
+      <img src="logo.svg" alt="Legend" class="h-5 opacity-60 mb-4" />
+      <div class="flex items-center gap-2 mb-1">
+        <div class="w-1.5 h-1.5 bg-[#e63329] rounded-full animate-pulse shadow-[0_0_8px_#e63329]"></div>
+        <span class="font-mono text-[9px] tracking-[0.3em] text-white/40 uppercase">Mission Briefing</span>
       </div>
-      <div class="w-full border-t border-white/[.06]"></div>
-      <div class="flex items-start gap-4">
-        <span class="font-anton text-2xl text-[#e63329] w-8 flex-shrink-0">2</span>
-        <p class="font-mono text-xs md:text-sm text-gray-400 leading-relaxed">Each hit <span class="text-[#e63329] font-bold">drains your $10,000</span> balance — hit $0 and you're out</p>
+      <h1 class="font-anton text-[2.5rem] md:text-[5rem] leading-[0.9] text-center uppercase">
+        <span class="text-white">HOW TO</span>
+        <span class="text-[#e63329] ml-2" style="text-shadow:0 0 15px rgba(230,51,41,.8)">PLAY</span>
+      </h1>
+      <div class="h-px w-full max-w-[160px] md:max-w-[200px] bg-gradient-to-r from-transparent via-[#e63329] to-transparent mt-4 opacity-60"></div>
+    </header>
+
+    <!-- 3 cards -->
+    <main class="w-full flex items-center justify-center py-3 md:py-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 w-full max-w-5xl">
+        <!-- DODGE -->
+        <div class="group relative bg-[#111] border border-white/10 p-4 md:p-6 flex flex-col items-center text-center rounded-sm overflow-hidden transition-all duration-300 hover:translate-y-[-4px] hover:border-white/30">
+          <div class="absolute inset-0 bg-gradient-to-b from-[#e63329]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="relative z-10 w-12 h-12 md:w-16 md:h-16 mb-3 md:mb-4 flex items-center justify-center rounded-full bg-[#e63329]/10 border border-[#e63329]/30 group-hover:border-[#e63329] group-hover:shadow-[0_0_20px_rgba(230,51,41,.3)] transition-all duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e63329" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <h2 class="relative z-10 font-anton text-2xl md:text-3xl text-[#e63329] mb-1 md:mb-2 tracking-wide">DODGE</h2>
+          <p class="relative z-10 font-mono text-[9px] md:text-xs text-white/50 leading-relaxed max-w-[240px]">Move to avoid inflation. Each hit drains your <span class="text-[#e63329] font-bold">$10,000</span> balance.</p>
+          <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/20"></div>
+          <div class="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/20"></div>
+          <div class="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/20"></div>
+          <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/20"></div>
+        </div>
+        <!-- SURVIVE -->
+        <div class="group relative bg-[#111] border border-white/10 p-4 md:p-6 flex flex-col items-center text-center rounded-sm overflow-hidden transition-all duration-300 hover:translate-y-[-4px] hover:border-white/30">
+          <div class="absolute inset-0 bg-gradient-to-b from-[#f59e0b]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="relative z-10 w-12 h-12 md:w-16 md:h-16 mb-3 md:mb-4 flex items-center justify-center rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 group-hover:border-[#f59e0b] group-hover:shadow-[0_0_20px_rgba(245,158,11,.3)] transition-all duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h2 class="relative z-10 font-anton text-2xl md:text-3xl text-[#f59e0b] mb-1 md:mb-2 tracking-wide">SURVIVE</h2>
+          <p class="relative z-10 font-mono text-[9px] md:text-xs text-white/50 leading-relaxed max-w-[240px]">Stay alive as long as possible. <span class="text-[#f59e0b] font-bold">Graze</span> close for combo bonuses.</p>
+          <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/20"></div>
+          <div class="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/20"></div>
+          <div class="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/20"></div>
+          <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/20"></div>
+        </div>
+        <!-- COMPETE -->
+        <div class="group relative bg-[#111] border border-white/10 p-4 md:p-6 flex flex-col items-center text-center rounded-sm overflow-hidden transition-all duration-300 hover:translate-y-[-4px] hover:border-white/30">
+          <div class="absolute inset-0 bg-gradient-to-b from-[#10b981]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="relative z-10 w-12 h-12 md:w-16 md:h-16 mb-3 md:mb-4 flex items-center justify-center rounded-full bg-[#10b981]/10 border border-[#10b981]/30 group-hover:border-[#10b981] group-hover:shadow-[0_0_20px_rgba(16,185,129,.3)] transition-all duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <h2 class="relative z-10 font-anton text-2xl md:text-3xl text-[#10b981] mb-1 md:mb-2 tracking-wide">COMPETE</h2>
+          <p class="relative z-10 font-mono text-[9px] md:text-xs text-white/50 leading-relaxed max-w-[240px]">Daily competitions. <span class="text-[#10b981] font-bold">Real prizes.</span> Top score wins $1,000 USDC.</p>
+          <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/20"></div>
+          <div class="absolute top-0 right-0 w-2 h-2 border-t border-r border-white/20"></div>
+          <div class="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-white/20"></div>
+          <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/20"></div>
+        </div>
       </div>
-      <div class="w-full border-t border-white/[.06]"></div>
-      <div class="flex items-start gap-4">
-        <span class="font-anton text-2xl text-[#e63329] w-8 flex-shrink-0">3</span>
-        <p class="font-mono text-xs md:text-sm text-gray-400 leading-relaxed"><span class="text-[#10b981] font-bold">Get close</span> without touching for a <span class="text-[#f59e0b] font-bold">graze bonus</span> — build combos for massive rewards</p>
+    </main>
+
+    <!-- controls + button -->
+    <div class="w-full flex flex-col items-center gap-4 md:gap-6 mb-2 md:mb-4">
+      <!-- controls -->
+      <div class="flex flex-col items-center gap-2">
+        <div class="flex items-center gap-6 md:gap-8">
+          <!-- desktop: mouse -->
+          <div class="hidden md:flex flex-col items-center gap-2">
+            <div class="w-10 h-10 flex items-center justify-center bg-[#1a1a1a] border border-white/20 rounded font-mono text-sm" style="box-shadow:0 4px 0 #333">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="7"/><line x1="12" y1="6" x2="12" y2="10"/></svg>
+            </div>
+            <span class="font-mono text-[9px] uppercase tracking-widest text-white/30">Move</span>
+          </div>
+          <!-- mobile: finger -->
+          <div class="md:hidden flex flex-col items-center gap-2">
+            <div class="w-10 h-10 flex items-center justify-center bg-[#1a1a1a] border border-white/20 rounded font-mono text-sm" style="box-shadow:0 4px 0 #333">👆</div>
+            <span class="font-mono text-[9px] uppercase tracking-widest text-white/30">Drag</span>
+          </div>
+          <div class="w-px h-8 bg-white/10"></div>
+          <!-- desktop: spacebar -->
+          <div class="hidden md:flex flex-col items-center gap-2">
+            <div class="w-24 h-10 flex items-center justify-center bg-[#1a1a1a] border border-[#f59e0b]/30 rounded font-mono text-sm text-[#f59e0b]" style="box-shadow:0 4px 0 #333">SPACE</div>
+            <span class="font-mono text-[9px] uppercase tracking-widest text-white/30">Panic</span>
+          </div>
+          <!-- mobile: double tap -->
+          <div class="md:hidden flex flex-col items-center gap-2">
+            <div class="w-20 h-10 flex items-center justify-center bg-[#1a1a1a] border border-[#f59e0b]/30 rounded font-mono text-[10px] text-[#f59e0b]" style="box-shadow:0 4px 0 #333">2x TAP</div>
+            <span class="font-mono text-[9px] uppercase tracking-widest text-white/30">Panic</span>
+          </div>
+        </div>
       </div>
-      <div class="w-full border-t border-white/[.06]"></div>
-      <div class="flex items-start gap-4">
-        <span class="font-anton text-2xl text-[#e63329] w-8 flex-shrink-0">4</span>
-        <p class="font-mono text-xs md:text-sm text-gray-400 leading-relaxed">Collect <span class="text-[#10b981] font-bold">pickups</span> to heal — grab the rare <span class="text-[#FFD700] font-bold">BAILOUT</span> for invincibility</p>
-      </div>
-      <div class="w-full border-t border-white/[.06]"></div>
-      <div class="flex items-start gap-4">
-        <span class="font-anton text-2xl text-[#e63329] w-8 flex-shrink-0">5</span>
-        <p class="font-mono text-xs md:text-sm text-gray-400 leading-relaxed">Press <span class="text-[#f59e0b] font-bold hidden md:inline">SPACEBAR</span><span class="text-[#f59e0b] font-bold md:hidden">DOUBLE-TAP</span> for a one-time <span class="text-[#f59e0b] font-bold">PANIC</span> button — use it wisely</p>
+
+      <!-- start button — matching landing page style -->
+      <div class="flex flex-col items-center gap-2">
+        <button id="btn-howto-go" class="btn-cycle relative overflow-hidden bg-transparent text-[#e63329] border border-[#e63329]/60 px-10 py-3 min-w-[220px] cursor-pointer pointer-events-auto" style="animation:btn-blink 2.4s step-end infinite">
+          <span class="relative z-10 font-mono text-xs tracking-[0.3em] uppercase">▶ START GAME</span>
+        </button>
+        <span class="font-mono text-[10px] text-white/20 tracking-[0.15em]">GOOD LUCK. YOU'LL NEED IT.</span>
       </div>
     </div>
+  </div>
 
-    <p class="font-mono text-[10px] text-gray-600 italic text-center mb-8 max-w-xs">Inflation is undefeated.<br>You probably won't survive. Good luck.</p>
-
-    <button id="btn-howto-go" class="btn-cycle relative bg-transparent text-[#e63329] border border-[#e63329]/60 px-10 py-3 min-w-[220px] cursor-pointer pointer-events-auto clip-parallelogram" style="animation:btn-blink 2.4s step-end infinite">
-      <span class="font-anton text-base tracking-widest uppercase">LET'S GO</span>
-    </button>
+  <!-- bottom ticker -->
+  <div class="relative z-50 w-full bg-[#050505] border-t border-white/10 h-10 flex items-center overflow-hidden flex-shrink-0">
+    <div class="ticker-wrap flex items-center whitespace-nowrap" style="animation:ticker-scroll 25s linear infinite">
+      <span class="font-mono text-[10px] text-[#e63329] tracking-[0.2em] uppercase mx-4">/// INFLATION: 9,000% /// SAVINGS: GONE /// RENT DUE: YESTERDAY /// CREDIT SCORE: DELETED</span>
+      <span class="font-mono text-[10px] text-[#e63329] tracking-[0.2em] uppercase mx-4">/// INFLATION: 9,000% /// SAVINGS: GONE /// RENT DUE: YESTERDAY /// CREDIT SCORE: DELETED</span>
+      <span class="font-mono text-[10px] text-[#e63329] tracking-[0.2em] uppercase mx-4">/// INFLATION: 9,000% /// SAVINGS: GONE /// RENT DUE: YESTERDAY /// CREDIT SCORE: DELETED</span>
+    </div>
   </div>
 </div>
 
