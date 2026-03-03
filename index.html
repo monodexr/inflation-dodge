@@ -1262,9 +1262,10 @@ function showDeath(){
 
 // ============ PIXI POST-PROCESSING ============
 let pixiApp=null,pixiSprite=null;
+const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 function initPixi(){
   if(typeof PIXI==='undefined')return;
-  const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if(isSafari){console.log('Safari detected — skipping Pixi, using Canvas 2D directly');return;}
   pixiApp=new PIXI.Application({
     width:W*DPR,height:H*DPR,
     backgroundAlpha:0,
@@ -1348,8 +1349,8 @@ function initPixi(){
 
 try{initPixi();}catch(e){
   console.warn('Pixi init failed, using Canvas 2D fallback',e);
-  c.style.zIndex='1';c.style.opacity='1';
 }
+if(!pixiApp){c.style.zIndex='1';c.style.opacity='1';}
 
 // ============ INIT ============
 lucide.createIcons();
