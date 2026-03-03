@@ -1014,7 +1014,7 @@ function update(){
     }
     if(dq<pr*pr&&iframes===0){o.hit=true;
       if(o.deadly){
-        balance=0;totalLost+=balance;shake=25;flash=2;
+        totalLost+=balance;balance=0;shake=25;flash=2;
         emit(player.x,player.y,'#ff0000',30,8);
         snd('sawtooth',60,.4,.8,15);snd('square',40,.3,1,10);noise(.2,.4);
       }else{
@@ -1058,7 +1058,9 @@ function update(){
   updateHUD();
 
   if(balance<=0){
-    endBalance=Math.max(0,Math.floor(balance));balance=0;state='dead';deathSnd();
+    endBalance=Math.max(0,Math.floor(balance));balance=0;state='dead';
+    bailoutActive=false;bailoutTimer=0;
+    deathSnd();
     if(lvl>bestLvl){bestLvl=lvl;localStorage.setItem('id_blvl',String(bestLvl));}
     showDeath();}
 }
@@ -1100,27 +1102,6 @@ function updateHUD(){
 // ============ DRAW (canvas only — no HUD) ============
 function rr(cx,cy,cw,ch,cr){if(X.roundRect){X.roundRect(cx,cy,cw,ch,cr);return;}X.moveTo(cx+cr,cy);X.lineTo(cx+cw-cr,cy);X.arcTo(cx+cw,cy,cx+cw,cy+cr,cr);X.lineTo(cx+cw,cy+ch-cr);X.arcTo(cx+cw,cy+ch,cx+cw-cr,cy+ch,cr);X.lineTo(cx+cr,cy+ch);X.arcTo(cx,cy+ch,cx,cy+ch-cr,cr);X.lineTo(cx,cy+cr);X.arcTo(cx,cy,cx+cr,cy,cr);X.closePath();}
 
-// enhanced background particles
-const bgDots=[];
-for(let layer=0;layer<3;layer++){
-  const dots=[];const count=layer===0?80:layer===1?45:20;
-  for(let i=0;i<count;i++){
-    dots.push({
-      x:Math.random()*2400,y:Math.random()*1600,
-      baseX:0,baseY:0,
-      sz:.4+layer*.5+Math.random()*.6,
-      sp:.1+layer*.1+Math.random()*.08,
-      a:.02+layer*.015+Math.random()*.015,
-      pulse:Math.random()*Math.PI*2,
-      pulseSpd:.01+Math.random()*.02,
-    });
-    dots[dots.length-1].baseX=dots[dots.length-1].x;
-    dots[dots.length-1].baseY=dots[dots.length-1].y;
-  }
-  bgDots.push(dots);
-}
-// grid vertex cache for gravity well distortion
-const gridSpacing=40;
 
 function draw(){
   if(state!=='playing'){X.fillStyle='#050505';X.fillRect(0,0,W,H);return;}
@@ -1431,7 +1412,6 @@ function initPixi(){
     resolution:1,
     autoDensity:false,
     antialias:false,
-    preferWebGLVersion:isSafari?2:undefined,
     powerPreference:'high-performance',
   });
   const pxCanvas=pixiApp.view;
