@@ -202,6 +202,47 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
   </div>
 </div>
 
+<!-- ============ HOW TO PLAY ============ -->
+<div id="screen-howto" class="fixed inset-0 z-25 hidden items-center justify-center" style="background:#0a0a0a">
+  <div class="w-full max-w-md px-6 flex flex-col items-center">
+    <span class="text-[#e63329] font-mono text-[9px] tracking-[0.5em] font-bold mb-4 opacity-70">BRIEFING</span>
+    <h2 class="font-anton text-4xl md:text-5xl text-white tracking-tight mb-8">How to Play</h2>
+
+    <div class="w-full flex flex-col gap-5 mb-8">
+      <div class="flex items-start gap-4">
+        <span class="font-anton text-2xl text-[#e63329] w-8 flex-shrink-0">1</span>
+        <p class="font-mono text-xs md:text-sm text-gray-400 leading-relaxed"><span class="text-white font-bold">Move</span> your mouse or finger to dodge <span class="text-[#e63329] font-bold">inflation</span> flying at you</p>
+      </div>
+      <div class="w-full border-t border-white/[.06]"></div>
+      <div class="flex items-start gap-4">
+        <span class="font-anton text-2xl text-[#e63329] w-8 flex-shrink-0">2</span>
+        <p class="font-mono text-xs md:text-sm text-gray-400 leading-relaxed">Each hit <span class="text-[#e63329] font-bold">drains your $10,000</span> balance — hit $0 and you're out</p>
+      </div>
+      <div class="w-full border-t border-white/[.06]"></div>
+      <div class="flex items-start gap-4">
+        <span class="font-anton text-2xl text-[#e63329] w-8 flex-shrink-0">3</span>
+        <p class="font-mono text-xs md:text-sm text-gray-400 leading-relaxed"><span class="text-[#10b981] font-bold">Get close</span> without touching for a <span class="text-[#f59e0b] font-bold">graze bonus</span> — build combos for massive rewards</p>
+      </div>
+      <div class="w-full border-t border-white/[.06]"></div>
+      <div class="flex items-start gap-4">
+        <span class="font-anton text-2xl text-[#e63329] w-8 flex-shrink-0">4</span>
+        <p class="font-mono text-xs md:text-sm text-gray-400 leading-relaxed">Collect <span class="text-[#10b981] font-bold">pickups</span> to heal — grab the rare <span class="text-[#FFD700] font-bold">BAILOUT</span> for invincibility</p>
+      </div>
+      <div class="w-full border-t border-white/[.06]"></div>
+      <div class="flex items-start gap-4">
+        <span class="font-anton text-2xl text-[#e63329] w-8 flex-shrink-0">5</span>
+        <p class="font-mono text-xs md:text-sm text-gray-400 leading-relaxed">Press <span class="text-[#f59e0b] font-bold hidden md:inline">SPACEBAR</span><span class="text-[#f59e0b] font-bold md:hidden">DOUBLE-TAP</span> for a one-time <span class="text-[#f59e0b] font-bold">PANIC</span> button — use it wisely</p>
+      </div>
+    </div>
+
+    <p class="font-mono text-[10px] text-gray-600 italic text-center mb-8 max-w-xs">Inflation is undefeated.<br>You probably won't survive. Good luck.</p>
+
+    <button id="btn-howto-go" class="btn-cycle relative bg-transparent text-[#e63329] border border-[#e63329]/60 px-10 py-3 min-w-[220px] cursor-pointer pointer-events-auto clip-parallelogram" style="animation:btn-blink 2.4s step-end infinite">
+      <span class="font-anton text-base tracking-widest uppercase">LET'S GO</span>
+    </button>
+  </div>
+</div>
+
 <!-- ============ GAMEPLAY HUD ============ -->
 <div id="screen-hud" class="screen fixed inset-0 z-10 pointer-events-none">
   <!-- bailout "INVINCIBLE" flash -->
@@ -789,11 +830,35 @@ document.addEventListener('touchend',e=>{
   lastTap=now;
 });
 
-// start button
-document.getElementById('btn-start').onclick=()=>{
-  ia();clickSnd();showScreen(null);initGame();
+// HOW TO PLAY — show 2 times then skip
+function shouldShowHowTo(){
+  const count=parseInt(localStorage.getItem('id_howto')||'0');
+  return count<2;
+}
+function markHowToShown(){
+  const count=parseInt(localStorage.getItem('id_howto')||'0');
+  localStorage.setItem('id_howto',String(count+1));
+}
+function startViaHowTo(){
+  ia();clickSnd();
+  if(shouldShowHowTo()){
+    showScreen(null);
+    const h=document.getElementById('screen-howto');
+    h.style.display='flex';
+    markHowToShown();
+  }else{
+    showScreen(null);initGame();
+  }
+}
+document.getElementById('btn-howto-go').onclick=()=>{
+  clickSnd();
+  document.getElementById('screen-howto').style.display='none';
+  initGame();
 };
-// retry button
+
+// start button
+document.getElementById('btn-start').onclick=()=>startViaHowTo();
+// retry button (always skip how-to on retry)
 document.getElementById('btn-retry').onclick=()=>{
   ia();clickSnd();showScreen(null);initGame();
 };
