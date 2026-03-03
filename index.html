@@ -201,6 +201,25 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 
 <!-- ============ GAMEPLAY HUD ============ -->
 <div id="screen-hud" class="screen fixed inset-0 z-10 pointer-events-none">
+  <!-- breaking news overlay -->
+  <div id="news-overlay" class="absolute top-1/2 left-0 w-full -translate-y-1/2 z-30 pointer-events-none hidden">
+    <div class="bg-[#e63329]/90 border-y-2 border-white/20 py-2 md:py-3">
+      <div class="flex items-center justify-center gap-3 px-4">
+        <span class="font-mono text-[9px] md:text-xs text-white/60 tracking-widest font-bold whitespace-nowrap">BREAKING</span>
+        <div class="w-1.5 h-1.5 rounded-full bg-white animate-pulse flex-shrink-0"></div>
+        <span id="news-text" class="font-anton text-lg md:text-2xl text-white tracking-tight whitespace-nowrap"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- panic button indicator -->
+  <div class="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+    <span id="panic-indicator" class="font-mono text-[9px] text-[#f59e0b]/60 tracking-widest font-bold uppercase">PANIC: READY [SPACE]</span>
+  </div>
+
+  <!-- bailout active indicator -->
+  <div id="bailout-overlay" class="absolute inset-0 pointer-events-none z-20 hidden" style="border:3px solid #FFD700;box-shadow:inset 0 0 60px rgba(255,215,0,.15)"></div>
+
   <!-- corner brackets -->
   <div class="absolute inset-4 pointer-events-none opacity-30">
     <div class="corner-bracket cb-tl"></div>
@@ -630,9 +649,30 @@ let bestLvl=parseInt(localStorage.getItem('id_blvl')||'0');
 
 let countdownPhase=0;
 let openingBurst=false;
-let cameraZoom=1.8; // starts zoomed in
+let cameraZoom=1.8;
 let cameraTarget=1;
 let hudRevealed=false;
+
+// PANIC BUTTON — one per game
+let panicAvailable=true;
+let panicCooldown=0;
+
+// BREAKING NEWS EVENTS
+let newsTimer=0;
+let newsActive=null; // {type,text,endsAt}
+const NEWS_EVENTS=[
+  {type:'rateHike',text:'FED RAISES RATES TO 15%',dur:300,effect:'speed'},
+  {type:'stimulus',text:'STIMULUS CHECK INCOMING',dur:240,effect:'pickups'},
+  {type:'crash',text:'MARKET CRASH — SELL EVERYTHING',dur:300,effect:'drain'},
+  {type:'freeze',text:'GOVERNMENT SHUTDOWN',dur:240,effect:'freeze'},
+  {type:'bull',text:'BULL RUN DETECTED',dur:300,effect:'slow'},
+  {type:'blackFriday',text:'BLACK FRIDAY — PRICES SLASHED',dur:180,effect:'shrink'},
+];
+
+// BAILOUT POWER-UP
+let bailoutActive=false;
+let bailoutTimer=0;
+let bailoutSpawnTimer=0;
 
 function initGame(){
   player={x:W/2,y:H*.65,r:22};pt.x=player.x;pt.y=player.y;prevPX=player.x;prevPY=player.y;
@@ -644,6 +684,9 @@ function initGame(){
   totalLost=0;peakBal=INIT_BAL;bestCombo=0;
   dipDone=false;wallObs=[];legendCycle=0;trailPts=[];lastBalWarn=0;
   cameraZoom=1.8;cameraTarget=1;hudRevealed=false;
+  panicAvailable=true;panicCooldown=0;
+  newsTimer=0;newsActive=null;
+  bailoutActive=false;bailoutTimer=0;bailoutSpawnTimer=0;
   showScreen('screen-hud');
   // hide HUD elements initially for staggered reveal
   document.querySelector('#screen-hud .absolute.bottom-0').style.opacity='0';
@@ -735,6 +778,30 @@ function emit(px,py,col,n,sp){for(let i=0;i<n;i++){const a=Math.random()*Math.PI
 document.addEventListener('mousemove',e=>{if(state==='playing'){pt.x=e.clientX;pt.y=e.clientY}});
 document.addEventListener('touchmove',e=>{if(state==='playing'){e.preventDefault();pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}},{passive:false});
 document.addEventListener('touchstart',e=>{if(state==='playing'){pt.x=e.touches[0].clientX;pt.y=e.touches[0].clientY}},{passive:true});
+
+// PANIC BUTTON — spacebar or double-tap
+function triggerPanic(){
+  if(state!=='playing'||!panicAvailable)return;
+  panicAvailable=false;panicCooldown=30;
+  // destroy all obstacles on screen
+  obs.forEach(o=>{if(!o.hit){o.hit=true;emit(o.x+o.w/2,o.y+o.h/2,o.col||'#ff4444',8,5);}});
+  balance+=1000;
+  iframes=120;shake=20;flash=2;
+  // epic sound
+  snd('sine',1200,.2,.3,2400);snd('sine',800,.15,.4,1600);snd('triangle',600,.1,.5,1200);
+  noise(.15,.3);
+  setTimeout(()=>{if(ac){snd('sine',400,.08,.3,800);snd('sine',600,.06,.2,1000);}},200);
+  // update HUD indicator
+  const pi=document.getElementById('panic-indicator');
+  if(pi){pi.textContent='PANIC: USED';pi.style.color='#555';}
+}
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&state==='playing'){e.preventDefault();triggerPanic();}});
+let lastTap=0;
+document.addEventListener('touchend',e=>{
+  const now=Date.now();
+  if(now-lastTap<300&&state==='playing')triggerPanic();
+  lastTap=now;
+});
 
 // start button
 document.getElementById('btn-start').onclick=()=>{
@@ -858,7 +925,7 @@ function update(){
   const L=curLvl();
   if(lvlFrame>=LVL_DUR){setLevel(lvl+1);}
   if(announceT>12){announceT--;return;}
-  const dps=drainRate+(lvl>=14?legendCycle*2:0);
+  const dps=(drainRate+(lvl>=14?legendCycle*2:0))*(newsActive&&newsActive.effect==='drain'?2:1);
   balance-=dps/60;totalLost+=dps/60;
   if(balance>peakBal)peakBal=balance;
   if(announceT>0)announceT--;
@@ -883,7 +950,40 @@ function update(){
   // rare deadly obstacles — chance increases with level
   if(lvl>=2&&fc%60===0&&Math.random()<(0.01+lvl*0.005))spawnDeadly();
 
+  // BREAKING NEWS EVENTS — every 20-30 seconds
+  newsTimer++;
+  if(!newsActive&&newsTimer>1200+Math.random()*600&&lvl>=1){
+    const ev=NEWS_EVENTS[Math.floor(Math.random()*NEWS_EVENTS.length)];
+    newsActive={...ev,endsAt:fc+ev.dur};newsTimer=0;
+    snd('square',300,.12,.2,150);snd('sine',500,.08,.15,250);
+  }
+  if(newsActive&&fc>=newsActive.endsAt){newsActive=null;}
+  // apply news effects
+  const newsSpeedMul=newsActive&&newsActive.effect==='speed'?1.5:newsActive&&newsActive.effect==='slow'?.6:1;
+  const newsDrainMul=newsActive&&newsActive.effect==='drain'?2:1;
+  if(newsActive&&newsActive.effect==='pickups'&&fc%30===0)spawnPickup();
+  if(newsActive&&newsActive.effect==='shrink'){
+    obs.forEach(o=>{if(!o.hit){o.w*=.995;o.h*=.995;}});
+  }
+
+  // BAILOUT POWER-UP — spawns every 45-60s
+  bailoutSpawnTimer++;
+  if(!bailoutActive&&bailoutSpawnTimer>2700+Math.random()*900&&lvl>=2){
+    bailoutSpawnTimer=0;
+    pickups.push({x:zoneL+40+Math.random()*(zoneR-zoneL-80),y:zoneT-30,
+      vy:1.5+Math.random(),amt:0,fake:false,collected:false,type:'bailout',sz:50});
+    snd('sine',1000,.1,.3,2000);snd('triangle',800,.06,.2,1500);
+  }
+  if(bailoutActive){
+    bailoutTimer--;
+    if(bailoutTimer<=0){bailoutActive=false;}
+  }
+
+  // panic cooldown
+  if(panicCooldown>0)panicCooldown--;
+
   let ts=1;if(balance>0&&balance<500)ts=.5+(balance/500)*.5;
+  ts*=newsSpeedMul;
 
   for(let i=obs.length-1;i>=0;i--){
     const o=obs[i];
@@ -899,6 +999,13 @@ function update(){
     const cx3=Math.max(o.x,Math.min(player.x,o.x+o.w));const cy3=Math.max(o.y,Math.min(player.y,o.y+o.h));
     const dx2=player.x-cx3,dy2=player.y-cy3;const dq=dx2*dx2+dy2*dy2;
     if(!o.grazed&&dq<(pr+10)*(pr+10)&&dq>pr*pr){o.grazed=true;combo++;if(combo>bestCombo)bestCombo=combo;updateCombo();balance+=(80+lvl*30)*comboMul;emit(cx3,cy3,'#78FFB4',5,3);grazeSnd();}
+    // bailout god mode — shatter obstacles on contact
+    if(bailoutActive&&dq<(pr+5)*(pr+5)){
+      o.hit=true;balance+=500;
+      emit(o.x+o.w/2,o.y+o.h/2,'#FFD700',12,6);
+      snd('sine',1200+Math.random()*400,.06,.05,800);
+      continue;
+    }
     if(dq<pr*pr&&iframes===0){o.hit=true;
       if(o.deadly){
         balance=0;totalLost+=balance;shake=25;flash=2;
@@ -922,6 +1029,12 @@ function update(){
     if(d3<35+p.sz){p.x+=dx3*.04;p.y+=dy3*.04;}
     if(d3<player.r+p.sz*.5){p.collected=true;
       if(p.fake){balance-=1000;shake=8;flash=1;emit(p.x,p.y,'#ff0000',12,5);hitSnd(10);}
+      else if(p.type==='bailout'){
+        bailoutActive=true;bailoutTimer=180;
+        iframes=180;shake=12;flash=1.5;
+        emit(p.x,p.y,'#FFD700',25,8);
+        snd('sine',1000,.2,.4,2000);snd('sine',1500,.12,.5,3000);snd('triangle',800,.08,.3,1600);
+      }
       else{balance+=p.amt*comboMul;emit(p.x,p.y,p.type==='defi'?'#FFD700':'#78FFB4',14,6);collectSnd(p.amt);
         if(p.amt>=1500){for(const o of obs){if(o.hit)continue;const odx=(o.x+o.w/2)-player.x,ody=(o.y+o.h/2)-player.y;const od=Math.sqrt(odx*odx+ody*ody);if(od<140&&od>0){o.vx+=(odx/od)*5;o.vy+=(ody/od)*5;}}shake=4;}}
       pickups.splice(i,1);}
@@ -970,7 +1083,14 @@ function updateHUD(){
   fpsFrames++;
   const now=performance.now();
   if(now-fpsLast>=500){fpsVal=Math.round(fpsFrames/((now-fpsLast)/1000));fpsFrames=0;fpsLast=now;
-    document.getElementById('hud-fps').textContent='FPS: '+fpsVal;}
+    const fpsEl=document.getElementById('hud-fps');if(fpsEl)fpsEl.textContent='FPS: '+fpsVal;}
+  // news overlay
+  const no=document.getElementById('news-overlay');
+  if(newsActive){no.classList.remove('hidden');document.getElementById('news-text').textContent=newsActive.text;}
+  else{no.classList.add('hidden');}
+  // bailout overlay
+  const bo=document.getElementById('bailout-overlay');
+  if(bailoutActive){bo.classList.remove('hidden');}else{bo.classList.add('hidden');}
 }
 
 // ============ DRAW (canvas only — no HUD) ============
@@ -1036,8 +1156,23 @@ function draw(){
   if(L.dark){X.fillStyle='rgba(0,0,0,.88)';X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);const sp=X.createRadialGradient(player.x,player.y,10,player.x,player.y,85);sp.addColorStop(0,'rgba(0,0,0,0)');sp.addColorStop(1,'rgba(0,0,0,.92)');X.fillStyle=sp;X.fillRect(zoneL,zoneT,zoneR-zoneL,zoneB-zoneT);}
 
   // pickups
-  pickups.forEach(p=>{if(p.collected)return;const isG=p.type==='defi';const r=p.sz*(1+Math.sin(fc*.06)*.04);
-    X.save();X.shadowColor=p.fake?'#ff0000':isG?'#FFD700':'#78FFB4';X.shadowBlur=p.fake?8:isG?14:8;X.beginPath();X.arc(p.x,p.y,r+2,0,Math.PI*2);X.strokeStyle=p.fake?'rgba(255,60,60,.6)':isG?'rgba(255,200,0,.5)':'rgba(120,255,180,.35)';X.lineWidth=2.5;X.stroke();X.shadowBlur=0;X.restore();
+  pickups.forEach(p=>{if(p.collected)return;
+    const isG=p.type==='defi';const isBailout=p.type==='bailout';
+    const r=p.sz*(1+Math.sin(fc*.06)*(isBailout?.08:.04));
+    if(isBailout){
+      // golden pulsing bailout pickup
+      const bp=.5+Math.sin(fc*.1)*.3;
+      X.save();X.shadowColor='#FFD700';X.shadowBlur=25*bp;
+      X.beginPath();X.arc(p.x,p.y,r+4,0,Math.PI*2);
+      X.strokeStyle=`rgba(255,215,0,${.4+bp*.3})`;X.lineWidth=3;X.stroke();
+      X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);
+      X.fillStyle=`rgba(255,215,0,${.15+bp*.1})`;X.fill();
+      X.shadowBlur=0;X.restore();
+      X.fillStyle='#FFD700';X.font='bold 11px "Space Mono",monospace';
+      X.textAlign='center';X.textBaseline='middle';X.fillText('BAILOUT',p.x,p.y);
+    }else{
+      X.save();X.shadowColor=p.fake?'#ff0000':isG?'#FFD700':'#78FFB4';X.shadowBlur=p.fake?8:isG?14:8;X.beginPath();X.arc(p.x,p.y,r+2,0,Math.PI*2);X.strokeStyle=p.fake?'rgba(255,60,60,.6)':isG?'rgba(255,200,0,.5)':'rgba(120,255,180,.35)';X.lineWidth=2.5;X.stroke();X.shadowBlur=0;X.restore();
+    }
     if(appIcon.complete&&!p.fake){X.save();X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);X.clip();X.drawImage(appIcon,p.x-r,p.y-r,r*2,r*2);X.restore();}
     else{X.beginPath();X.arc(p.x,p.y,r,0,Math.PI*2);X.fillStyle=p.fake?'rgba(255,30,30,.7)':'rgba(20,20,25,.8)';X.fill();}
     const lbl=p.fake?'???':isG?'+$'+Math.floor(p.amt/1000)+'K':'+$200';X.font='bold 11px M,monospace';const tw=X.measureText(lbl).width;
@@ -1112,11 +1247,16 @@ function draw(){
 
   // player — Legend app icon with green pulse
   const pr=player.r*(1-hitShrink*.3);const coinHp=Math.max(0,Math.min(1,balance/INIT_BAL));
-  // green earning pulse glow
+  // player glow — gold during bailout, green normally
   const pulseA=.12+Math.sin(fc*.06)*.08;
-  const glowR=28+Math.sin(fc*.04)*6+combo*1.5;
+  const glowR=28+Math.sin(fc*.04)*6+combo*1.5+(bailoutActive?15:0);
   const pg=X.createRadialGradient(player.x,player.y,pr*.5,player.x,player.y,glowR);
-  pg.addColorStop(0,`rgba(34,197,94,${coinHp>.2?pulseA:.03})`);pg.addColorStop(1,'rgba(0,0,0,0)');
+  if(bailoutActive){
+    const bp=.2+Math.sin(fc*.12)*.1;
+    pg.addColorStop(0,`rgba(255,215,0,${bp})`);pg.addColorStop(1,'rgba(0,0,0,0)');
+  }else{
+    pg.addColorStop(0,`rgba(34,197,94,${coinHp>.2?pulseA:.03})`);pg.addColorStop(1,'rgba(0,0,0,0)');
+  }
   X.fillStyle=pg;X.beginPath();X.arc(player.x,player.y,glowR,0,Math.PI*2);X.fill();
   // icon body
   if(appIcon.complete){
