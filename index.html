@@ -95,6 +95,9 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 @keyframes trail-fade{0%{opacity:1;transform:scale(1) translateY(0)}100%{opacity:0;transform:scale(.5) translateY(-20px)}}
 .glitch-active{text-shadow:2px 0 #e63329,-2px 0 blue}
 
+/* bailout invincible flash */
+@keyframes bailout-flash{0%{opacity:.25}50%{opacity:.08}}
+
 /* screen management */
 .screen{display:none}
 .screen.active{display:flex}
@@ -201,15 +204,9 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 
 <!-- ============ GAMEPLAY HUD ============ -->
 <div id="screen-hud" class="screen fixed inset-0 z-10 pointer-events-none">
-  <!-- breaking news overlay -->
-  <div id="news-overlay" class="absolute top-1/2 left-0 w-full -translate-y-1/2 z-30 pointer-events-none hidden">
-    <div class="bg-[#e63329]/90 border-y-2 border-white/20 py-2 md:py-3">
-      <div class="flex items-center justify-center gap-3 px-4">
-        <span class="font-mono text-[9px] md:text-xs text-white/60 tracking-widest font-bold whitespace-nowrap">BREAKING</span>
-        <div class="w-1.5 h-1.5 rounded-full bg-white animate-pulse flex-shrink-0"></div>
-        <span id="news-text" class="font-anton text-lg md:text-2xl text-white tracking-tight whitespace-nowrap"></span>
-      </div>
-    </div>
+  <!-- bailout "INVINCIBLE" flash -->
+  <div id="bailout-text" class="absolute inset-0 flex items-center justify-center z-30 pointer-events-none hidden">
+    <h1 class="font-anton text-[4rem] md:text-[8rem] text-[#FFD700] tracking-tight uppercase" style="animation:bailout-flash .4s step-end infinite;text-shadow:0 0 40px rgba(255,215,0,.4)">INVINCIBLE</h1>
   </div>
 
   <!-- panic button indicator -->
@@ -657,18 +654,6 @@ let hudRevealed=false;
 let panicAvailable=true;
 let panicCooldown=0;
 
-// BREAKING NEWS EVENTS
-let newsTimer=0;
-let newsActive=null; // {type,text,endsAt}
-const NEWS_EVENTS=[
-  {type:'rateHike',text:'FED RAISES RATES TO 15%',dur:300,effect:'speed'},
-  {type:'stimulus',text:'STIMULUS CHECK INCOMING',dur:240,effect:'pickups'},
-  {type:'crash',text:'MARKET CRASH — SELL EVERYTHING',dur:300,effect:'drain'},
-  {type:'freeze',text:'GOVERNMENT SHUTDOWN',dur:240,effect:'freeze'},
-  {type:'bull',text:'BULL RUN DETECTED',dur:300,effect:'slow'},
-  {type:'blackFriday',text:'BLACK FRIDAY — PRICES SLASHED',dur:180,effect:'shrink'},
-];
-
 // BAILOUT POWER-UP
 let bailoutActive=false;
 let bailoutTimer=0;
@@ -687,7 +672,6 @@ function initGame(){
   panicAvailable=true;panicCooldown=0;
   const pi=document.getElementById('panic-indicator');
   if(pi)pi.innerHTML='<span class="hidden md:inline">PANIC: READY [SPACE]</span><span class="md:hidden">PANIC: READY [2x TAP]</span>';
-  newsTimer=0;newsActive=null;
   bailoutActive=false;bailoutTimer=0;bailoutSpawnTimer=0;
   showScreen('screen-hud');
   // hide HUD elements initially for staggered reveal
@@ -927,7 +911,7 @@ function update(){
   const L=curLvl();
   if(lvlFrame>=LVL_DUR){setLevel(lvl+1);}
   if(announceT>12){announceT--;return;}
-  const dps=(drainRate+(lvl>=14?legendCycle*2:0))*(newsActive&&newsActive.effect==='drain'?2:1);
+  const dps=drainRate+(lvl>=14?legendCycle*2:0);
   balance-=dps/60;totalLost+=dps/60;
   if(balance>peakBal)peakBal=balance;
   if(announceT>0)announceT--;
@@ -968,21 +952,6 @@ function update(){
     snd('square',150,.1,.4,60);snd('sine',250,.06,.3,100);
   }
 
-  // BREAKING NEWS EVENTS — every 20-30 seconds
-  newsTimer++;
-  if(!newsActive&&newsTimer>1200+Math.random()*600&&lvl>=1){
-    const ev=NEWS_EVENTS[Math.floor(Math.random()*NEWS_EVENTS.length)];
-    newsActive={...ev,endsAt:fc+ev.dur};newsTimer=0;
-    snd('square',300,.12,.2,150);snd('sine',500,.08,.15,250);
-  }
-  if(newsActive&&fc>=newsActive.endsAt){newsActive=null;}
-  // apply news effects
-  const newsSpeedMul=newsActive&&newsActive.effect==='speed'?1.5:newsActive&&newsActive.effect==='slow'?.6:newsActive&&newsActive.effect==='freeze'?0:1;
-  if(newsActive&&newsActive.effect==='pickups'&&fc%30===0)spawnPickup();
-  if(newsActive&&newsActive.effect==='shrink'){
-    obs.forEach(o=>{if(!o.hit){o.w*=.995;o.h*=.995;}});
-  }
-
   // BAILOUT POWER-UP — spawns every 45-60s
   bailoutSpawnTimer++;
   if(!bailoutActive&&bailoutSpawnTimer>2700+Math.random()*900&&lvl>=2){
@@ -1013,7 +982,6 @@ function update(){
   if(panicCooldown>0)panicCooldown--;
 
   let ts=1;if(balance>0&&balance<500)ts=.5+(balance/500)*.5;
-  ts*=newsSpeedMul;
 
   for(let i=obs.length-1;i>=0;i--){
     const o=obs[i];
@@ -1122,13 +1090,11 @@ function updateHUD(){
   const now=performance.now();
   if(now-fpsLast>=500){fpsVal=Math.round(fpsFrames/((now-fpsLast)/1000));fpsFrames=0;fpsLast=now;
     const fpsEl=document.getElementById('hud-fps');if(fpsEl)fpsEl.textContent='FPS: '+fpsVal;}
-  // news overlay
-  const no=document.getElementById('news-overlay');
-  if(newsActive){no.classList.remove('hidden');document.getElementById('news-text').textContent=newsActive.text;}
-  else{no.classList.add('hidden');}
-  // bailout overlay
+  // bailout overlays
   const bo=document.getElementById('bailout-overlay');
-  if(bailoutActive){bo.classList.remove('hidden');}else{bo.classList.add('hidden');}
+  const bt=document.getElementById('bailout-text');
+  if(bailoutActive){bo.classList.remove('hidden');bt.classList.remove('hidden');}
+  else{bo.classList.add('hidden');bt.classList.add('hidden');}
 }
 
 // ============ DRAW (canvas only — no HUD) ============
