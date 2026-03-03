@@ -25,7 +25,7 @@
 @font-face{font-family:'M';src:url('fonts/PPNeueMontrealMono-Regular.otf') format('opentype');font-weight:400;font-display:swap}
 @font-face{font-family:'M';src:url('fonts/PPNeueMontrealMono-Bold.otf') format('opentype');font-weight:700;font-display:swap}
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:#050505;-webkit-font-smoothing:antialiased}
+html,body{width:100%;height:100%;overflow:hidden;background:#050505;-webkit-font-smoothing:antialiased;-webkit-overflow-scrolling:touch;touch-action:none;overscroll-behavior:none}
 canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 #c{z-index:-1;opacity:0}
 
@@ -280,7 +280,7 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 </div>
 
 <!-- ============ LEVEL TRANSITION OVERLAY ============ -->
-<div id="screen-level" class="fixed inset-0 z-30 flex items-center justify-center pointer-events-none opacity-0" style="background:rgba(0,0,0,.25);backdrop-filter:blur(2px);transition:opacity .6s ease-in-out">
+<div id="screen-level" class="fixed inset-0 z-30 flex items-center justify-center pointer-events-none opacity-0" style="background:rgba(0,0,0,.25);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);transition:opacity .6s ease-in-out">
   <div class="relative p-12">
     <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-red-600"></div>
     <div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-red-600"></div>
@@ -475,7 +475,8 @@ function showScreen(id){
 // ============ AUDIO ============
 let ac,mg;
 function ia(){
-  if(ac)return;ac=new(AudioContext||webkitAudioContext)();
+  if(ac){if(ac.state==='suspended')ac.resume();return;}
+  ac=new(window.AudioContext||window.webkitAudioContext)();
   mg=ac.createGain();mg.gain.value=.6;mg.connect(ac.destination);
   // ambient drone — deep sub bass
   const dr=ac.createOscillator(),dg=ac.createGain();
@@ -497,14 +498,17 @@ function snd(tp,f,v,d,fe){
 }
 function noise(v,d){
   if(!ac)return;
-  const buf=ac.createBuffer(1,ac.sampleRate*d,ac.sampleRate);
-  const data=buf.getChannelData(0);
-  for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1);
-  const src=ac.createBufferSource(),g=ac.createGain(),flt=ac.createBiquadFilter();
-  src.buffer=buf;flt.type='bandpass';flt.frequency.value=2000;flt.Q.value=1;
-  g.gain.value=v;src.connect(flt);flt.connect(g);g.connect(mg);
-  g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);
-  src.start();src.stop(ac.currentTime+d);
+  try{
+    const len=Math.max(1,Math.floor(ac.sampleRate*d));
+    const buf=ac.createBuffer(1,len,ac.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1);
+    const src=ac.createBufferSource(),g=ac.createGain(),flt=ac.createBiquadFilter();
+    src.buffer=buf;flt.type='bandpass';flt.frequency.value=2000;flt.Q.value=1;
+    g.gain.value=v;src.connect(flt);flt.connect(g);g.connect(mg);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);
+    src.start();src.stop(ac.currentTime+d);
+  }catch(e){}
 }
 // hit — meaty impact, varies by severity
 function hitSnd(p){
@@ -1259,13 +1263,16 @@ function showDeath(){
 // ============ PIXI POST-PROCESSING ============
 let pixiApp=null,pixiSprite=null;
 function initPixi(){
-  if(!PIXI)return;
+  if(typeof PIXI==='undefined')return;
+  const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   pixiApp=new PIXI.Application({
     width:W*DPR,height:H*DPR,
     backgroundAlpha:0,
     resolution:1,
     autoDensity:false,
     antialias:false,
+    preferWebGLVersion:isSafari?2:undefined,
+    powerPreference:'high-performance',
   });
   const pxCanvas=pixiApp.view;
   pxCanvas.style.position='fixed';
@@ -1284,7 +1291,7 @@ function initPixi(){
 
   // bloom / glow filter
   const fxFrag=`
-    precision mediump float;
+    precision highp float;
     varying vec2 vTextureCoord;
     uniform sampler2D uSampler;
     uniform float uFlash;
@@ -1322,12 +1329,10 @@ function initPixi(){
       gl_FragColor=final;
     }
   `;
-  const fxFilter=new PIXI.Filter(undefined,fxFrag,{
-    uFlash:0.0,
-    uTime:0.0,
-    uGlitch:0.0,
-  });
-  pixiApp.stage.filters=[fxFilter];
+  try{
+    const fxFilter=new PIXI.Filter(undefined,fxFrag,{uFlash:0.0,uTime:0.0,uGlitch:0.0});
+    pixiApp.stage.filters=[fxFilter];
+  }catch(e){console.warn('Shader compilation failed, running without post-fx',e);}
 
   // resize handler
   const origResize=resize;
@@ -1341,7 +1346,10 @@ function initPixi(){
   };
 }
 
-try{initPixi();}catch(e){console.warn('Pixi init failed, using Canvas 2D fallback',e);}
+try{initPixi();}catch(e){
+  console.warn('Pixi init failed, using Canvas 2D fallback',e);
+  c.style.zIndex='1';c.style.opacity='1';
+}
 
 // ============ INIT ============
 lucide.createIcons();
@@ -1351,8 +1359,8 @@ function loop(){
   draw();
   // update pixi post-processing
   if(pixiApp&&pixiSprite){
-    pixiSprite.texture.baseTexture.resource.source=c;
-    pixiSprite.texture.baseTexture.update();
+    try{pixiSprite.texture.baseTexture.resource.source=c;pixiSprite.texture.baseTexture.update();}
+    catch(e){pixiSprite.texture.update();}
     const f=pixiApp.stage.filters;
     if(f&&f[0]&&f[0].uniforms){
       const t=performance.now()/1000;
