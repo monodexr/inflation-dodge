@@ -830,26 +830,10 @@ document.addEventListener('touchend',e=>{
   lastTap=now;
 });
 
-// HOW TO PLAY — show 2 times then skip
-function shouldShowHowTo(){
-  const count=parseInt(localStorage.getItem('id_howto')||'0');
-  return count<2;
-}
-function markHowToShown(){
-  const count=parseInt(localStorage.getItem('id_howto')||'0');
-  localStorage.setItem('id_howto',String(count+1));
-}
 function startViaHowTo(){
-  ia();clickSnd();
-  if(shouldShowHowTo()){
-    showScreen(null);
-    document.body.style.cursor='';
-    const h=document.getElementById('screen-howto');
-    h.style.display='flex';
-    markHowToShown();
-  }else{
-    showScreen(null);initGame();
-  }
+  ia();clickSnd();showScreen(null);
+  document.body.style.cursor='';
+  document.getElementById('screen-howto').style.display='flex';
 }
 document.getElementById('btn-howto-go').onclick=()=>{
   clickSnd();
