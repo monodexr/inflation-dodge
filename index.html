@@ -596,6 +596,7 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 <script>
 // ============ CANVAS ============
 const c=document.getElementById('c'),X=c.getContext('2d');
+const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 let W,H,DPR=1;
 function resize(){
   DPR=isSafari?1:Math.min(window.devicePixelRatio||1,2);
@@ -606,7 +607,6 @@ function resize(){
 }
 resize();onresize=resize;
 const appIcon=new Image();appIcon.src='app-icon.png';
-const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 // ============ SCREEN MANAGEMENT ============
 let lvlOverlayTimer=null;
