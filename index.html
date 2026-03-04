@@ -17,15 +17,9 @@
 <meta name="twitter:description" content="Your savings are under attack. Top score wins $1,000 USDC daily.">
 <meta name="twitter:image" content="https://monodexr.github.io/inflation-dodge/og-share-v2.png">
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-<script src="https://pixijs.download/v7.3.2/pixi.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=JetBrains+Mono:wght@400;700;800&family=Oswald:wght@400;500;700&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;700&family=Oswald:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-@font-face{font-family:'Knapp';src:url('fonts/Knapp-Light.otf') format('opentype');font-weight:300;font-display:swap}
-@font-face{font-family:'Knapp';src:url('fonts/Knapp-Regular.otf') format('opentype');font-weight:400;font-display:swap}
-@font-face{font-family:'Knapp';src:url('fonts/Knapp-Medium.otf') format('opentype');font-weight:500;font-display:swap}
-@font-face{font-family:'M';src:url('fonts/PPNeueMontrealMono-Regular.otf') format('opentype');font-weight:400;font-display:swap}
-@font-face{font-family:'M';src:url('fonts/PPNeueMontrealMono-Bold.otf') format('opentype');font-weight:700;font-display:swap}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#050505;-webkit-font-smoothing:antialiased;-webkit-overflow-scrolling:touch;touch-action:none;overscroll-behavior:none}
 canvas{display:block;cursor:none;position:fixed;top:0;left:0}
@@ -34,13 +28,8 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 .font-mono{font-family:'JetBrains Mono',monospace}
 .font-display{font-family:'Oswald',sans-serif}
 .font-anton{font-family:'Anton',sans-serif}
-.font-headline{font-family:'Archivo Black',sans-serif}
-.font-heavy{font-family:'Inter',sans-serif}
 
-/* shared effects */
-.scanlines{position:fixed;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(255,255,255,0) 50%,rgba(0,0,0,.15) 50%,rgba(0,0,0,.15));background-size:100% 4px;pointer-events:none;z-index:90}
-.vignette{position:fixed;inset:0;background:radial-gradient(circle,transparent 50%,rgba(0,0,0,.7) 100%);pointer-events:none;z-index:91}
-.noise-overlay{position:fixed;inset:0;pointer-events:none;z-index:89;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* shared */
 .bg-grid{background-size:40px 40px;background-image:linear-gradient(to right,rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.03) 1px,transparent 1px)}
 
 /* title screen */
@@ -49,13 +38,10 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 @keyframes pulse-red{0%,100%{opacity:1;text-shadow:0 0 10px rgba(255,51,51,.5)}50%{opacity:.5;text-shadow:0 0 20px rgba(255,51,51,0)}}
 .ticker-wrap{overflow:hidden;white-space:nowrap}
 .ticker-move{display:inline-block;animation:ticker-scroll 20s linear infinite}
-.floating-item{position:absolute;animation:float-up linear infinite}
 .text-glow-red{text-shadow:0 0 10px rgba(255,51,51,.7)}
-.text-glow-amber{text-shadow:0 0 10px rgba(212,136,58,.7)}
 
 /* gameplay HUD */
 @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-@keyframes pulse-glow{0%,100%{box-shadow:0 0 15px rgba(59,130,246,.5)}50%{box-shadow:0 0 25px rgba(59,130,246,.8)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
 .animate-marquee{animation:marquee 20s linear infinite}
 .animate-blink{animation:blink 1s step-end infinite}
@@ -73,12 +59,6 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 @keyframes g1{0%{clip-path:inset(20% 0 80% 0);transform:translate(-2px,1px)}20%{clip-path:inset(60% 0 10% 0);transform:translate(2px,-1px)}40%{clip-path:inset(40% 0 50% 0);transform:translate(-2px,2px)}60%{clip-path:inset(80% 0 5% 0);transform:translate(2px,-2px)}80%{clip-path:inset(10% 0 70% 0);transform:translate(-1px,1px)}100%{clip-path:inset(30% 0 60% 0);transform:translate(1px,-1px)}}
 @keyframes g2{0%{clip-path:inset(10% 0 60% 0);transform:translate(2px,1px)}20%{clip-path:inset(30% 0 20% 0);transform:translate(-2px,-1px)}40%{clip-path:inset(70% 0 10% 0);transform:translate(2px,2px)}60%{clip-path:inset(20% 0 50% 0);transform:translate(-2px,-2px)}80%{clip-path:inset(50% 0 30% 0);transform:translate(1px,1px)}100%{clip-path:inset(0% 0 80% 0);transform:translate(-1px,-1px)}}
 .bg-floater{position:absolute;color:rgba(255,51,51,.1);user-select:none;pointer-events:none;animation:float-up linear infinite}
-.stat-card{background:rgba(10,10,10,.8);backdrop-filter:blur(8px);border:1px solid #1f1f1f;transition:all .3s ease}
-.stat-card:hover{border-color:#333;transform:translateY(-2px);box-shadow:0 10px 30px -10px rgba(255,51,51,.1)}
-.btn-glitch{position:relative;overflow:hidden}
-.btn-glitch::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transition:.5s}
-.btn-glitch:hover::before{left:100%}
-.red-glow-text{text-shadow:0 0 20px rgba(255,51,51,.6)}
 
 /* gameplay scanline sweep — from design */
 @keyframes scan-sweep{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
@@ -106,11 +86,6 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 </style>
 </head>
 <body class="text-white select-none">
-
-<!-- shared overlays (gameplay only) -->
-<div id="fx-scanlines" class="scanlines"></div>
-<div id="fx-vignette" class="vignette"></div>
-<div id="fx-noise" class="noise-overlay"></div>
 
 <!-- game canvas -->
 <canvas id="c"></canvas>
@@ -598,7 +573,6 @@ canvas{display:block;cursor:none;position:fixed;top:0;left:0}
 <script>
 // ============ CANVAS ============
 const c=document.getElementById('c'),X=c.getContext('2d');
-const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 let W,H,DPR=1;
 function resize(){
   DPR=Math.min(window.devicePixelRatio||1,2);
@@ -615,9 +589,6 @@ let lvlOverlayTimer=null;
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   if(id)document.getElementById(id).classList.add('active');
-  document.getElementById('fx-scanlines').style.display='none';
-  document.getElementById('fx-vignette').style.display='none';
-  document.getElementById('fx-noise').style.display='none';
   document.getElementById('scan-sweep').style.display=id==='screen-hud'?'':'none';
   document.body.style.cursor=id==='screen-hud'||!id?'none':'';
   if(id!=='screen-hud')document.getElementById('screen-level').style.opacity='0';
@@ -1501,119 +1472,10 @@ function showDeath(){
   },1000);
 })();
 
-// ============ PIXI POST-PROCESSING ============
-let pixiApp=null,pixiSprite=null;
-function initPixi(){
-  if(typeof PIXI==='undefined')return;
-  // Pixi post-processing disabled — Canvas 2D rendering is optimized enough
-  return;
-  pixiApp=new PIXI.Application({
-    width:W*DPR,height:H*DPR,
-    backgroundAlpha:0,
-    resolution:1,
-    autoDensity:false,
-    antialias:false,
-    powerPreference:'high-performance',
-  });
-  const pxCanvas=pixiApp.view;
-  pxCanvas.style.position='fixed';
-  pxCanvas.style.top='0';pxCanvas.style.left='0';
-  pxCanvas.style.width=W+'px';pxCanvas.style.height=H+'px';
-  pxCanvas.style.zIndex='1';
-  pxCanvas.style.pointerEvents='none';
-  pxCanvas.style.cursor='none';
-  document.body.insertBefore(pxCanvas,document.getElementById('screen-title'));
-
-  const baseTex=PIXI.BaseTexture.from(c,{scaleMode:PIXI.SCALE_MODES.LINEAR});
-  const tex=new PIXI.Texture(baseTex);
-  pixiSprite=new PIXI.Sprite(tex);
-  pixiSprite.width=W*DPR;pixiSprite.height=H*DPR;
-  pixiApp.stage.addChild(pixiSprite);
-
-  // bloom / glow filter
-  const fxFrag=`
-    precision highp float;
-    varying vec2 vTextureCoord;
-    uniform sampler2D uSampler;
-    uniform float uFlash;
-    uniform float uTime;
-    uniform float uGlitch;
-    void main(){
-      vec2 uv=vTextureCoord;
-      // VHS glitch — horizontal displacement on random scanlines
-      float glitchAmt=uGlitch;
-      if(glitchAmt>0.0){
-        float line=floor(uv.y*200.0);
-        float rnd=fract(sin(line*43.758+uTime*100.0)*43758.5453);
-        if(rnd>0.92)uv.x+=glitchAmt*(rnd-0.5)*0.1;
-      }
-      vec4 col=texture2D(uSampler,uv);
-      // chromatic aberration (edges + glitch boost)
-      float dist=length(uv-0.5);
-      float ca=dist*0.0006+uFlash*0.002+glitchAmt*0.004;
-      float r=texture2D(uSampler,uv+vec2(ca,0.0)).r;
-      float bl=texture2D(uSampler,uv-vec2(ca,0.0)).b;
-      vec4 final=vec4(r,col.g,bl,col.a);
-      // selective bloom
-      vec4 bloomSample=vec4(0.0);
-      for(float x=-1.0;x<=1.0;x+=1.0){
-        for(float y=-1.0;y<=1.0;y+=1.0){
-          vec4 s=max(texture2D(uSampler,uv+vec2(x,y)*0.002)-0.35,0.0)*1.5;
-          bloomSample+=s;
-        }
-      }
-      bloomSample/=9.0;
-      final.rgb+=bloomSample.rgb*0.25*(0.5+uFlash*2.0);
-      // vignette
-      float vig=1.0-smoothstep(0.5,1.5,dist*2.0);
-      final.rgb*=mix(0.9,1.0,vig);
-      gl_FragColor=final;
-    }
-  `;
-  try{
-    const fxFilter=new PIXI.Filter(undefined,fxFrag,{uFlash:0.0,uTime:0.0,uGlitch:0.0});
-    pixiApp.stage.filters=[fxFilter];
-  }catch(e){console.warn('Shader compilation failed, running without post-fx',e);}
-
-  // resize handler
-  const origResize=resize;
-  resize=function(){
-    origResize();
-    if(pixiApp){
-      pixiApp.renderer.resize(W*DPR,H*DPR);
-      pixiSprite.width=W*DPR;pixiSprite.height=H*DPR;
-      pxCanvas.style.width=W+'px';pxCanvas.style.height=H+'px';
-    }
-  };
-}
-
-try{initPixi();}catch(e){
-  console.warn('Pixi init failed, using Canvas 2D fallback',e);
-}
-
 // ============ INIT ============
 lucide.createIcons();
 document.fonts.ready.then(()=>{const ts=document.getElementById('screen-title');if(ts)ts.style.opacity='1';});
-function loop(){
-  update();
-  draw();
-  // update pixi post-processing
-  if(pixiApp&&pixiSprite){
-    try{pixiSprite.texture.baseTexture.resource.source=c;pixiSprite.texture.baseTexture.update();}
-    catch(e){pixiSprite.texture.update();}
-    const f=pixiApp.stage.filters;
-    if(f&&f[0]&&f[0].uniforms){
-      const t=performance.now()/1000;
-      f[0].uniforms.uTime=t;
-      f[0].uniforms.uFlash=state==='playing'?flash:0;
-      // VHS glitch: brief burst every ~10s, lasts ~0.15s
-      const glitchCycle=t%10;
-      f[0].uniforms.uGlitch=state==='playing'&&glitchCycle>9.85?1:0;
-    }
-    pixiApp.render();
-  }
-  requestAnimationFrame(loop);
-}
+function loop(){update();draw();requestAnimationFrame(loop);}
 loop();
 </script>
 </body>
