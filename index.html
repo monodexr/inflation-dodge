@@ -29,7 +29,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#050505;-webkit-font-smoothing:antialiased;-webkit-overflow-scrolling:touch;touch-action:none;overscroll-behavior:none}
 canvas{display:block;cursor:none;position:fixed;top:0;left:0}
-#c{z-index:-1;opacity:0}
+#c{z-index:1}
 
 .font-mono{font-family:'JetBrains Mono',monospace}
 .font-display{font-family:'Oswald',sans-serif}
@@ -601,7 +601,7 @@ const c=document.getElementById('c'),X=c.getContext('2d');
 const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 let W,H,DPR=1;
 function resize(){
-  DPR=isSafari?1:Math.min(window.devicePixelRatio||1,2);
+  DPR=Math.min(window.devicePixelRatio||1,2);
   W=innerWidth;H=innerHeight;
   c.width=W*DPR;c.height=H*DPR;
   c.style.width=W+'px';c.style.height=H+'px';
@@ -1505,7 +1505,8 @@ function showDeath(){
 let pixiApp=null,pixiSprite=null;
 function initPixi(){
   if(typeof PIXI==='undefined')return;
-  if(isSafari){console.log('Safari detected — skipping Pixi, using Canvas 2D directly');return;}
+  // Pixi post-processing disabled — Canvas 2D rendering is optimized enough
+  return;
   pixiApp=new PIXI.Application({
     width:W*DPR,height:H*DPR,
     backgroundAlpha:0,
@@ -1589,7 +1590,6 @@ function initPixi(){
 try{initPixi();}catch(e){
   console.warn('Pixi init failed, using Canvas 2D fallback',e);
 }
-if(!pixiApp){c.style.zIndex='1';c.style.opacity='1';}
 
 // ============ INIT ============
 lucide.createIcons();
